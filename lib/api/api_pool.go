@@ -167,6 +167,42 @@ func FetchFtLpBalance(ftlpCode, network string) (*big.Int, error) {
 	return sum, nil
 }
 
+// FetchFtLpUTXOList returns all LP UTXOs for the given ftlpCode script.
+func FetchFtLpUTXOList(ftlpCode, network string) ([]*LpUTXO, error) {
+	hash, err := scriptHashFromHex(ftlpCode)
+	if err != nil {
+		return nil, err
+	}
+	baseURL := getBaseURL(network)
+	url := fmt.Sprintf("%spool/lputxo/scriptpubkeyhash/%s", baseURL, hash)
+
+	body, err := httpGetWithRetry(url)
+	if err != nil {
+		return nil, err
+	}
+
+	var r lpUtxoListResponse
+	if err := json.Unmarshal(body, &r); err != nil {
+		return nil, err
+	}
+
+	result := make([]*LpUTXO, 0, len(r.Data.UTXOs))
+	for i := range r.Data.UTXOs {
+		lb, _ := parseBigIntOrUint64(r.Data.UTXOs[i].LpBalance)
+		if lb == nil {
+			lb = new(big.Int)
+		}
+		result = append(result, &LpUTXO{
+			TxID:      r.Data.UTXOs[i].TxID,
+			Vout:      uint32(r.Data.UTXOs[i].Index),
+			Script:    ftlpCode,
+			Satoshis:  r.Data.UTXOs[i].TBCBalance,
+			FtBalance: lb,
+		})
+	}
+	return result, nil
+}
+
 // FetchFtLpUTXO returns a single LP UTXO meeting the requested amount.
 func FetchFtLpUTXO(ftlpCode string, amount *big.Int, network string) (*LpUTXO, error) {
 	hash, err := scriptHashFromHex(ftlpCode)
