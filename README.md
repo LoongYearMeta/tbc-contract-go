@@ -26,7 +26,7 @@ tbc-contract-go/
 
 ## 依赖
 
-- `github.com/sCrypt-Inc/go-bt/v2`：本地开发时通过 `go.mod` 中的 `replace` 指向 sibling **`../tbc-lib-go`**（与团队 fork 对齐）。
+- `github.com/LoongYearMeta/tbc-lib-go`：本地开发时通过 `go.mod` 中的 `replace` 指向 sibling **`../tbc-lib-go`**（与团队 fork 对齐）。
 
 ## 构建
 

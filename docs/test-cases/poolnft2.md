@@ -32,8 +32,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sCrypt-Inc/tbc-contract-go/lib/api"
-	"github.com/sCrypt-Inc/tbc-contract-go/lib/contract"
+	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
+	"github.com/LoongYearMeta/tbc-contract-go/lib/contract"
 )
 
 func envOrDefault(k, d string) string {

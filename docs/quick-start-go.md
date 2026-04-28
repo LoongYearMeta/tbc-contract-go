@@ -16,7 +16,7 @@
 
 ## 最小可执行脚本
 
-在已 **`require github.com/sCrypt-Inc/tbc-contract-go`** 且 **`replace github.com/sCrypt-Inc/go-bt/v2 => ../tbc-lib-go`** 的业务模块中，保存为 **`main.go`**：
+在已 **`require github.com/LoongYearMeta/tbc-contract-go`** 且 **`replace github.com/LoongYearMeta/tbc-lib-go => ../tbc-lib-go`** 的业务模块中，保存为 **`main.go`**：
 
 ```bash
 export TBC_WIF='你的测试网WIF'
@@ -32,9 +32,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/libsv/go-bk/wif"
-	"github.com/sCrypt-Inc/go-bt/v2/bscript"
-	"github.com/sCrypt-Inc/tbc-contract-go/lib/api"
+	"github.com/LoongYearMeta/tbc-lib-go/wif"
+	"github.com/LoongYearMeta/tbc-lib-go/bscript"
+	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
 )
 
 func envOrDefault(k, d string) string {

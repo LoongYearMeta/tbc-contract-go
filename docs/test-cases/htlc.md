@@ -47,12 +47,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/libsv/go-bk/bec"
-	"github.com/libsv/go-bk/wif"
-	bt "github.com/sCrypt-Inc/go-bt/v2"
-	"github.com/sCrypt-Inc/go-bt/v2/bscript"
-	"github.com/sCrypt-Inc/tbc-contract-go/lib/api"
-	"github.com/sCrypt-Inc/tbc-contract-go/lib/contract"
+	"github.com/LoongYearMeta/tbc-lib-go/bec"
+	"github.com/LoongYearMeta/tbc-lib-go/wif"
+	bt "github.com/LoongYearMeta/tbc-lib-go"
+	"github.com/LoongYearMeta/tbc-lib-go/bscript"
+	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
+	"github.com/LoongYearMeta/tbc-contract-go/lib/contract"
 )
 
 func envOrDefault(k, d string) string {
@@ -121,17 +121,20 @@ func runDeploy(priv *bec.PrivateKey) error {
 	if err != nil {
 		return err
 	}
-	tl, err := strconv.Atoi(strings.TrimSpace(os.Getenv("HTLC_TIMELOCK")))
+	tl64, err := strconv.ParseUint(strings.TrimSpace(os.Getenv("HTLC_TIMELOCK")), 10, 32)
 	if err != nil {
 		return fmt.Errorf("HTLC_TIMELOCK: %w", err)
 	}
-	lock, _ := strconv.ParseFloat(envOrDefault("HTLC_LOCK_TBC", "0.001"), 64)
-	fee, _ := strconv.ParseFloat(envOrDefault("HTLC_FEE_TBC", "0.001"), 64)
-	utxo, err := api.FetchUTXO(sender.AddressString, lock+fee, nw())
+	tl := uint32(tl64)
+	// DeployHTLCWithSign takes satoshis (1 TBC = 1_000_000 sat)
+	lockF, _ := strconv.ParseFloat(envOrDefault("HTLC_LOCK_TBC", "0.001"), 64)
+	feeF, _ := strconv.ParseFloat(envOrDefault("HTLC_FEE_TBC", "0.001"), 64)
+	lockSat := uint64(lockF * 1_000_000)
+	utxo, err := api.FetchUTXO(sender.AddressString, lockF+feeF, nw())
 	if err != nil {
 		return err
 	}
-	raw, err := contract.DeployHTLCWithSign(sender.AddressString, recv, hl, tl, lock, utxo, priv)
+	raw, err := contract.DeployHTLCWithSign(sender.AddressString, recv, hl, tl, lockSat, utxo, priv)
 	if err != nil {
 		return err
 	}
@@ -178,11 +181,11 @@ func runRefund(priv *bec.PrivateKey) error {
 	if err != nil {
 		return err
 	}
-	tl, err := strconv.Atoi(strings.TrimSpace(os.Getenv("HTLC_TIMELOCK")))
+	tl64, err := strconv.ParseUint(strings.TrimSpace(os.Getenv("HTLC_TIMELOCK")), 10, 32)
 	if err != nil {
 		return fmt.Errorf("HTLC_TIMELOCK: %w", err)
 	}
-	raw, err := contract.RefundWithSign(sender.AddressString, u, priv, tl)
+	raw, err := contract.RefundWithSign(sender.AddressString, u, priv, uint32(tl64))
 	if err != nil {
 		return err
 	}

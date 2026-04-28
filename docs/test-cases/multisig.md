@@ -39,12 +39,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/libsv/go-bk/bec"
-	"github.com/libsv/go-bk/wif"
-	bt "github.com/sCrypt-Inc/go-bt/v2"
-	"github.com/sCrypt-Inc/go-bt/v2/bscript"
-	"github.com/sCrypt-Inc/tbc-contract-go/lib/api"
-	"github.com/sCrypt-Inc/tbc-contract-go/lib/contract"
+	"github.com/LoongYearMeta/tbc-lib-go/bec"
+	"github.com/LoongYearMeta/tbc-lib-go/wif"
+	bt "github.com/LoongYearMeta/tbc-lib-go"
+	"github.com/LoongYearMeta/tbc-lib-go/bscript"
+	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
+	"github.com/LoongYearMeta/tbc-contract-go/lib/contract"
 )
 
 func envOrDefault(k, d string) string {
@@ -72,14 +72,24 @@ func pubKeys() []string {
 	return strings.Split(raw, ",")
 }
 
-func counts() (int, int) {
+func sigCount() int {
 	a, _ := strconv.Atoi(envOrDefault("MS_SIGNATURE_COUNT", "2"))
+	return a
+}
+
+func pubCount() int {
 	b, _ := strconv.Atoi(envOrDefault("MS_PUBLIC_KEY_COUNT", "3"))
-	return a, b
+	return b
+}
+
+// tbcToSat converts a TBC float string to satoshis (1 TBC = 1_000_000 sat).
+func tbcToSat(tbcStr string) uint64 {
+	f, _ := strconv.ParseFloat(tbcStr, 64)
+	return uint64(f * 1_000_000)
 }
 
 func runAddress() error {
-	addr, err := contract.GetMultiSigAddress(pubKeys(), counts())
+	addr, err := contract.GetMultiSigAddress(pubKeys(), sigCount(), pubCount())
 	if err != nil {
 		return err
 	}
@@ -92,8 +102,8 @@ func runCreate(priv *bec.PrivateKey) error {
 	if err != nil {
 		return err
 	}
-	amt, _ := strconv.ParseFloat(envOrDefault("MS_TBC_AMOUNT", "0.001"), 64)
-	utxos, err := api.GetUTXOs(from.AddressString, amt+0.05, nw())
+	amtSat := tbcToSat(envOrDefault("MS_TBC_AMOUNT", "0.001"))
+	utxos, err := api.GetUTXOs(from.AddressString, float64(amtSat)/1_000_000+0.05, nw())
 	if err != nil {
 		return err
 	}
@@ -101,8 +111,7 @@ func runCreate(priv *bec.PrivateKey) error {
 	for i := range utxos {
 		sl[i] = utxos[i]
 	}
-	sig, pub := counts()
-	raw, err := contract.CreateMultiSigWallet(from.AddressString, pubKeys(), sig, pub, amt, sl, priv)
+	raw, err := contract.CreateMultiSigWallet(from.AddressString, pubKeys(), sigCount(), pubCount(), amtSat, sl, priv)
 	if err != nil {
 		return err
 	}
@@ -117,8 +126,8 @@ func runP2PK(priv *bec.PrivateKey) error {
 		return fmt.Errorf("p2pk 需要 MS_MULTISIG_ADDRESS")
 	}
 	from, _ := bscript.NewAddressFromPublicKey(priv.PubKey(), true)
-	amt, _ := strconv.ParseFloat(envOrDefault("MS_TBC_AMOUNT", "0.001"), 64)
-	utxos, err := api.GetUTXOs(from.AddressString, amt+0.05, nw())
+	amtSat := tbcToSat(envOrDefault("MS_TBC_AMOUNT", "0.001"))
+	utxos, err := api.GetUTXOs(from.AddressString, float64(amtSat)/1_000_000+0.05, nw())
 	if err != nil {
 		return err
 	}
@@ -126,7 +135,7 @@ func runP2PK(priv *bec.PrivateKey) error {
 	for i := range utxos {
 		sl[i] = utxos[i]
 	}
-	raw, err := contract.P2PKHToMultiSigSendTBC(from.AddressString, to, amt, sl, priv)
+	raw, err := contract.P2PKHToMultiSigSendTBC(from.AddressString, to, amtSat, sl, priv)
 	if err != nil {
 		return err
 	}

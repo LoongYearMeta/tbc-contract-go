@@ -39,12 +39,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/libsv/go-bk/bec"
-	"github.com/libsv/go-bk/wif"
-	bt "github.com/sCrypt-Inc/go-bt/v2"
-	"github.com/sCrypt-Inc/go-bt/v2/bscript"
-	"github.com/sCrypt-Inc/tbc-contract-go/lib/api"
-	"github.com/sCrypt-Inc/tbc-contract-go/lib/contract"
+	"github.com/LoongYearMeta/tbc-lib-go/bec"
+	"github.com/LoongYearMeta/tbc-lib-go/wif"
+	bt "github.com/LoongYearMeta/tbc-lib-go"
+	"github.com/LoongYearMeta/tbc-lib-go/bscript"
+	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
+	"github.com/LoongYearMeta/tbc-contract-go/lib/contract"
 )
 
 func envOrDefault(k, d string) string {
@@ -69,13 +69,15 @@ func runFreeze(priv *bec.PrivateKey) error {
 	if err != nil {
 		return err
 	}
-	tbc, _ := strconv.ParseFloat(envOrDefault("PIGGY_TBC", "0.001"), 64)
+	tbcF, _ := strconv.ParseFloat(envOrDefault("PIGGY_TBC", "0.001"), 64)
+	// FreezeTBCWithSign takes satoshis (1 TBC = 1_000_000 sat)
+	tbcSat := uint64(tbcF * 1_000_000)
 	lt64, _ := strconv.ParseUint(strings.TrimSpace(envOrDefault("PIGGY_LOCKTIME", "500000")), 10, 32)
-	utxo, err := api.FetchUTXO(addr.AddressString, tbc+0.03, nw())
+	utxo, err := api.FetchUTXO(addr.AddressString, tbcF+0.03, nw())
 	if err != nil {
 		return err
 	}
-	raw, err := contract.FreezeTBCWithSign(priv, tbc, uint32(lt64), []*bt.UTXO{utxo}, nw())
+	raw, err := contract.FreezeTBCWithSign(priv, tbcSat, uint32(lt64), []*bt.UTXO{utxo})
 	if err != nil {
 		return err
 	}
@@ -110,7 +112,13 @@ func runUnfreeze(priv *bec.PrivateKey) error {
 	if err != nil {
 		return err
 	}
-	raw, err := contract.UnfreezeTBCWithSign(priv, []*bt.UTXO{u}, nw())
+	// UnfreezeTBCWithSign needs the current block height (not a network string).
+	// Use api.FetchTBCLockTime to retrieve it.
+	blockHeight, err := api.FetchTBCLockTime(nw())
+	if err != nil {
+		return err
+	}
+	raw, err := contract.UnfreezeTBCWithSign(priv, []*bt.UTXO{u}, blockHeight)
 	if err != nil {
 		return err
 	}

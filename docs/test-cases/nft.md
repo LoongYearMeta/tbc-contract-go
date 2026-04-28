@@ -43,12 +43,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/libsv/go-bk/bec"
-	"github.com/libsv/go-bk/wif"
-	bt "github.com/sCrypt-Inc/go-bt/v2"
-	"github.com/sCrypt-Inc/go-bt/v2/bscript"
-	"github.com/sCrypt-Inc/tbc-contract-go/lib/api"
-	"github.com/sCrypt-Inc/tbc-contract-go/lib/contract"
+	"github.com/LoongYearMeta/tbc-lib-go/bec"
+	"github.com/LoongYearMeta/tbc-lib-go/wif"
+	bt "github.com/LoongYearMeta/tbc-lib-go"
+	"github.com/LoongYearMeta/tbc-lib-go/bscript"
+	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
+	"github.com/LoongYearMeta/tbc-contract-go/lib/contract"
 )
 
 const tinyPNGDataURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
