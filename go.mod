@@ -2,11 +2,7 @@ module github.com/LoongYearMeta/tbc-contract-go
 
 go 1.17
 
-require (
-	github.com/LoongYearMeta/tbc-lib-go v0.0.0-00010101000000-000000000000
-	github.com/libsv/go-bk v0.1.6
-	github.com/sCrypt-Inc/go-bt/v2 v2.1.0-beta.9
-)
+require github.com/LoongYearMeta/tbc-lib-go v0.0.0-00010101000000-000000000000
 
 require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect

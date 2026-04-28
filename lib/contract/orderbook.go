@@ -618,7 +618,10 @@ func (o *OrderBook) BuildBuyOrderTX(
 
 	// buyOrderHash160: sha256ripemd160(sha256(buyOrder)) — used as FT code "address"
 	buyOrderHash160 := hex.EncodeToString(crypto.Hash160(crypto.Sha256(buyOrder.Bytes())))
-	ftCodeBuy := BuildFTtransferCode(ftCodeScriptHex, buyOrderHash160)
+	ftCodeBuy, err := BuildFTtransferCode(ftCodeScriptHex, buyOrderHash160)
+	if err != nil {
+		return "", err
+	}
 	ftTapeBuy := BuildFTtransferTape(ftTapeHex, amountHex)
 	ftCodeDust := ftutxos[0].Satoshis
 
@@ -634,7 +637,10 @@ func (o *OrderBook) BuildBuyOrderTX(
 	tx.AddOutput(&bt.Output{LockingScript: ftTapeBuy, Satoshis: 0})
 
 	if ftAmount.Cmp(tapeAmountSum) < 0 {
-		ftCodeChange := BuildFTtransferCode(ftCodeScriptHex, holdAddress)
+		ftCodeChange, err := BuildFTtransferCode(ftCodeScriptHex, holdAddress)
+		if err != nil {
+			return "", err
+		}
 		ftTapeChange := BuildFTtransferTape(ftTapeHex, changeHex)
 		tx.AddOutput(&bt.Output{LockingScript: ftCodeChange, Satoshis: ftCodeDust})
 		tx.AddOutput(&bt.Output{LockingScript: ftTapeChange, Satoshis: 0})
@@ -681,7 +687,10 @@ func (o *OrderBook) BuildCancelBuyOrderTX(
 	}
 	ftTapeHex := hex.EncodeToString(ftPreTX.Outputs[int(ftUTXO.Vout)+1].LockingScript.Bytes())
 	ftCodeScriptHex := hex.EncodeToString(ftUTXO.LockingScript.Bytes())
-	ftCodeOut := BuildFTtransferCode(ftCodeScriptHex, buyData.HoldAddress)
+	ftCodeOut, err := BuildFTtransferCode(ftCodeScriptHex, buyData.HoldAddress)
+	if err != nil {
+		return "", err
+	}
 	ftTapeOut := BuildFTtransferTape(ftTapeHex, amountHex)
 
 	tx := newFTTx()
@@ -885,13 +894,19 @@ func (o *OrderBook) MatchOrder(
 	}
 
 	// FT Seller output
-	ftSellerCode := BuildFTtransferCode(ftCodeScriptHex, sellData.HoldAddress)
+	ftSellerCode, err := BuildFTtransferCode(ftCodeScriptHex, sellData.HoldAddress)
+	if err != nil {
+		return "", err
+	}
 	tx.AddOutput(&bt.Output{LockingScript: ftSellerCode, Satoshis: ftUTXO.Satoshis})
 	ftSellerTape := BuildFTtransferTape(ftTapeHex, ftSellerAmountHex)
 	tx.AddOutput(&bt.Output{LockingScript: ftSellerTape, Satoshis: 0})
 
 	// FT Tax output
-	ftTaxCode := BuildFTtransferCode(ftCodeScriptHex, ftFeeAddress)
+	ftTaxCode, err := BuildFTtransferCode(ftCodeScriptHex, ftFeeAddress)
+	if err != nil {
+		return "", err
+	}
 	tx.AddOutput(&bt.Output{LockingScript: ftTaxCode, Satoshis: ftUTXO.Satoshis})
 	ftTaxTape := BuildFTtransferTape(ftTapeHex, ftTaxAmountHex)
 	tx.AddOutput(&bt.Output{LockingScript: ftTaxTape, Satoshis: 0})
@@ -958,7 +973,10 @@ func (o *OrderBook) MatchOrder(
 
 			// FT change to buy-order hash160
 			buyHash160 := hex.EncodeToString(crypto.Hash160(crypto.Sha256(newBuyScript.Bytes())))
-			ftChangeCode := BuildFTtransferCode(ftCodeScriptHex, buyHash160)
+			ftChangeCode, err := BuildFTtransferCode(ftCodeScriptHex, buyHash160)
+			if err != nil {
+				return "", err
+			}
 			tx.AddOutput(&bt.Output{LockingScript: ftChangeCode, Satoshis: ftUTXO.Satoshis})
 			ftChangeTape := BuildFTtransferTape(ftTapeHex, changeHex)
 			tx.AddOutput(&bt.Output{LockingScript: ftChangeTape, Satoshis: 0})

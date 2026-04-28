@@ -162,7 +162,10 @@ func GetPrePreTxdata(tx *bt.Tx, vout int) (string, error) {
 	if off := partialOffsetGetPrePre(scriptLen); off > 0 {
 		suffix := lockScript[off:]
 		partialHash := partialsha256.CalculatePartialHash(lockScript[:off])
-		ph, _ := hex.DecodeString(partialHash)
+		ph, err := hex.DecodeString(partialHash)
+		if err != nil {
+			return "", fmt.Errorf("GetPrePreTxdata: decode partial hash: %w", err)
+		}
 		buf = append(buf, getLengthHex(len(suffix))...)
 		buf = append(buf, suffix...)
 		buf = append(buf, 0x20)
@@ -178,7 +181,11 @@ func GetPrePreTxdata(tx *bt.Tx, vout int) (string, error) {
 			n := scriptLen / 64
 			partialLen := 64 * n
 			phStr := partialsha256.CalculatePartialHash(lockScript[:partialLen])
-			ph, _ = hex.DecodeString(phStr)
+			var err error
+			ph, err = hex.DecodeString(phStr)
+			if err != nil {
+				return "", fmt.Errorf("GetPrePreTxdata: decode partial hash: %w", err)
+			}
 			suffix = lockScript[partialLen:]
 		}
 		buf = append(buf, getLengthHex(len(suffix))...)
@@ -279,7 +286,10 @@ func GetPreTxdata(tx *bt.Tx, vout int) (string, error) {
 	}
 	suffix := lockScript[off:]
 	partialHash := partialsha256.CalculatePartialHash(lockScript[:off])
-	ph, _ := hex.DecodeString(partialHash)
+	ph, err := hex.DecodeString(partialHash)
+	if err != nil {
+		return "", fmt.Errorf("GetPreTxdata: decode partial hash: %w", err)
+	}
 
 	sat := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sat, tx.Outputs[vout].Satoshis)
@@ -324,7 +334,10 @@ func GetCurrentTxdata(tx *bt.Tx, inputIndex int) (string, error) {
 		if off := partialOffsetGetPrePre(scriptLen); off > 0 {
 			suffix := lockScript[off:]
 			partialHash := partialsha256.CalculatePartialHash(lockScript[:off])
-			ph, _ := hex.DecodeString(partialHash)
+			ph, err := hex.DecodeString(partialHash)
+			if err != nil {
+				return "", fmt.Errorf("GetCurrentTxdata: decode partial hash: %w", err)
+			}
 			buf = append(buf, getLengthHex(len(suffix))...)
 			buf = append(buf, suffix...)
 			buf = append(buf, 0x20)
@@ -352,7 +365,10 @@ func GetCurrentTxdata(tx *bt.Tx, inputIndex int) (string, error) {
 				n := scriptLen / 64
 				partialLength := 64 * n
 				partialHashHex := partialsha256.CalculatePartialHash(lockScript[:partialLength])
-				ph, _ := hex.DecodeString(partialHashHex)
+				ph, err := hex.DecodeString(partialHashHex)
+				if err != nil {
+					return "", fmt.Errorf("GetCurrentTxdata: decode partial hash: %w", err)
+				}
 				suffixdata = lockScript[partialLength:]
 				suffixPartialHash = ph
 			}
@@ -469,4 +485,16 @@ func GetContractTxdata(tx *bt.Tx, vout int) (string, error) {
 // Corresponds to JS ftunlock.getSize. Renamed from GetSizeHex to match TS naming.
 func GetSize(length int) []byte {
 	return getSize(length)
+}
+
+// GetTapePushSize returns the raw length bytes used in stablecoin tape scripts.
+// Mirrors ftunlock.getSize for lengths ≤ 65535.
+// Moved here from nftunlock.go: this function is FT-tape-related, not NFT-related.
+func GetTapePushSize(length int) []byte {
+	if length < 256 {
+		return []byte{byte(length)}
+	}
+	b := make([]byte, 2)
+	binary.LittleEndian.PutUint16(b, uint16(length))
+	return b
 }

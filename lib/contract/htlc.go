@@ -12,12 +12,12 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"regexp"
 
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bec"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
 	"github.com/LoongYearMeta/tbc-lib-go/sighash"
+	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 )
 
 // --------------------------------------------------------------------------
@@ -51,12 +51,6 @@ func htlcAddressToPKH(address string) (string, error) {
 	return addr.PublicKeyHash, nil
 }
 
-// isValidSHA256Hash validates that s is a 64-character hex string.
-func isValidSHA256Hash(s string) bool {
-	matched, _ := regexp.MatchString(`^[0-9a-fA-F]{64}$`, s)
-	return matched
-}
-
 // --------------------------------------------------------------------------
 // DeployHTLC (unsigned)
 // --------------------------------------------------------------------------
@@ -72,7 +66,7 @@ func DeployHTLC(
 	amountSat uint64,
 	utxo *bt.UTXO,
 ) (string, error) {
-	if !isValidSHA256Hash(hashlock) {
+	if !util.IsValidSHA256Hash(hashlock) {
 		return "", fmt.Errorf("DeployHTLC: invalid hashlock")
 	}
 	senderPKH, err := htlcAddressToPKH(sender)
@@ -241,7 +235,7 @@ func DeployHTLCWithSign(
 	utxo *bt.UTXO,
 	privKey *bec.PrivateKey,
 ) (string, error) {
-	if !isValidSHA256Hash(hashlock) {
+	if !util.IsValidSHA256Hash(hashlock) {
 		return "", fmt.Errorf("DeployHTLCWithSign: invalid hashlock")
 	}
 	senderPKH, err := htlcAddressToPKH(sender)

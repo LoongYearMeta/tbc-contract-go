@@ -53,30 +53,29 @@ func NftGetLengthHex(length int) []byte {
 //   - 1 byte, value 1..16 → OP_1..OP_16 (0x51..0x60)
 //   - 1 byte, value 0x81 → OP_1NEGATE (0x4f)
 //   - otherwise → standard PushDataPrefix + data
-func NftEncodeMinimalPushData(data []byte) []byte {
+func NftEncodeMinimalPushData(data []byte) ([]byte, error) {
 	if len(data) == 0 {
-		return []byte{0x00}
+		return []byte{0x00}, nil
 	}
 	if len(data) == 1 {
 		b := data[0]
 		if b >= 1 && b <= 16 {
-			return []byte{0x50 + b} // OP_1=0x51 … OP_16=0x60
+			return []byte{0x50 + b}, nil // OP_1=0x51 … OP_16=0x60
 		}
 		if b == 0x81 {
-			return []byte{0x4f} // OP_1NEGATE
+			return []byte{0x4f}, nil // OP_1NEGATE
 		}
 	}
 	prefix, err := script.PushDataPrefix(data)
 	if err != nil {
-		// Only happens if data > 4 GiB which is impossible in practice.
-		panic(fmt.Sprintf("NftEncodeMinimalPushData: %v", err))
+		return nil, fmt.Errorf("NftEncodeMinimalPushData: data exceeds 4 GiB: %w", err)
 	}
-	return append(prefix, data...)
+	return append(prefix, data...), nil
 }
 
 // nftAppendOutputsData mirrors getOutputsData(tx, fromIdx) in nftunlock.ts.
-// Returns the encoded bytes (length-prefixed or bare 00 if no outputs).
-func nftAppendOutputsData(tx *bt.Tx, fromIdx int) []byte {
+// Returns the encoded bytes (length-prefixed or bare 00 if no outputs), or an error.
+func nftAppendOutputsData(tx *bt.Tx, fromIdx int) ([]byte, error) {
 	var w bytes.Buffer
 	for i := fromIdx; i < len(tx.Outputs); i++ {
 		o := tx.Outputs[i]
@@ -87,7 +86,7 @@ func nftAppendOutputsData(tx *bt.Tx, fromIdx int) []byte {
 	}
 	raw := w.Bytes()
 	if len(raw) == 0 {
-		return []byte{0x00}
+		return []byte{0x00}, nil
 	}
 	return NftEncodeMinimalPushData(raw)
 }
@@ -106,7 +105,11 @@ func GetNFTCurrentTxdata(tx *bt.Tx) (string, error) {
 	w.Write(sat)
 	w.Write(nftHashLen)
 	w.Write(crypto.Sha256(o0.LockingScript.Bytes()))
-	w.Write(nftAppendOutputsData(tx, 1))
+	outputsData, err := nftAppendOutputsData(tx, 1)
+	if err != nil {
+		return "", fmt.Errorf("GetNFTCurrentTxdata: %w", err)
+	}
+	w.Write(outputsData)
 	return hex.EncodeToString(w.Bytes()), nil
 }
 
@@ -139,7 +142,11 @@ func GetNFTPreTxdata(tx *bt.Tx) (string, error) {
 		in1.Write(oi)
 		in2.Write(crypto.Sha256(inp.UnlockingScript.Bytes()))
 	}
-	w.Write(NftEncodeMinimalPushData(in1.Bytes()))
+	in1Push, err := NftEncodeMinimalPushData(in1.Bytes())
+	if err != nil {
+		return "", fmt.Errorf("GetNFTPreTxdata: encode inputs: %w", err)
+	}
+	w.Write(in1Push)
 	w.Write(nftHashLen)
 	w.Write(crypto.Sha256(in2.Bytes()))
 
@@ -155,8 +162,16 @@ func GetNFTPreTxdata(tx *bt.Tx) (string, error) {
 	w.Write(nftAmountLen)
 	binary.LittleEndian.PutUint64(sat, o1.Satoshis)
 	w.Write(sat)
-	w.Write(NftEncodeMinimalPushData(o1.LockingScript.Bytes()))
-	w.Write(nftAppendOutputsData(tx, 2))
+	o1Push, err := NftEncodeMinimalPushData(o1.LockingScript.Bytes())
+	if err != nil {
+		return "", fmt.Errorf("GetNFTPreTxdata: encode output[1]: %w", err)
+	}
+	w.Write(o1Push)
+	outputsData, err := nftAppendOutputsData(tx, 2)
+	if err != nil {
+		return "", fmt.Errorf("GetNFTPreTxdata: %w", err)
+	}
+	w.Write(outputsData)
 	return hex.EncodeToString(w.Bytes()), nil
 }
 
@@ -200,7 +215,11 @@ func GetNFTPrePreTxdata(tx *bt.Tx) (string, error) {
 	w.Write(sat)
 	w.Write(nftHashLen)
 	w.Write(crypto.Sha256(o0.LockingScript.Bytes()))
-	w.Write(nftAppendOutputsData(tx, 1))
+	outputsData, err := nftAppendOutputsData(tx, 1)
+	if err != nil {
+		return "", fmt.Errorf("GetNFTPrePreTxdata: %w", err)
+	}
+	w.Write(outputsData)
 	return hex.EncodeToString(w.Bytes()), nil
 }
 
@@ -220,8 +239,16 @@ func GetNFTCurrentTxdataV0(tx *bt.Tx) (string, error) {
 	sat := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sat, o0.Satoshis)
 	w.Write(sat)
-	w.Write(NftEncodeMinimalPushData(o0.LockingScript.Bytes()))
-	w.Write(nftAppendOutputsData(tx, 1))
+	o0Push, err := NftEncodeMinimalPushData(o0.LockingScript.Bytes())
+	if err != nil {
+		return "", fmt.Errorf("GetNFTCurrentTxdataV0: encode output[0]: %w", err)
+	}
+	w.Write(o0Push)
+	outputsData, err := nftAppendOutputsData(tx, 1)
+	if err != nil {
+		return "", fmt.Errorf("GetNFTCurrentTxdataV0: %w", err)
+	}
+	w.Write(outputsData)
 	return hex.EncodeToString(w.Bytes()), nil
 }
 
@@ -254,21 +281,38 @@ func GetNFTPreTxdataV0(tx *bt.Tx) (string, error) {
 		in1.Write(oi)
 		in2.Write(crypto.Sha256(inp.UnlockingScript.Bytes()))
 	}
-	w.Write(NftEncodeMinimalPushData(in1.Bytes()))
+	in1Push, err := NftEncodeMinimalPushData(in1.Bytes())
+	if err != nil {
+		return "", fmt.Errorf("GetNFTPreTxdataV0: encode inputs: %w", err)
+	}
+	w.Write(in1Push)
 	w.Write(nftHashLen)
 	w.Write(crypto.Sha256(in2.Bytes()))
 
-	writeOutFull := func(idx int) {
+	writeOutFull := func(idx int) error {
 		o := tx.Outputs[idx]
 		sat := make([]byte, 8)
 		w.Write(nftAmountLen)
 		binary.LittleEndian.PutUint64(sat, o.Satoshis)
 		w.Write(sat)
-		w.Write(NftEncodeMinimalPushData(o.LockingScript.Bytes()))
+		push, err := NftEncodeMinimalPushData(o.LockingScript.Bytes())
+		if err != nil {
+			return fmt.Errorf("GetNFTPreTxdataV0: encode output[%d]: %w", idx, err)
+		}
+		w.Write(push)
+		return nil
 	}
-	writeOutFull(0)
-	writeOutFull(1)
-	w.Write(nftAppendOutputsData(tx, 2))
+	if err := writeOutFull(0); err != nil {
+		return "", err
+	}
+	if err := writeOutFull(1); err != nil {
+		return "", err
+	}
+	outputsData, err := nftAppendOutputsData(tx, 2)
+	if err != nil {
+		return "", fmt.Errorf("GetNFTPreTxdataV0: %w", err)
+	}
+	w.Write(outputsData)
 	return hex.EncodeToString(w.Bytes()), nil
 }
 
@@ -311,18 +355,16 @@ func GetNFTPrePreTxdataV0(tx *bt.Tx) (string, error) {
 	w.Write(nftAmountLen)
 	binary.LittleEndian.PutUint64(sat, o0.Satoshis)
 	w.Write(sat)
-	w.Write(NftEncodeMinimalPushData(o0.LockingScript.Bytes()))
-	w.Write(nftAppendOutputsData(tx, 1))
+	o0Push, err := NftEncodeMinimalPushData(o0.LockingScript.Bytes())
+	if err != nil {
+		return "", fmt.Errorf("GetNFTPrePreTxdataV0: encode output[0]: %w", err)
+	}
+	w.Write(o0Push)
+	outputsData, err := nftAppendOutputsData(tx, 1)
+	if err != nil {
+		return "", fmt.Errorf("GetNFTPrePreTxdataV0: %w", err)
+	}
+	w.Write(outputsData)
 	return hex.EncodeToString(w.Bytes()), nil
 }
 
-// GetTapePushSize returns the raw length bytes used in stablecoin tape scripts.
-// Mirrors ftunlock.getSize for lengths ≤ 65535.
-func GetTapePushSize(length int) []byte {
-	if length < 256 {
-		return []byte{byte(length)}
-	}
-	b := make([]byte, 2)
-	binary.LittleEndian.PutUint16(b, uint16(length))
-	return b
-}

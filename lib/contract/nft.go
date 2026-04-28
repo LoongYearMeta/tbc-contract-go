@@ -35,19 +35,6 @@ const nftSatPerKB = 80
 // Types
 // ---------------------------------------------------------------------------
 
-// NFTInfo is the on-chain / initialization metadata (mirrors nft.ts NFTInfo).
-type NFTInfo struct {
-	CollectionID         string
-	CollectionIndex      int
-	CollectionName       string
-	NftName              string
-	NftSymbol            string
-	NftAttributes        string
-	NftDescription       string
-	NftTransferTimeCount int
-	NftIcon              string
-}
-
 // CollectionData is the createCollection parameter (JSON matches TS CollectionData).
 type CollectionData struct {
 	CollectionName string `json:"collectionName"`
@@ -84,21 +71,21 @@ func NewNFT(contractID string) *NFT {
 	return &NFT{ContractID: contractID}
 }
 
-// Initialize populates the NFT from NFTInfo.
+// Initialize populates the NFT from util.NFTInfo.
 // Mirrors TS NFT.initialize(nftInfo).
-func (n *NFT) Initialize(info *NFTInfo) {
+func (n *NFT) Initialize(info *util.NFTInfo) {
 	file := n.ContractID + "00000000"
 	n.NftData = NFTData{
-		NftName:     info.NftName,
-		Symbol:      info.NftSymbol,
-		Description: info.NftDescription,
-		Attributes:  info.NftAttributes,
+		NftName:     info.NFTName,
+		Symbol:      info.NFTSymbol,
+		Description: info.NFTDescription,
+		Attributes:  info.NFTAttributes,
 		File:        file,
 	}
 	n.CollectionID = info.CollectionID
 	n.CollectionIndex = info.CollectionIndex
 	n.CollectionName = info.CollectionName
-	n.TransferCount = info.NftTransferTimeCount
+	n.TransferCount = info.NFTTransferTimeCount
 }
 
 // ---------------------------------------------------------------------------

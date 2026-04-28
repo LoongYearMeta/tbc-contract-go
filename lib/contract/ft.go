@@ -194,7 +194,9 @@ func (f *FT) MintFT(privKey *bec.PrivateKey, addressTo string, utxo *bt.UTXO) ([
 	// Adjust fee to actual signed size
 	actualMintBytes := len(txMint.Bytes())
 	mintActualFee := int(math.Ceil(float64(actualMintBytes) * float64(ftSatPerKB) / 1000.0))
-	_ = txMint.AdjustImplicitFeeToTarget(mintActualFee)
+	if err := txMint.AdjustImplicitFeeToTarget(mintActualFee); err != nil {
+		return nil, fmt.Errorf("MintFT: AdjustImplicitFeeToTarget: %w", err)
+	}
 	// Re-sign after adjustment
 	if err := signP2PKHInput(txMint, privKey, 0); err != nil {
 		return nil, err
@@ -249,7 +251,10 @@ func (f *FT) Transfer(
 		return "", err
 	}
 
-	codeScript := BuildFTtransferCode(f.CodeScript, addressTo)
+	codeScript, err := BuildFTtransferCode(f.CodeScript, addressTo)
+	if err != nil {
+		return "", err
+	}
 	tx.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 500})
 	tapeScript := BuildFTtransferTape(f.TapeScript, amountHex)
 	tx.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
@@ -258,7 +263,10 @@ func (f *FT) Transfer(
 		tx.To(addressTo, tbcAmountSat)
 	}
 	if amount.Cmp(tapeAmountSum) < 0 {
-		changeCode := BuildFTtransferCode(f.CodeScript, addressFrom)
+		changeCode, err := BuildFTtransferCode(f.CodeScript, addressFrom)
+		if err != nil {
+			return "", err
+		}
 		tx.AddOutput(&bt.Output{LockingScript: changeCode, Satoshis: 500})
 		changeTape := BuildFTtransferTape(f.TapeScript, changeHex)
 		tx.AddOutput(&bt.Output{LockingScript: changeTape, Satoshis: 0})
@@ -397,13 +405,19 @@ func (f *FT) BatchTransfer(
 		}
 
 		for i, r := range batch {
-			cs := BuildFTtransferCode(f.CodeScript, r.Address)
+			cs, err := BuildFTtransferCode(f.CodeScript, r.Address)
+			if err != nil {
+				return nil, err
+			}
 			tx.AddOutput(&bt.Output{LockingScript: cs, Satoshis: 500})
 			ts := BuildFTtransferTape(f.TapeScript, tapeHexes[i])
 			tx.AddOutput(&bt.Output{LockingScript: ts, Satoshis: 0})
 		}
 		if totalBatchAmount.Cmp(balance) < 0 {
-			changeCode := BuildFTtransferCode(f.CodeScript, addressFrom)
+			changeCode, err := BuildFTtransferCode(f.CodeScript, addressFrom)
+			if err != nil {
+				return nil, err
+			}
 			tx.AddOutput(&bt.Output{LockingScript: changeCode, Satoshis: 500})
 			changeTape := BuildFTtransferTape(f.TapeScript, tapeHexes[len(batch)])
 			tx.AddOutput(&bt.Output{LockingScript: changeTape, Satoshis: 0})
@@ -652,7 +666,10 @@ func (f *FT) mergeFTSingle(
 		}
 	}
 
-	codeScript := BuildFTtransferCode(f.CodeScript, addressFrom)
+	codeScript, err := BuildFTtransferCode(f.CodeScript, addressFrom)
+	if err != nil {
+		return nil, err
+	}
 	tx.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 500})
 	tapeScript := BuildFTtransferTape(f.TapeScript, amountHex)
 	tx.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
@@ -965,11 +982,11 @@ func buildMultiTapeAmountsRaw(outputAmounts []*big.Int, tapeAmountSetIn []*big.I
 
 // BuildFTtransferCode builds a transfer code script for the recipient.
 // Mirrors TS FT.buildFTtransferCode(code, addressOrHash).
-func BuildFTtransferCode(codeHex, addressOrHash string) *bscript.Script {
+func BuildFTtransferCode(codeHex, addressOrHash string) (*bscript.Script, error) {
 	codeHex = strings.TrimSpace(codeHex)
 	codeBuf, err := hex.DecodeString(codeHex)
 	if err != nil || len(codeBuf) == 0 {
-		panic("BuildFTtransferCode: invalid code hex")
+		return nil, fmt.Errorf("BuildFTtransferCode: invalid code hex")
 	}
 	var hashBuf []byte
 	ok, _ := bscript.ValidateAddress(addressOrHash)
@@ -981,7 +998,7 @@ func BuildFTtransferCode(codeHex, addressOrHash string) *bscript.Script {
 		hashBuf[20] = 0x00
 	} else {
 		if len(addressOrHash) != 40 {
-			panic("BuildFTtransferCode: invalid address or hash length (expected 40 hex chars)")
+			return nil, fmt.Errorf("BuildFTtransferCode: invalid address or hash length (expected 40 hex chars)")
 		}
 		hashBuf = hexDecode(addressOrHash + "01")
 	}
@@ -998,7 +1015,7 @@ func BuildFTtransferCode(codeHex, addressOrHash string) *bscript.Script {
 				c.Len = len(c.Buf)
 			}
 			if out, err := bscript.FromChunks(chunks); err == nil && out != nil {
-				return out
+				return out, nil
 			}
 		}
 	}
@@ -1006,9 +1023,9 @@ func BuildFTtransferCode(codeHex, addressOrHash string) *bscript.Script {
 	if len(codeBuf) >= 1558 {
 		out := append([]byte(nil), codeBuf...)
 		copy(out[1537:1558], hashBuf)
-		return bscript.NewFromBytes(out)
+		return bscript.NewFromBytes(out), nil
 	}
-	panic("BuildFTtransferCode: unsupported code script layout")
+	return nil, fmt.Errorf("BuildFTtransferCode: unsupported code script layout")
 }
 
 // BuildFTtransferTape builds a transfer tape script with the specified amount.
