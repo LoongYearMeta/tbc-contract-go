@@ -1,21 +1,174 @@
 package util
 
 import (
+	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"math/big"
 	"regexp"
 	"strings"
 
-	"github.com/sCrypt-Inc/go-bt/v2"
-	"github.com/sCrypt-Inc/go-bt/v2/bscript"
+	bt "github.com/LoongYearMeta/tbc-lib-go"
+	"github.com/LoongYearMeta/tbc-lib-go/bscript"
+	"github.com/LoongYearMeta/tbc-lib-go/crypto"
 )
 
 var reSHA256Hex = regexp.MustCompile(`^[0-9a-fA-F]{64}$`)
 var reHex = regexp.MustCompile(`^[0-9a-fA-F]+$`)
 
-// ParseDecimalToBigInt 与 tbc-contract/lib/util parseDecimalToBigInt 一致
-func ParseDecimalToBigInt(amount string, decimal int) *big.Int {
+// FtUTXO mirrors what TS treats as Transaction.IUnspentOutput + ftBalance.
+// Field types align with bt.UTXO so FtUTXOToUTXO() is zero-copy.
+type FtUTXO struct {
+	TxID           []byte
+	Vout           uint32
+	LockingScript  *bscript.Script
+	Satoshis       uint64
+	SequenceNumber uint32
+	FtBalance      *big.Int
+}
+
+// NFTInfo is the canonical NFT metadata struct, used both by lib/api/api_nft.go
+// (response shape) and by lib/contract/nft.go (constructor input). Defined here
+// to avoid an api↔contract import cycle.
+type NFTInfo struct {
+	CollectionID         string
+	CollectionIndex      int
+	CollectionName       string
+	NFTName              string
+	NFTSymbol            string
+	NFTAttributes        string
+	NFTDescription       string
+	NFTTransferTimeCount int
+	NFTIcon              string
+}
+
+// NFTBrief is the listing-row form returned by FetchNFTs.
+type NFTBrief struct {
+	NFTHolder     string
+	NFTContractID string
+}
+
+// FtUTXOToUTXO drops the FtBalance field, returning a plain *bt.UTXO suitable
+// as a transaction input.
+func FtUTXOToUTXO(f *FtUTXO) *bt.UTXO {
+	return &bt.UTXO{
+		TxID:           f.TxID,
+		Vout:           f.Vout,
+		LockingScript:  f.LockingScript,
+		Satoshis:       f.Satoshis,
+		SequenceNumber: f.SequenceNumber,
+	}
+}
+
+// FtUTXOsToUTXOs is the slice form of FtUTXOToUTXO.
+func FtUTXOsToUTXOs(list []*FtUTXO) []*bt.UTXO {
+	result := make([]*bt.UTXO, len(list))
+	for i, f := range list {
+		result[i] = FtUTXOToUTXO(f)
+	}
+	return result
+}
+
+// BuildUTXO constructs a FtUTXO from a tx output, optionally reading the FT
+// balance from the tape output at vout+1. Mirrors TS buildUTXO(tx, vout, isFT?).
+func BuildUTXO(tx *bt.Tx, vout int, isFT bool) (*FtUTXO, error) {
+	if vout >= len(tx.Outputs) {
+		return nil, errors.New("output at index does not exist")
+	}
+	output := tx.Outputs[vout]
+	var ftBalance *big.Int
+	if isFT && vout+1 < len(tx.Outputs) {
+		var err error
+		ftBalance, err = GetFtBalanceFromTape(hex.EncodeToString(tx.Outputs[vout+1].LockingScript.Bytes()))
+		if err != nil {
+			ftBalance = big.NewInt(0)
+		}
+	} else {
+		ftBalance = big.NewInt(0)
+	}
+	txIDBytes, err := hex.DecodeString(tx.TxID())
+	if err != nil {
+		return nil, err
+	}
+	return &FtUTXO{
+		TxID:          txIDBytes,
+		Vout:          uint32(vout),
+		LockingScript: output.LockingScript,
+		Satoshis:      output.Satoshis,
+		FtBalance:     ftBalance,
+	}, nil
+}
+
+// BuildFtPrePreTxData walks preTX's tape, recursively pulling pre-pre tx data
+// from localTXs. Mirrors TS buildFtPrePreTxData.
+func BuildFtPrePreTxData(preTX *bt.Tx, preTxVout int, localTXs []*bt.Tx) (string, error) {
+	if preTxVout+1 >= len(preTX.Outputs) {
+		return "", errors.New("output at index does not exist")
+	}
+	tapeScript := preTX.Outputs[preTxVout+1].LockingScript.Bytes()
+	if len(tapeScript) < 51 {
+		return "", errors.New("tape script too short")
+	}
+	tapeSlice := tapeScript[3:51]
+	tapeHex := hex.EncodeToString(tapeSlice)
+
+	var prepretxdata string
+	for i := len(tapeHex) - 16; i >= 0; i -= 16 {
+		chunk := tapeHex[i : i+16]
+		if chunk != "0000000000000000" {
+			inputIndex := i / 16
+			if inputIndex >= len(preTX.Inputs) {
+				return "", errors.New("input index out of range")
+			}
+			prevTxID := hex.EncodeToString(preTX.Inputs[inputIndex].PreviousTxID())
+			prepreTX, err := SelectTXfromLocal(localTXs, prevTxID)
+			if err != nil {
+				return "", err
+			}
+			data, err := GetPrePreTxdata(prepreTX, int(preTX.Inputs[inputIndex].PreviousTxOutIndex))
+			if err != nil {
+				return "", err
+			}
+			prepretxdata += data
+		}
+	}
+	return "57" + prepretxdata, nil
+}
+
+// GetFtBalanceFromTape reads the 6-slot uint64 tape (48 bytes) and sums it.
+// Mirrors TS getFtBalanceFromTape.
+func GetFtBalanceFromTape(tapeHex string) (*big.Int, error) {
+	data, err := hex.DecodeString(tapeHex)
+	if err != nil {
+		return nil, fmt.Errorf("invalid tape hex: %w", err)
+	}
+	if len(data) < 51 {
+		return nil, errors.New("tape too short")
+	}
+	tapeSlice := data[3 : 3+48]
+	balance := new(big.Int)
+	for i := 0; i < 6; i++ {
+		v := binary.LittleEndian.Uint64(tapeSlice[i*8 : i*8+8])
+		balance.Add(balance, new(big.Int).SetUint64(v))
+	}
+	return balance, nil
+}
+
+// SelectTXfromLocal returns the tx in txs whose hash matches txid.
+func SelectTXfromLocal(txs []*bt.Tx, txid string) (*bt.Tx, error) {
+	for _, tx := range txs {
+		if tx.TxID() == txid {
+			return tx, nil
+		}
+	}
+	return nil, fmt.Errorf("transaction not found: %s", txid)
+}
+
+// ParseDecimalToBigInt is the Go equivalent of TS parseDecimalToBigInt(amount, decimal).
+// Crucially: takes the raw decimal string, never goes through float64.
+func ParseDecimalToBigInt(amount string, decimal int) (*big.Int, error) {
 	s := strings.TrimSpace(amount)
 	parts := strings.SplitN(s, ".", 2)
 	intPart := parts[0]
@@ -35,17 +188,17 @@ func ParseDecimalToBigInt(amount string, decimal int) *big.Int {
 	combined := intPart + frac
 	n := new(big.Int)
 	if _, ok := n.SetString(combined, 10); !ok {
-		return big.NewInt(0)
+		return nil, fmt.Errorf("invalid decimal string: %q", amount)
 	}
-	return n
+	return n, nil
 }
 
-// IsValidSHA256Hash 对应 util._isValidSHA256Hash
+// IsValidSHA256Hash is true when s is exactly 64 hex characters.
 func IsValidSHA256Hash(s string) bool {
 	return reSHA256Hex.MatchString(s)
 }
 
-// IsValidHexString 对应 util._isValidHexString
+// IsValidHexString is true when s is even-length and only [0-9a-fA-F].
 func IsValidHexString(s string) bool {
 	if s == "" {
 		return false
@@ -53,140 +206,78 @@ func IsValidHexString(s string) bool {
 	return reHex.MatchString(s)
 }
 
-var (
-	ErrOutputNotExist       = errors.New("output at index does not exist")
-	ErrTapeTooShort         = errors.New("tape script too short")
-	ErrInputIndexOutOfRange = errors.New("input index out of range")
-)
-
-// FtUnspentOutput 扩展 UTXO，包含 FT 余额，用于 transfer 等操作
-type FtUnspentOutput struct {
-	*bt.UTXO
-	FtBalance string
+// IsLock returns whether lockTime indicates a frozen UTXO. Mirrors TS isLock.
+// TS: length > 6600 → 1 (locked), else 0 (unlocked).
+func IsLock(lockTime uint32) bool {
+	return lockTime > 6600
 }
 
-// BuildUTXO 从交易构建 UTXO，用于 FT 或普通
-// 对应 JS util.buildUTXO
-func BuildUTXO(tx *bt.Tx, vout int, isFT bool) (*FtUnspentOutput, error) {
-	if vout >= len(tx.Outputs) {
-		return nil, ErrOutputNotExist
-	}
-	output := tx.Outputs[vout]
-	var ftBalance string
-	if isFT && vout+1 < len(tx.Outputs) {
-		ftBalance = GetFtBalanceFromTape(tx.Outputs[vout+1].LockingScript.String())
-	} else {
-		ftBalance = "0"
-	}
-	txID, err := hex.DecodeString(tx.TxID())
-	if err != nil {
+// SafeJSONParse mirrors TS safeJSONParse — returns the parsed value or an error
+// without panicking on malformed input.
+func SafeJSONParse(data []byte) (interface{}, error) {
+	var v interface{}
+	if err := json.Unmarshal(data, &v); err != nil {
 		return nil, err
 	}
-	return &FtUnspentOutput{
-		UTXO: &bt.UTXO{
-			TxID:          txID,
-			Vout:          uint32(vout),
-			LockingScript: output.LockingScript,
-			Satoshis:      output.Satoshis,
-		},
-		FtBalance: ftBalance,
-	}, nil
+	return v, nil
 }
 
-// BuildFtPrePreTxData 构建 FT 的 pre-pre 交易数据
-// 对应 JS util.buildFtPrePreTxData
-func BuildFtPrePreTxData(preTX *bt.Tx, preTxVout int, localTXs []*bt.Tx) (string, error) {
-	if preTxVout+1 >= len(preTX.Outputs) {
-		return "", ErrOutputNotExist
+// GetOpCode returns the opcode string for a small integer 0..255. Mirrors TS getOpCode.
+// For 0..15 it returns OP_N; for 16..255 it returns the 2-char hex value.
+func GetOpCode(n int) (string, error) {
+	if n < 0 {
+		return "", errors.New("number must be >= 0")
 	}
-	tapeScript := preTX.Outputs[preTxVout+1].LockingScript.Bytes()
-	if len(tapeScript) < 51 {
-		return "", ErrTapeTooShort
+	if n < 16 {
+		names := []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"}
+		return "OP_" + names[n], nil
 	}
-	tapeSlice := tapeScript[3:51]
-	tapeHex := hex.EncodeToString(tapeSlice)
-
-	var prepretxdata string
-	for i := len(tapeHex) - 16; i >= 0; i -= 16 {
-		chunk := tapeHex[i : i+16]
-		if chunk != "0000000000000000" {
-			inputIndex := i / 16
-			if inputIndex >= len(preTX.Inputs) {
-				return "", ErrInputIndexOutOfRange
-			}
-			// 与 Tx.TxID() / 浏览器 txid 一致，与 api.FetchFtPrePreTxData 中 FetchTXRaw 所用格式一致
-			prevTxID := hex.EncodeToString(preTX.Inputs[inputIndex].PreviousTxID())
-			prepreTX := SelectTXFromLocal(localTXs, prevTxID)
-			data, err := bt.GetPrePreTxdata(prepreTX, int(preTX.Inputs[inputIndex].PreviousTxOutIndex))
-			if err != nil {
-				return "", err
-			}
-			// 与 tbc-contract/lib/util/util.ts buildFtPrePreTxData 及 api.fetchFtPrePreTxData 一致：append 拼接（勿 prepend）。
-			prepretxdata += data
-		}
+	if n < 256 {
+		return fmt.Sprintf("%02x", n), nil
 	}
-	return "57" + prepretxdata, nil
+	return "", errors.New("number must be < 256")
 }
 
-// SelectTXFromLocal 从本地交易列表中找到指定 txid 的交易
-// 对应 JS util.selectTXfromLocal
-func SelectTXFromLocal(txs []*bt.Tx, txid string) *bt.Tx {
-	for _, tx := range txs {
-		if tx.TxID() == txid {
-			return tx
-		}
+// GetLpCostAddress mirrors TS getLpCostAddress.
+// Extracts the pubkeyHash from poolCode at offset 213..253 (bytes 213..232, i.e. chars 426..465).
+func GetLpCostAddress(poolCode string) (string, error) {
+	if len(poolCode) < 426+40 {
+		return "", errors.New("poolCode too short for getLpCostAddress")
 	}
-	panic("transaction not found: " + txid)
-}
-
-// GetFtBalanceFromTape 从 tape 脚本中提取 FT 余额（支持大数）
-// 对应 JS util.getFtBalanceFromTape
-func GetFtBalanceFromTape(tapeHex string) string {
-	data, err := hex.DecodeString(tapeHex)
-	if err != nil || len(data) < 51 {
-		return "0"
-	}
-	tapeSlice := data[3 : 3+48]
-	balance := new(big.Int)
-	for i := 0; i < 6; i++ {
-		if i*8+8 <= len(tapeSlice) {
-			var v uint64
-			for j := 0; j < 8; j++ {
-				v |= uint64(tapeSlice[i*8+j]) << (j * 8)
-			}
-			balance.Add(balance, new(big.Int).SetUint64(v))
-		}
-	}
-	return balance.String()
-}
-
-// FtUTXOToUTXO 将 FtUTXO 转为 bt.UTXO 用于交易输入
-func FtUTXOToUTXO(f *bt.FtUTXO) (*bt.UTXO, error) {
-	txID, err := hex.DecodeString(f.TxID)
+	pubKeyHashHex := poolCode[426 : 426+40]
+	pkh, err := hex.DecodeString(pubKeyHashHex)
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("invalid pubKeyHash hex: %w", err)
 	}
-	script, err := bscript.NewFromHexString(f.Script)
+	addr, err := bscript.NewAddressFromPublicKeyHash(pkh, true)
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("address from pubKeyHash: %w", err)
 	}
-	return &bt.UTXO{
-		TxID:          txID,
-		Vout:          f.Vout,
-		LockingScript: script,
-		Satoshis:      f.Satoshis,
-	}, nil
+	return addr.AddressString, nil
 }
 
-// FtUTXOsToUTXOs 批量转换
-func FtUTXOsToUTXOs(list []*bt.FtUTXO) ([]*bt.UTXO, error) {
-	result := make([]*bt.UTXO, len(list))
-	for i, f := range list {
-		u, err := FtUTXOToUTXO(f)
-		if err != nil {
-			return nil, err
-		}
-		result[i] = u
+// GetLpCostAmount mirrors TS getLpCostAmount.
+// Reads the 8-byte LE uint64 at offset 237..244 (chars 474..489).
+func GetLpCostAmount(poolCode string) (uint64, error) {
+	if len(poolCode) < 474+16 {
+		return 0, errors.New("poolCode too short for getLpCostAmount")
 	}
-	return result, nil
+	amountHex := poolCode[474 : 474+16]
+	b, err := hex.DecodeString(amountHex)
+	if err != nil {
+		return 0, fmt.Errorf("invalid amount hex: %w", err)
+	}
+	return binary.LittleEndian.Uint64(b), nil
+}
+
+// scriptHash computes the TBC indexer's scriptpubkeyhash (reversed SHA256).
+// Used internally in api packages.
+func ScriptHash(scriptHex string) (string, error) {
+	b, err := hex.DecodeString(scriptHex)
+	if err != nil {
+		return "", err
+	}
+	h := crypto.Sha256(b)
+	rev := bt.ReverseBytes(h)
+	return hex.EncodeToString(rev), nil
 }

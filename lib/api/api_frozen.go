@@ -5,13 +5,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 
-	bt "github.com/sCrypt-Inc/go-bt/v2"
-	"github.com/sCrypt-Inc/go-bt/v2/bscript"
+	bt "github.com/LoongYearMeta/tbc-lib-go"
+	"github.com/LoongYearMeta/tbc-lib-go/bscript"
 )
 
+// FrozenUTXO is a piggybank / frozen TBC UTXO.
 type FrozenUTXO struct {
 	TxID     string
 	Vout     uint32
@@ -37,29 +36,25 @@ type frozenUtxoListResponse struct {
 	} `json:"data"`
 }
 
+// FetchFrozenTBCBalance returns the frozen TBC balance for an address.
 func FetchFrozenTBCBalance(address, network string) (uint64, error) {
 	baseURL := getBaseURL(network)
 	url := fmt.Sprintf("%sfrozenBalance/address/%s/piggyBank", baseURL, address)
 
-	resp, err := httpGetWithRetry(url)
+	body, err := httpGetWithRetry(url)
 	if err != nil {
 		return 0, err
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return 0, fmt.Errorf("Failed to fetch frozen TBC balance: %s", string(body))
-	}
 
 	var r frozenBalanceResponse
-	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+	if err := json.Unmarshal(body, &r); err != nil {
 		return 0, err
 	}
 	return r.Data.Balance, nil
 }
 
-func fetchTBCLockTime(scriptHex string) (uint32, error) {
+// fetchTBCLockTimeFromScript parses the lock time from a piggybank script hex.
+func fetchTBCLockTimeFromScript(scriptHex string) (uint32, error) {
 	if len(scriptHex) != 106*2 {
 		return 0, fmt.Errorf("Invalid Piggy Bank script")
 	}
@@ -83,23 +78,18 @@ func fetchTBCLockTime(scriptHex string) (uint32, error) {
 	return binary.LittleEndian.Uint32(chunk.Buf[:4]), nil
 }
 
-func FetchFrozenUTXOList(address, network string) ([]*FrozenUTXO, error) {
+// FetchFrozenUTXOList returns all frozen piggybank UTXOs for an address.
+func FetchFrozenUTXOList(addr, network string) ([]*FrozenUTXO, error) {
 	baseURL := getBaseURL(network)
-	url := fmt.Sprintf("%sfrozenUtxo/address/%s/piggyBank", baseURL, address)
+	url := fmt.Sprintf("%sfrozenUtxo/address/%s/piggyBank", baseURL, addr)
 
-	resp, err := httpGetWithRetry(url)
+	body, err := httpGetWithRetry(url)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("Failed to fetch frozen UTXO list: %s", string(body))
-	}
 
 	var r frozenUtxoListResponse
-	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+	if err := json.Unmarshal(body, &r); err != nil {
 		return nil, err
 	}
 
@@ -134,12 +124,13 @@ func FetchFrozenUTXOList(address, network string) ([]*FrozenUTXO, error) {
 	return list, nil
 }
 
-func FetchUnfrozenUTXOList(address, network string) ([]*FrozenUTXO, error) {
-	list, err := FetchFrozenUTXOList(address, network)
+// FetchUnfrozenUTXOList returns frozen UTXOs whose lockTime <= current block height.
+func FetchUnfrozenUTXOList(addr, network string) ([]*FrozenUTXO, error) {
+	list, err := FetchFrozenUTXOList(addr, network)
 	if err != nil {
 		return nil, err
 	}
-	headers, err := FetchBlockHeaders(network)
+	headers, err := FetchBlockHeaders(0, 1, network)
 	if err != nil || len(headers) == 0 {
 		return nil, fmt.Errorf("Failed to fetch block headers")
 	}
@@ -147,7 +138,7 @@ func FetchUnfrozenUTXOList(address, network string) ([]*FrozenUTXO, error) {
 
 	var unfrozen []*FrozenUTXO
 	for _, u := range list {
-		lockTime, err := fetchTBCLockTime(u.Script)
+		lockTime, err := fetchTBCLockTimeFromScript(u.Script)
 		if err != nil {
 			continue
 		}
@@ -161,6 +152,7 @@ func FetchUnfrozenUTXOList(address, network string) ([]*FrozenUTXO, error) {
 	return unfrozen, nil
 }
 
+// FrozenToBTUTXO converts a FrozenUTXO to a *bt.UTXO.
 func FrozenToBTUTXO(f *FrozenUTXO) (*bt.UTXO, error) {
 	txid, err := hex.DecodeString(f.TxID)
 	if err != nil {

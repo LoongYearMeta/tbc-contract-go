@@ -1,3 +1,6 @@
+//go:build legacy_stablecoin
+// +build legacy_stablecoin
+
 package api
 
 import (

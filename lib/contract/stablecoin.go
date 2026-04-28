@@ -1,3 +1,6 @@
+//go:build legacy_stablecoin
+// +build legacy_stablecoin
+
 // Package contract — stableCoin 扩展 FT（对齐 tbc-contract/lib/contract/stableCoin.ts）。
 package contract
 

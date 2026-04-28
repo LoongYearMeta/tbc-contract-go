@@ -4,17 +4,35 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 
-	"github.com/sCrypt-Inc/go-bt/v2/bscript"
+	bt "github.com/LoongYearMeta/tbc-lib-go"
+	"github.com/LoongYearMeta/tbc-lib-go/bscript"
 )
 
+// SimpleUTXO is a generic UTXO for custom-script (UM) lookups.
 type SimpleUTXO struct {
 	TxID     string
 	Vout     uint32
 	Script   string
 	Satoshis uint64
+}
+
+// SimpleUTXOToBTUTXO converts a SimpleUTXO to a *bt.UTXO.
+func SimpleUTXOToBTUTXO(u *SimpleUTXO) (*bt.UTXO, error) {
+	txid, err := hex.DecodeString(u.TxID)
+	if err != nil {
+		return nil, err
+	}
+	ls, err := bscript.NewFromHexString(u.Script)
+	if err != nil {
+		return nil, err
+	}
+	return &bt.UTXO{
+		TxID:          txid,
+		Vout:          u.Vout,
+		LockingScript: ls,
+		Satoshis:      u.Satoshis,
+	}, nil
 }
 
 type utxoByScriptHashResponse struct {
@@ -27,7 +45,8 @@ type utxoByScriptHashResponse struct {
 	} `json:"data"`
 }
 
-func FetchUMTXO(scriptASM string, tbcAmount float64, network string) (*SimpleUTXO, error) {
+// FetchUMTXO fetches a single UTXO by custom script ASM, meeting the minimum TBC amount.
+func FetchUMTXO(scriptASM string, tbcAmount float64, network string) (*bt.UTXO, error) {
 	script, err := bscript.NewFromASM(scriptASM)
 	if err != nil {
 		return nil, err
@@ -42,19 +61,13 @@ func FetchUMTXO(scriptASM string, tbcAmount float64, network string) (*SimpleUTX
 	baseURL := getBaseURL(network)
 	url := fmt.Sprintf("%sutxo/scriptpubkeyhash/%s", baseURL, hash)
 
-	resp, err := httpGetWithRetry(url)
+	body, err := httpGetWithRetry(url)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("Failed to fetch UTXO: %s", string(body))
-	}
 
 	var r utxoByScriptHashResponse
-	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+	if err := json.Unmarshal(body, &r); err != nil {
 		return nil, err
 	}
 	if len(r.Data.UTXOs) == 0 {
@@ -81,15 +94,24 @@ func FetchUMTXO(scriptASM string, tbcAmount float64, network string) (*SimpleUTX
 		return nil, fmt.Errorf("Please mergeUTXO")
 	}
 
-	return &SimpleUTXO{
-		TxID:     selected.TxID,
-		Vout:     uint32(selected.Index),
-		Script:   multiScript,
-		Satoshis: selected.Value,
+	ls, err := bscript.NewFromHexString(multiScript)
+	if err != nil {
+		return nil, err
+	}
+	txidBytes, err := hex.DecodeString(selected.TxID)
+	if err != nil {
+		return nil, err
+	}
+	return &bt.UTXO{
+		TxID:          txidBytes,
+		Vout:          uint32(selected.Index),
+		LockingScript: ls,
+		Satoshis:      selected.Value,
 	}, nil
 }
 
-func FetchUMTXOs(scriptASM string, network string) ([]*SimpleUTXO, error) {
+// FetchUMTXOs fetches all UTXOs for a custom script ASM.
+func FetchUMTXOs(scriptASM string, network string) ([]*bt.UTXO, error) {
 	script, err := bscript.NewFromASM(scriptASM)
 	if err != nil {
 		return nil, err
@@ -103,39 +125,43 @@ func FetchUMTXOs(scriptASM string, network string) ([]*SimpleUTXO, error) {
 	baseURL := getBaseURL(network)
 	url := fmt.Sprintf("%sutxo/scriptpubkeyhash/%s", baseURL, hash)
 
-	resp, err := httpGetWithRetry(url)
+	body, err := httpGetWithRetry(url)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("Failed to fetch UTXO: %s", string(body))
-	}
 
 	var r utxoByScriptHashResponse
-	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+	if err := json.Unmarshal(body, &r); err != nil {
 		return nil, err
 	}
 	if len(r.Data.UTXOs) == 0 {
 		return nil, fmt.Errorf("The balance in the account is zero.")
 	}
 
-	result := make([]*SimpleUTXO, 0, len(r.Data.UTXOs))
+	ls, err := bscript.NewFromHexString(multiScript)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*bt.UTXO, 0, len(r.Data.UTXOs))
 	for i := range r.Data.UTXOs {
 		u := &r.Data.UTXOs[i]
-		result = append(result, &SimpleUTXO{
-			TxID:     u.TxID,
-			Vout:     uint32(u.Index),
-			Script:   multiScript,
-			Satoshis: u.Value,
+		txidBytes, err := hex.DecodeString(u.TxID)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, &bt.UTXO{
+			TxID:          txidBytes,
+			Vout:          uint32(u.Index),
+			LockingScript: ls,
+			Satoshis:      u.Value,
 		})
 	}
 	return result, nil
 }
 
-func GetUMTXOs(scriptASM string, amountTBC float64, network string) ([]*SimpleUTXO, error) {
+// GetUMTXOs returns all UTXOs for a custom script ASM, checking total balance.
+func GetUMTXOs(scriptASM string, amountTBC float64, network string) ([]*bt.UTXO, error) {
 	utxos, err := FetchUMTXOs(scriptASM, network)
 	if err != nil {
 		return nil, err

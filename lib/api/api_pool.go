@@ -4,14 +4,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math/big"
 
-	"github.com/libsv/go-bk/crypto"
-	bt "github.com/sCrypt-Inc/go-bt/v2"
-	"github.com/sCrypt-Inc/go-bt/v2/bscript"
+	bt "github.com/LoongYearMeta/tbc-lib-go"
+	"github.com/LoongYearMeta/tbc-lib-go/bscript"
 )
 
+// PoolNFTInfo holds the indexer response for a pool NFT.
 type PoolNFTInfo struct {
 	FtLpAmount             string `json:"ft_lp_amount"`
 	FtAAmount              string `json:"ft_a_amount"`
@@ -28,12 +27,13 @@ type PoolNFTInfo struct {
 	CurrentContractSatoshi uint64 `json:"currentContractSatoshi"`
 }
 
+// LpUTXO holds an LP token UTXO.
 type LpUTXO struct {
-	TxID      string `json:"txId"`
-	Vout      uint32 `json:"outputIndex"`
-	Script    string `json:"script"`
-	Satoshis  uint64 `json:"satoshis"`
-	FtBalance string `json:"ftBalance"`
+	TxID      string
+	Vout      uint32
+	Script    string
+	Satoshis  uint64
+	FtBalance *big.Int
 }
 
 type poolNftInfoRaw struct {
@@ -67,26 +67,12 @@ type lpUtxoListResponse struct {
 	} `json:"data"`
 }
 
-func scriptHashFromHex(scriptHex string) (string, error) {
-	b, err := hex.DecodeString(scriptHex)
-	if err != nil {
-		return "", err
-	}
-	h := crypto.Sha256(b)
-	return hex.EncodeToString(bt.ReverseBytes(h)), nil
-}
-
+// FetchPoolNFTInfo fetches pool NFT info by contract txid.
 func FetchPoolNFTInfo(contractTxID, network string) (*PoolNFTInfo, error) {
 	baseURL := getBaseURL(network)
 	url := fmt.Sprintf("%spool/poolinfo/poolid/%s", baseURL, contractTxID)
 
-	resp, err := httpGetWithRetry(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
+	body, err := httpGetWithRetry(url)
 	if err != nil {
 		return nil, err
 	}
@@ -96,9 +82,22 @@ func FetchPoolNFTInfo(contractTxID, network string) (*PoolNFTInfo, error) {
 		return nil, fmt.Errorf("解析 Pool NFT Info 失败: %w", err)
 	}
 
-	lpStr, _ := parseBigIntOrUint64(r.Data.LpBalance)
-	tokenStr, _ := parseBigIntOrUint64(r.Data.TokenBalance)
-	tbcStr, _ := parseBigIntOrUint64(r.Data.TBCBalance)
+	lpBal, _ := parseBigIntOrUint64(r.Data.LpBalance)
+	tokenBal, _ := parseBigIntOrUint64(r.Data.TokenBalance)
+	tbcBal, _ := parseBigIntOrUint64(r.Data.TBCBalance)
+
+	lpStr := "0"
+	if lpBal != nil {
+		lpStr = lpBal.String()
+	}
+	tokenStr := "0"
+	if tokenBal != nil {
+		tokenStr = tokenBal.String()
+	}
+	tbcStr := "0"
+	if tbcBal != nil {
+		tbcStr = tbcBal.String()
+	}
 
 	return &PoolNFTInfo{
 		FtLpAmount:             lpStr,
@@ -117,6 +116,7 @@ func FetchPoolNFTInfo(contractTxID, network string) (*PoolNFTInfo, error) {
 	}, nil
 }
 
+// FetchPoolNFTUTXO fetches the pool NFT UTXO.
 func FetchPoolNFTUTXO(contractTxID, network string) (*bt.UTXO, error) {
 	info, err := FetchPoolNFTInfo(contractTxID, network)
 	if err != nil {
@@ -138,42 +138,37 @@ func FetchPoolNFTUTXO(contractTxID, network string) (*bt.UTXO, error) {
 	}, nil
 }
 
-func FetchFtLpBalance(ftlpCode, network string) (string, error) {
+// FetchFtLpBalance returns the total LP token balance for a given LP code script.
+func FetchFtLpBalance(ftlpCode, network string) (*big.Int, error) {
 	hash, err := scriptHashFromHex(ftlpCode)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	baseURL := getBaseURL(network)
 	url := fmt.Sprintf("%spool/lputxo/scriptpubkeyhash/%s", baseURL, hash)
 
-	resp, err := httpGetWithRetry(url)
+	body, err := httpGetWithRetry(url)
 	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var r lpUtxoListResponse
 	if err := json.Unmarshal(body, &r); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	sum := new(big.Int)
 	for _, u := range r.Data.UTXOs {
-		s, _ := parseBigIntOrUint64(u.LpBalance)
-		b, _ := new(big.Int).SetString(s, 10)
-		if b != nil {
-			sum.Add(sum, b)
+		lb, _ := parseBigIntOrUint64(u.LpBalance)
+		if lb != nil {
+			sum.Add(sum, lb)
 		}
 	}
-	return sum.String(), nil
+	return sum, nil
 }
 
-func FetchFtLpUTXO(ftlpCode, network string, amount *big.Int) (*LpUTXO, error) {
+// FetchFtLpUTXO returns a single LP UTXO meeting the requested amount.
+func FetchFtLpUTXO(ftlpCode string, amount *big.Int, network string) (*LpUTXO, error) {
 	hash, err := scriptHashFromHex(ftlpCode)
 	if err != nil {
 		return nil, err
@@ -181,13 +176,7 @@ func FetchFtLpUTXO(ftlpCode, network string, amount *big.Int) (*LpUTXO, error) {
 	baseURL := getBaseURL(network)
 	url := fmt.Sprintf("%spool/lputxo/scriptpubkeyhash/%s", baseURL, hash)
 
-	resp, err := httpGetWithRetry(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
+	body, err := httpGetWithRetry(url)
 	if err != nil {
 		return nil, err
 	}
@@ -202,8 +191,7 @@ func FetchFtLpUTXO(ftlpCode, network string, amount *big.Int) (*LpUTXO, error) {
 
 	var selected lpUtxoRaw
 	for i := range r.Data.UTXOs {
-		lpStr, _ := parseBigIntOrUint64(r.Data.UTXOs[i].LpBalance)
-		lb, _ := new(big.Int).SetString(lpStr, 10)
+		lb, _ := parseBigIntOrUint64(r.Data.UTXOs[i].LpBalance)
 		if lb != nil && lb.Cmp(amount) >= 0 {
 			selected = r.Data.UTXOs[i]
 			break
@@ -211,15 +199,13 @@ func FetchFtLpUTXO(ftlpCode, network string, amount *big.Int) (*LpUTXO, error) {
 		selected = r.Data.UTXOs[i]
 	}
 
-	lpStr, _ := parseBigIntOrUint64(selected.LpBalance)
-	lb, _ := new(big.Int).SetString(lpStr, 10)
-	if lb == nil || lb.Cmp(amount) < 0 {
+	selectedLp, _ := parseBigIntOrUint64(selected.LpBalance)
+	if selectedLp == nil || selectedLp.Cmp(amount) < 0 {
 		sum := new(big.Int)
 		for i := range r.Data.UTXOs {
-			s, _ := parseBigIntOrUint64(r.Data.UTXOs[i].LpBalance)
-			b, _ := new(big.Int).SetString(s, 10)
-			if b != nil {
-				sum.Add(sum, b)
+			lb, _ := parseBigIntOrUint64(r.Data.UTXOs[i].LpBalance)
+			if lb != nil {
+				sum.Add(sum, lb)
 			}
 		}
 		if sum.Cmp(amount) < 0 {
@@ -233,6 +219,6 @@ func FetchFtLpUTXO(ftlpCode, network string, amount *big.Int) (*LpUTXO, error) {
 		Vout:      uint32(selected.Index),
 		Script:    ftlpCode,
 		Satoshis:  selected.TBCBalance,
-		FtBalance: lpStr,
+		FtBalance: selectedLp,
 	}, nil
 }
