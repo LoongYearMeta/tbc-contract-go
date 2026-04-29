@@ -939,11 +939,16 @@ func (o *OrderBook) MatchOrder(
 	if err != nil {
 		return "", fmt.Errorf("MatchOrder: derive fee change address: %w", err)
 	}
+	// TS emits this output unconditionally (`tx.to(addr, inputsFee-fee-1300)`).
+	// Skipping it on feeChange<=0 would change the output count and thus the
+	// sighash for the FT/orderbook custom-unlock inputs. If feeChange is not
+	// positive, the caller hasn't supplied enough fee inputs; surface that.
 	feeChange := int64(inputsFee) - int64(fee) - 1300
-	if feeChange > 0 {
-		if err := tx.PayToAddress(feeChangeAddr, uint64(feeChange)); err != nil {
-			return "", err
-		}
+	if feeChange <= 0 {
+		return "", fmt.Errorf("MatchOrder: insufficient fee inputs (inputsFee=%d, fee=%d, change=%d)", inputsFee, fee, feeChange)
+	}
+	if err := tx.PayToAddress(feeChangeAddr, uint64(feeChange)); err != nil {
+		return "", err
 	}
 
 	// Partial fill
