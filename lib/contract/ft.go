@@ -944,30 +944,38 @@ func BuildFTtransferCode(codeHex, addressOrHash string) (*bscript.Script, error)
 		}
 		hashBuf = hexDecode(addressOrHash + "01")
 	}
+	// Mirrors TS: replace chunks[len-2].buf with the new hashBuffer, then
+	// re-serialise via the script chunks. TS does Script.fromASM(toASM()) to
+	// re-normalize push opcodes; FromChunks does the equivalent in Go.
+	//
+	// The function is also called on FT-LP / coin-LP code (poolNFT2 paths),
+	// not just FT v1/v2 code. The chunks layout always has the destination
+	// 21-byte push as the second-to-last chunk (hash, then "Code" tag), so
+	// the chunk walker is correct for every code variant. There is no
+	// byte-offset fallback — bytes-blind patching at fixed [1537:1558] would
+	// silently corrupt LP scripts whose padding pushes the destination chunk
+	// elsewhere.
 	s := bscript.NewFromBytes(codeBuf)
 	chunks := s.Chunks()
-	if len(chunks) >= 2 {
-		idx := len(chunks) - 2
-		c := &chunks[idx]
-		if c.Buf != nil {
-			if len(c.Buf) == len(hashBuf) {
-				copy(c.Buf, hashBuf)
-			} else {
-				c.Buf = append([]byte(nil), hashBuf...)
-				c.Len = len(c.Buf)
-			}
-			if out, err := bscript.FromChunks(chunks); err == nil && out != nil {
-				return out, nil
-			}
-		}
+	if len(chunks) < 2 {
+		return nil, fmt.Errorf("BuildFTtransferCode: code script has fewer than 2 chunks")
 	}
-	// Fallback: fixed offset for v1 layout
-	if len(codeBuf) >= 1558 {
-		out := append([]byte(nil), codeBuf...)
-		copy(out[1537:1558], hashBuf)
-		return bscript.NewFromBytes(out), nil
+	idx := len(chunks) - 2
+	c := &chunks[idx]
+	if c.Buf == nil {
+		return nil, fmt.Errorf("BuildFTtransferCode: chunks[%d] has no push data", idx)
 	}
-	return nil, fmt.Errorf("BuildFTtransferCode: unsupported code script layout")
+	if len(c.Buf) == len(hashBuf) {
+		copy(c.Buf, hashBuf)
+	} else {
+		c.Buf = append([]byte(nil), hashBuf...)
+		c.Len = len(c.Buf)
+	}
+	out, err := bscript.FromChunks(chunks)
+	if err != nil || out == nil {
+		return nil, fmt.Errorf("BuildFTtransferCode: re-serialise chunks: %w", err)
+	}
+	return out, nil
 }
 
 // BuildFTtransferTape builds a transfer tape script with the specified amount.
