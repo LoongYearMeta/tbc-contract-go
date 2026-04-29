@@ -74,7 +74,14 @@ func NftEncodeMinimalPushData(data []byte) ([]byte, error) {
 }
 
 // nftAppendOutputsData mirrors getOutputsData(tx, fromIdx) in nftunlock.ts.
-// Returns the encoded bytes (length-prefixed or bare 00 if no outputs), or an error.
+// Returns the encoded bytes (length-prefixed via getLengthHex, or bare 00
+// if no outputs).
+//
+// NOTE: TS uses getLengthHex (raw OP_PUSHDATA1/2 length prefix), not the
+// minimal-pushdata encoding. For payloads ≥17 bytes the two encodings
+// agree, so prior callers happened to produce correct bytes — but the
+// semantics are different and a future short payload would have
+// diverged silently.
 func nftAppendOutputsData(tx *bt.Tx, fromIdx int) ([]byte, error) {
 	var w bytes.Buffer
 	for i := fromIdx; i < len(tx.Outputs); i++ {
@@ -88,7 +95,9 @@ func nftAppendOutputsData(tx *bt.Tx, fromIdx int) ([]byte, error) {
 	if len(raw) == 0 {
 		return []byte{0x00}, nil
 	}
-	return NftEncodeMinimalPushData(raw)
+	out := append([]byte(nil), NftGetLengthHex(len(raw))...)
+	out = append(out, raw...)
+	return out, nil
 }
 
 // GetNFTCurrentTxdata mirrors getCurrentTxdata(tx) in nftunlock.ts.
