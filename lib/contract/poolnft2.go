@@ -1376,7 +1376,10 @@ func (p *PoolNFT2) InitPoolNFT(
 	if err != nil {
 		return "", err
 	}
-	ftaToPoolTape := BuildFTtransferTape(ftaInfo.TapeScript, amountHex)
+	ftaToPoolTape, err := BuildFTtransferTape(ftaInfo.TapeScript, amountHex)
+	if err != nil {
+		return "", err
+	}
 	tx.AddOutput(&bt.Output{Satoshis: fttxoA.Satoshis, LockingScript: ftaToPoolCode})
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: ftaToPoolTape})
 
@@ -1413,7 +1416,10 @@ func (p *PoolNFT2) InitPoolNFT(
 		if err2 != nil {
 			return "", err2
 		}
-		changeTape := BuildFTtransferTape(ftaInfo.TapeScript, changeHex)
+		changeTape, err2 := BuildFTtransferTape(ftaInfo.TapeScript, changeHex)
+		if err2 != nil {
+			return "", err2
+		}
 		tx.AddOutput(&bt.Output{Satoshis: fttxoA.Satoshis, LockingScript: changeCode})
 		tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeTape})
 	}
@@ -1703,7 +1709,10 @@ func (p *PoolNFT2) IncreaseLP(
 	if err != nil {
 		return "", err
 	}
-	ftaToPoolTape := BuildFTtransferTape(ftaInfo.TapeScript, amountHex)
+	ftaToPoolTape, err := BuildFTtransferTape(ftaInfo.TapeScript, amountHex)
+	if err != nil {
+		return "", err
+	}
 	tx.AddOutput(&bt.Output{Satoshis: fttxoA.Satoshis, LockingScript: ftaToPoolCode})
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: ftaToPoolTape})
 
@@ -1749,7 +1758,10 @@ func (p *PoolNFT2) IncreaseLP(
 		if err2 != nil {
 			return "", err2
 		}
-		changeTape := BuildFTtransferTape(ftaInfo.TapeScript, changeHex)
+		changeTape, err2 := BuildFTtransferTape(ftaInfo.TapeScript, changeHex)
+		if err2 != nil {
+			return "", err2
+		}
 		tx.AddOutput(&bt.Output{Satoshis: fttxoA.Satoshis, LockingScript: changeCode})
 		tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeTape})
 	}
@@ -1940,7 +1952,10 @@ func (p *PoolNFT2) ConsumeLP(
 	if err != nil {
 		return "", err
 	}
-	ftAbyATape := BuildFTtransferTape(ftaInfo.TapeScript, ftAbyAHex)
+	ftAbyATape, err := BuildFTtransferTape(ftaInfo.TapeScript, ftAbyAHex)
+	if err != nil {
+		return "", err
+	}
 	tx.AddOutput(&bt.Output{Satoshis: 500, LockingScript: ftAbyACode})
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: ftAbyATape})
 
@@ -1976,7 +1991,10 @@ func (p *PoolNFT2) ConsumeLP(
 		}
 	}
 
-	eaterBurnTape := BuildFTtransferTape(hex.EncodeToString(ftlpBurnTape.Bytes()), ftlpBurnHex)
+	eaterBurnTape, err := BuildFTtransferTape(hex.EncodeToString(ftlpBurnTape.Bytes()), ftlpBurnHex)
+	if err != nil {
+		return "", err
+	}
 	tx.AddOutput(&bt.Output{Satoshis: fttxoLP.Satoshis, LockingScript: eaterCode})
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: eaterBurnTape})
 
@@ -1986,7 +2004,10 @@ func (p *PoolNFT2) ConsumeLP(
 		if err2 != nil {
 			return "", err2
 		}
-		ftlpChangeTape := BuildFTtransferTape(hex.EncodeToString(ftlpBurnTape.Bytes()), ftlpChangeHex)
+		ftlpChangeTape, err2 := BuildFTtransferTape(hex.EncodeToString(ftlpBurnTape.Bytes()), ftlpChangeHex)
+		if err2 != nil {
+			return "", err2
+		}
 		tx.AddOutput(&bt.Output{Satoshis: fttxoLP.Satoshis, LockingScript: ftlpChangeCode})
 		tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: ftlpChangeTape})
 	}
@@ -1997,7 +2018,10 @@ func (p *PoolNFT2) ConsumeLP(
 		if err2 != nil {
 			return "", err2
 		}
-		ftAbyCTape := BuildFTtransferTape(ftaInfo.TapeScript, ftAbyCHex)
+		ftAbyCTape, err2 := BuildFTtransferTape(ftaInfo.TapeScript, ftAbyCHex)
+		if err2 != nil {
+			return "", err2
+		}
 		tx.AddOutput(&bt.Output{Satoshis: 500, LockingScript: ftAbyCCode})
 		tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: ftAbyCTape})
 	}
@@ -2195,7 +2219,10 @@ func (p *PoolNFT2) SwapToToken(
 	if err != nil {
 		return "", err
 	}
-	ftAtoUserTape := BuildFTtransferTape(ftaInfo.TapeScript, amountHex)
+	ftAtoUserTape, err := BuildFTtransferTape(ftaInfo.TapeScript, amountHex)
+	if err != nil {
+		return "", err
+	}
 	tx.AddOutput(&bt.Output{Satoshis: 500, LockingScript: ftAtoUserCode})
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: ftAtoUserTape})
 
@@ -2218,7 +2245,10 @@ func (p *PoolNFT2) SwapToToken(
 		if err2 != nil {
 			return "", err2
 		}
-		ftAbyCTape := BuildFTtransferTape(ftaInfo.TapeScript, changeHex)
+		ftAbyCTape, err2 := BuildFTtransferTape(ftaInfo.TapeScript, changeHex)
+		if err2 != nil {
+			return "", err2
+		}
 		tx.AddOutput(&bt.Output{Satoshis: 500, LockingScript: ftAbyCCode})
 		tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: ftAbyCTape})
 	}
@@ -2383,7 +2413,10 @@ func (p *PoolNFT2) SwapToTBC(
 	if err != nil {
 		return "", err
 	}
-	ftAtoPoolTape := BuildFTtransferTape(ftaInfo.TapeScript, amountHex)
+	ftAtoPoolTape, err := BuildFTtransferTape(ftaInfo.TapeScript, amountHex)
+	if err != nil {
+		return "", err
+	}
 	tx.AddOutput(&bt.Output{Satoshis: fttxoA.Satoshis, LockingScript: ftAtoPoolCode})
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: ftAtoPoolTape})
 
@@ -2406,7 +2439,10 @@ func (p *PoolNFT2) SwapToTBC(
 		if err2 != nil {
 			return "", err2
 		}
-		changeTape := BuildFTtransferTape(ftaInfo.TapeScript, changeHex)
+		changeTape, err2 := BuildFTtransferTape(ftaInfo.TapeScript, changeHex)
+		if err2 != nil {
+			return "", err2
+		}
 		tx.AddOutput(&bt.Output{Satoshis: fttxoA.Satoshis, LockingScript: changeCode})
 		tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeTape})
 	}
@@ -2610,9 +2646,15 @@ func (p *PoolNFT2) MergeFTLP(
 		if asmErr != nil {
 			return "", fmt.Errorf("MergeFTLP build with-lock-time tape: %w", asmErr)
 		}
-		tapeScript = BuildFTtransferTape(hex.EncodeToString(baseTape.Bytes()), amountHex)
+		tapeScript, err = BuildFTtransferTape(hex.EncodeToString(baseTape.Bytes()), amountHex)
+		if err != nil {
+			return "", err
+		}
 	} else {
-		tapeScript = BuildFTtransferTape(ftaInfo.TapeScript, amountHex)
+		tapeScript, err = BuildFTtransferTape(ftaInfo.TapeScript, amountHex)
+		if err != nil {
+			return "", err
+		}
 	}
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: tapeScript})
 
@@ -2718,7 +2760,10 @@ func (p *PoolNFT2) BurnFTLP(
 	if err != nil {
 		return "", err
 	}
-	tapeScript := BuildFTtransferTape(ftaInfo.TapeScript, amountHex)
+	tapeScript, err := BuildFTtransferTape(ftaInfo.TapeScript, amountHex)
+	if err != nil {
+		return "", err
+	}
 	tx.AddOutput(&bt.Output{Satoshis: 500, LockingScript: burnCode})
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: tapeScript})
 
@@ -2942,7 +2987,10 @@ func (p *PoolNFT2) mergeFTinPoolSingle(
 	if err != nil {
 		return "", nil, err
 	}
-	mergedTape := BuildFTtransferTape(ftaInfo.TapeScript, amountHex)
+	mergedTape, err := BuildFTtransferTape(ftaInfo.TapeScript, amountHex)
+	if err != nil {
+		return "", nil, err
+	}
 	tx.AddOutput(&bt.Output{Satoshis: 500, LockingScript: mergedCode})
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: mergedTape})
 

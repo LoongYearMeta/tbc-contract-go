@@ -635,7 +635,10 @@ func P2PKHToMultiSigTransferFT(
 		return "", err
 	}
 	tx.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 2000})
-	tapeScript := BuildFTtransferTape(ft.TapeScript, amountHex)
+	tapeScript, err := BuildFTtransferTape(ft.TapeScript, amountHex)
+	if err != nil {
+		return "", err
+	}
 	tx.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
 
 	// Change FT outputs (back to sender)
@@ -645,7 +648,10 @@ func P2PKHToMultiSigTransferFT(
 			return "", err
 		}
 		tx.AddOutput(&bt.Output{LockingScript: changeCode, Satoshis: 2000})
-		changeTape := BuildFTtransferTape(ft.TapeScript, changeHex)
+		changeTape, err := BuildFTtransferTape(ft.TapeScript, changeHex)
+		if err != nil {
+			return "", err
+		}
 		tx.AddOutput(&bt.Output{LockingScript: changeTape, Satoshis: 0})
 	}
 
@@ -770,7 +776,10 @@ func BuildMultiSigTransactionTransferFT(
 		return nil, err
 	}
 	tx.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 2000})
-	tapeScript := BuildFTtransferTape(ft.TapeScript, amountHex)
+	tapeScript, err := BuildFTtransferTape(ft.TapeScript, amountHex)
+	if err != nil {
+		return nil, err
+	}
 	tx.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
 
 	if amountBN.Cmp(tapeAmountSum) < 0 {
@@ -779,7 +788,10 @@ func BuildMultiSigTransactionTransferFT(
 			return nil, err
 		}
 		tx.AddOutput(&bt.Output{LockingScript: changeCode, Satoshis: 2000})
-		changeTape := BuildFTtransferTape(ft.TapeScript, changeHex)
+		changeTape, err := BuildFTtransferTape(ft.TapeScript, changeHex)
+		if err != nil {
+			return nil, err
+		}
 		tx.AddOutput(&bt.Output{LockingScript: changeTape, Satoshis: 0})
 	}
 

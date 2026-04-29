@@ -245,7 +245,10 @@ func (f *FT) Transfer(
 		return "", err
 	}
 	tx.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 500})
-	tapeScript := BuildFTtransferTape(f.TapeScript, amountHex)
+	tapeScript, err := BuildFTtransferTape(f.TapeScript, amountHex)
+	if err != nil {
+		return "", err
+	}
 	tx.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
 
 	if tbcAmountSat > 0 {
@@ -257,7 +260,10 @@ func (f *FT) Transfer(
 			return "", err
 		}
 		tx.AddOutput(&bt.Output{LockingScript: changeCode, Satoshis: 500})
-		changeTape := BuildFTtransferTape(f.TapeScript, changeHex)
+		changeTape, err := BuildFTtransferTape(f.TapeScript, changeHex)
+		if err != nil {
+			return "", err
+		}
 		tx.AddOutput(&bt.Output{LockingScript: changeTape, Satoshis: 0})
 	}
 
@@ -384,7 +390,10 @@ func (f *FT) BatchTransfer(
 				return nil, err
 			}
 			tx.AddOutput(&bt.Output{LockingScript: cs, Satoshis: 500})
-			ts := BuildFTtransferTape(f.TapeScript, tapeHexes[i])
+			ts, err := BuildFTtransferTape(f.TapeScript, tapeHexes[i])
+			if err != nil {
+				return nil, err
+			}
 			tx.AddOutput(&bt.Output{LockingScript: ts, Satoshis: 0})
 		}
 		if totalBatchAmount.Cmp(balance) < 0 {
@@ -393,7 +402,10 @@ func (f *FT) BatchTransfer(
 				return nil, err
 			}
 			tx.AddOutput(&bt.Output{LockingScript: changeCode, Satoshis: 500})
-			changeTape := BuildFTtransferTape(f.TapeScript, tapeHexes[len(batch)])
+			changeTape, err := BuildFTtransferTape(f.TapeScript, tapeHexes[len(batch)])
+			if err != nil {
+				return nil, err
+			}
 			tx.AddOutput(&bt.Output{LockingScript: changeTape, Satoshis: 0})
 		}
 
@@ -626,7 +638,10 @@ func (f *FT) mergeFTSingle(
 		return nil, err
 	}
 	tx.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 500})
-	tapeScript := BuildFTtransferTape(f.TapeScript, amountHex)
+	tapeScript, err := BuildFTtransferTape(f.TapeScript, amountHex)
+	if err != nil {
+		return nil, err
+	}
 	tx.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
 
 	if err := tx.ChangeToAddress(addressFrom, newFeeQuote80()); err != nil {
@@ -979,11 +994,28 @@ func BuildFTtransferCode(codeHex, addressOrHash string) (*bscript.Script, error)
 
 // BuildFTtransferTape builds a transfer tape script with the specified amount.
 // Mirrors TS FT.buildFTtransferTape(tape, amountHex).
-func BuildFTtransferTape(tapeHex, amountHex string) *bscript.Script {
-	amountBuf, _ := hex.DecodeString(amountHex)
-	tapeBuf, _ := hex.DecodeString(tapeHex)
+//
+// Returns an error if either hex string is malformed, or if the decoded
+// tape is too short to hold the 48-byte amount block at offset 3, or if
+// the amount block is shorter than 48 bytes. The previous version silently
+// swallowed hex.DecodeString errors and panicked on slice out-of-range.
+func BuildFTtransferTape(tapeHex, amountHex string) (*bscript.Script, error) {
+	amountBuf, err := hex.DecodeString(amountHex)
+	if err != nil {
+		return nil, fmt.Errorf("BuildFTtransferTape: decode amountHex: %w", err)
+	}
+	if len(amountBuf) < 48 {
+		return nil, fmt.Errorf("BuildFTtransferTape: amountHex must encode at least 48 bytes, got %d", len(amountBuf))
+	}
+	tapeBuf, err := hex.DecodeString(tapeHex)
+	if err != nil {
+		return nil, fmt.Errorf("BuildFTtransferTape: decode tapeHex: %w", err)
+	}
+	if len(tapeBuf) < 51 {
+		return nil, fmt.Errorf("BuildFTtransferTape: tapeHex must encode at least 51 bytes, got %d", len(tapeBuf))
+	}
 	copy(tapeBuf[3:51], amountBuf[:48])
-	return bscript.NewFromBytes(tapeBuf)
+	return bscript.NewFromBytes(tapeBuf), nil
 }
 
 // GetBalanceFromTape extracts the FT balance from a tape hex string.

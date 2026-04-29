@@ -621,7 +621,10 @@ func (o *OrderBook) BuildBuyOrderTX(
 	if err != nil {
 		return "", err
 	}
-	ftTapeBuy := BuildFTtransferTape(ftTapeHex, amountHex)
+	ftTapeBuy, err := BuildFTtransferTape(ftTapeHex, amountHex)
+	if err != nil {
+		return "", err
+	}
 	ftCodeDust := ftutxos[0].Satoshis
 
 	tx := newFTTx()
@@ -640,7 +643,10 @@ func (o *OrderBook) BuildBuyOrderTX(
 		if err != nil {
 			return "", err
 		}
-		ftTapeChange := BuildFTtransferTape(ftTapeHex, changeHex)
+		ftTapeChange, err := BuildFTtransferTape(ftTapeHex, changeHex)
+		if err != nil {
+			return "", err
+		}
 		tx.AddOutput(&bt.Output{LockingScript: ftCodeChange, Satoshis: ftCodeDust})
 		tx.AddOutput(&bt.Output{LockingScript: ftTapeChange, Satoshis: 0})
 	}
@@ -690,7 +696,10 @@ func (o *OrderBook) BuildCancelBuyOrderTX(
 	if err != nil {
 		return "", err
 	}
-	ftTapeOut := BuildFTtransferTape(ftTapeHex, amountHex)
+	ftTapeOut, err := BuildFTtransferTape(ftTapeHex, amountHex)
+	if err != nil {
+		return "", err
+	}
 
 	tx := newFTTx()
 	if err := tx.FromUTXOs(buyUTXO); err != nil {
@@ -898,7 +907,10 @@ func (o *OrderBook) MatchOrder(
 		return "", err
 	}
 	tx.AddOutput(&bt.Output{LockingScript: ftSellerCode, Satoshis: ftUTXO.Satoshis})
-	ftSellerTape := BuildFTtransferTape(ftTapeHex, ftSellerAmountHex)
+	ftSellerTape, err := BuildFTtransferTape(ftTapeHex, ftSellerAmountHex)
+	if err != nil {
+		return "", err
+	}
 	tx.AddOutput(&bt.Output{LockingScript: ftSellerTape, Satoshis: 0})
 
 	// FT Tax output
@@ -907,7 +919,10 @@ func (o *OrderBook) MatchOrder(
 		return "", err
 	}
 	tx.AddOutput(&bt.Output{LockingScript: ftTaxCode, Satoshis: ftUTXO.Satoshis})
-	ftTaxTape := BuildFTtransferTape(ftTapeHex, ftTaxAmountHex)
+	ftTaxTape, err := BuildFTtransferTape(ftTapeHex, ftTaxAmountHex)
+	if err != nil {
+		return "", err
+	}
 	tx.AddOutput(&bt.Output{LockingScript: ftTaxTape, Satoshis: 0})
 
 	// TBC Buyer output
@@ -982,7 +997,10 @@ func (o *OrderBook) MatchOrder(
 				return "", err
 			}
 			tx.AddOutput(&bt.Output{LockingScript: ftChangeCode, Satoshis: ftUTXO.Satoshis})
-			ftChangeTape := BuildFTtransferTape(ftTapeHex, changeHex)
+			ftChangeTape, err := BuildFTtransferTape(ftTapeHex, changeHex)
+			if err != nil {
+				return "", err
+			}
 			tx.AddOutput(&bt.Output{LockingScript: ftChangeTape, Satoshis: 0})
 		}
 	}
