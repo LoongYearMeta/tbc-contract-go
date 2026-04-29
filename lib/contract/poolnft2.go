@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bec"
@@ -2378,16 +2379,20 @@ func (p *PoolNFT2) SwapToTBC(
 // --------------------------------------------------------------------------
 
 // MergeFTLP merges LP UTXOs. Returns "" if already merged (1 UTXO).
+// MergeFTLP merges up to 5 (or 6 with_lock_time) FT-LP UTXOs at the sender
+// address into one. lockTime is optional: when nil and p.WithLockTime, the
+// derived lock time falls back to the max tape-lock-time observed in the
+// merged set capped to current chain height (or current time for >=500m).
+// Mirrors poolNFT2.0.ts mergeFTLP(privateKey, utxo, lock_time?).
 func (p *PoolNFT2) MergeFTLP(
 	privKey *bec.PrivateKey,
 	utxo *bt.UTXO,
+	lockTime *uint32,
 ) (string, error) {
 	ftaInfo, err := api.FetchFtInfo(p.FtAContractTxID, p.Network)
 	if err != nil {
 		return "", fmt.Errorf("MergeFTLP FetchFtInfo: %w", err)
 	}
-	codeLen := len(ftaInfo.CodeScript) / 2
-	_, isCoin := ftVersionFromCodeLen(codeLen)
 
 	addr, err := bscript.NewAddressFromPublicKeyHash(crypto.Hash160(privKey.PubKey().SerialiseCompressed()), true)
 	if err != nil {
@@ -2399,18 +2404,89 @@ func (p *PoolNFT2) MergeFTLP(
 		return "", fmt.Errorf("MergeFTLP fetchFtlpUTXOList: %w", err)
 	}
 	if len(ftUtxoList) == 0 {
-		return "", fmt.Errorf("No FT UTXO available")
+		return "", fmt.Errorf("no FT UTXO available")
 	}
 	if len(ftUtxoList) == 1 {
 		return "", nil // already merged
 	}
 
-	// Take up to 5
-	count := len(ftUtxoList)
-	if count > 5 {
-		count = 5
+	// Select FT-LP UTXOs to merge: respects p.WithLockTime path per TS.
+	var ftutxo []*api.LpUTXO
+	var derivedLockTime uint32
+	if p.WithLockTime {
+		headers, hErr := api.FetchBlockHeaders(0, 1, p.Network)
+		if hErr != nil || len(headers) == 0 {
+			return "", fmt.Errorf("MergeFTLP FetchBlockHeaders: %w", hErr)
+		}
+		// TS: subtract 2 for safety; subtract 30 minutes from time.
+		currentBlockHeight := uint32(headers[0].Height) - 2
+		currentTime := uint32(time.Now().Unix()) - 1800
+		var lockTimeMax uint32
+
+		for i := 0; i < len(ftUtxoList) && len(ftutxo) < 6; i++ {
+			ltape, lerr := api.FetchTXRaw(ftUtxoList[i].TxID, p.Network)
+			if lerr != nil {
+				return "", fmt.Errorf("MergeFTLP FetchTXRaw[%d]: %w", i, lerr)
+			}
+			tapeOutIdx := int(ftUtxoList[i].Vout) + 1
+			if tapeOutIdx >= len(ltape.Outputs) {
+				return "", fmt.Errorf("MergeFTLP: tape vout %d out of range", tapeOutIdx)
+			}
+			chunks := ltape.Outputs[tapeOutIdx].LockingScript.Chunks()
+			if len(chunks) < 4 || len(chunks[3].Buf) < 4 {
+				return "", fmt.Errorf("MergeFTLP: ftlp tape chunks[3] missing or short")
+			}
+			lockTimeFromTape := binary.LittleEndian.Uint32(chunks[3].Buf[:4])
+
+			if lockTime != nil {
+				lt := *lockTime
+				switch {
+				case lockTimeFromTape == 0:
+					ftutxo = append(ftutxo, ftUtxoList[i])
+				case lt < 500_000_000 && lockTimeFromTape <= lt:
+					ftutxo = append(ftutxo, ftUtxoList[i])
+				case lockTimeFromTape >= 500_000_000 && lockTimeFromTape <= lt:
+					ftutxo = append(ftutxo, ftUtxoList[i])
+				}
+			} else {
+				if lockTimeFromTape > lockTimeMax {
+					lockTimeMax = lockTimeFromTape
+				}
+				switch {
+				case lockTimeFromTape < 500_000_000 && lockTimeFromTape <= currentBlockHeight:
+					ftutxo = append(ftutxo, ftUtxoList[i])
+				case lockTimeFromTape >= 500_000_000 && lockTimeFromTape <= currentTime:
+					ftutxo = append(ftutxo, ftUtxoList[i])
+				}
+			}
+		}
+		if len(ftutxo) == 0 {
+			return "", fmt.Errorf("no unlockable FTLP UTXO")
+		}
+		if lockTime != nil {
+			derivedLockTime = *lockTime
+		} else if lockTimeMax < 500_000_000 {
+			if lockTimeMax > currentBlockHeight {
+				derivedLockTime = currentBlockHeight
+			} else {
+				derivedLockTime = lockTimeMax
+			}
+		} else {
+			if lockTimeMax > currentTime {
+				derivedLockTime = currentTime
+			} else {
+				derivedLockTime = lockTimeMax
+			}
+		}
+	} else {
+		count := len(ftUtxoList)
+		if count > 5 {
+			count = 5
+		}
+		ftutxo = ftUtxoList[:count]
 	}
-	ftutxo := ftUtxoList[:count]
+
+	count := len(ftutxo)
 	ftutxoCodeScript := ftutxo[0].Script
 
 	tapeAmountSetIn := make([]*big.Int, count)
@@ -2433,7 +2509,7 @@ func (p *PoolNFT2) MergeFTLP(
 	amountHex, changeHex := BuildTapeAmount(tapeAmountSum, tapeAmountSetIn)
 	zeroChange := strings.Repeat("00", 48)
 	if changeHex != zeroChange {
-		return "", fmt.Errorf("Change amount is not zero")
+		return "", fmt.Errorf("change amount is not zero")
 	}
 
 	tx := newFTTx()
@@ -2460,14 +2536,13 @@ func (p *PoolNFT2) MergeFTLP(
 	// tape
 	var tapeScript *bscript.Script
 	if p.WithLockTime {
-		nameHex := hex.EncodeToString([]byte(ftaInfo.Name))
-		symHex := hex.EncodeToString([]byte(ftaInfo.Symbol))
-		_ = nameHex
-		_ = symHex
 		fillSize := len(ftaInfo.TapeScript)/2 - 62
 		opZeros := strings.Repeat("OP_0 ", fillSize)
-		baseTape, _ := bscript.NewFromASM(fmt.Sprintf("OP_FALSE OP_RETURN %s 00000000 %s4654617065",
+		baseTape, asmErr := bscript.NewFromASM(fmt.Sprintf("OP_FALSE OP_RETURN %s 00000000 %s4654617065",
 			strings.Repeat("0000000000000000", 6), opZeros))
+		if asmErr != nil {
+			return "", fmt.Errorf("MergeFTLP build with-lock-time tape: %w", asmErr)
+		}
 		tapeScript = BuildFTtransferTape(hex.EncodeToString(baseTape.Bytes()), amountHex)
 	} else {
 		tapeScript = BuildFTtransferTape(ftaInfo.TapeScript, amountHex)
@@ -2483,19 +2558,19 @@ func (p *PoolNFT2) MergeFTLP(
 		if p.WithLockTime {
 			tx.Inputs[i].SequenceNumber = 4294967294
 		}
-		_ = isCoin
-		lpb, _ := lpUTXOTobtUTXO(u)
 		unlock, err2 := ft.GetFTunlock(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], i, int(u.Vout), false)
 		if err2 != nil {
 			return "", err2
 		}
 		tx.Inputs[i].UnlockingScript = unlock
-		_ = lpb
 	}
 
-	err = signP2PKHAtIdx(tx, privKey, utxo, uint32(count))
-	if err != nil {
+	if err := signP2PKHAtIdx(tx, privKey, utxo, uint32(count)); err != nil {
 		return "", err
+	}
+
+	if p.WithLockTime {
+		tx.LockTime = derivedLockTime
 	}
 
 	return tx.String(), nil
