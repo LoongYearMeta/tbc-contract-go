@@ -1028,6 +1028,63 @@ func (p *PoolNFT2) FetchFtLpUTXOList(address string) ([]*api.LpUTXO, error) {
 	return p.fetchFtlpUTXOList(address)
 }
 
+// FetchFtlpBalance returns the sum of FT-LP balances at the given address.
+// Mirrors poolNFT2.0.ts:2275 fetchFtlpBalance.
+func (p *PoolNFT2) FetchFtlpBalance(address string) (*big.Int, error) {
+	list, err := p.fetchFtlpUTXOList(address)
+	if err != nil {
+		return nil, fmt.Errorf("FetchFtlpBalance: %w", err)
+	}
+	total := new(big.Int)
+	for _, u := range list {
+		if u.FtBalance != nil {
+			total.Add(total, u.FtBalance)
+		}
+	}
+	return total, nil
+}
+
+// FtlpLockTimeEntry is one (FT-LP balance, tape lock_time) pair returned by
+// FetchFtlpLockTime. lockTime < 500_000_000 is interpreted as a block height
+// gate; >= 500_000_000 is a Unix timestamp gate.
+type FtlpLockTimeEntry struct {
+	FtBalance *big.Int
+	LockTime  uint32
+}
+
+// FetchFtlpLockTime returns one FtlpLockTimeEntry per FT-LP UTXO at the
+// given address, decoding chunks[3].Buf[:4] of each tape script as LE
+// int32 lock_time. Mirrors poolNFT2.0.ts:2399 fetchFtlpLockTime (sans the
+// console.log batches).
+func (p *PoolNFT2) FetchFtlpLockTime(address string) ([]FtlpLockTimeEntry, error) {
+	list, err := p.fetchFtlpUTXOList(address)
+	if err != nil {
+		return nil, fmt.Errorf("FetchFtlpLockTime: %w", err)
+	}
+	out := make([]FtlpLockTimeEntry, 0, len(list))
+	for _, u := range list {
+		preTX, fErr := api.FetchTXRaw(u.TxID, p.Network)
+		if fErr != nil {
+			return nil, fmt.Errorf("FetchFtlpLockTime FetchTXRaw[%s]: %w", u.TxID, fErr)
+		}
+		tapeIdx := int(u.Vout) + 1
+		if tapeIdx >= len(preTX.Outputs) {
+			return nil, fmt.Errorf("FetchFtlpLockTime: tape vout %d out of range", tapeIdx)
+		}
+		chunks := preTX.Outputs[tapeIdx].LockingScript.Chunks()
+		if len(chunks) < 4 || len(chunks[3].Buf) < 4 {
+			return nil, fmt.Errorf("FetchFtlpLockTime: ftlp tape chunks[3] missing or short")
+		}
+		lockTime := binary.LittleEndian.Uint32(chunks[3].Buf[:4])
+		bal := new(big.Int)
+		if u.FtBalance != nil {
+			bal.Set(u.FtBalance)
+		}
+		out = append(out, FtlpLockTimeEntry{FtBalance: bal, LockTime: lockTime})
+	}
+	return out, nil
+}
+
 // fetchFtlpUTXO finds a single FT-LP UTXO meeting the requested amount.
 func (p *PoolNFT2) fetchFtlpUTXO(address string, amount *big.Int) (*api.LpUTXO, error) {
 	ftaInfo, err := api.FetchFtInfo(p.FtAContractTxID, p.Network)
