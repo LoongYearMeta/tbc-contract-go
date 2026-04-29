@@ -25,6 +25,7 @@ import (
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
 	"github.com/LoongYearMeta/tbc-lib-go/crypto"
 	"github.com/LoongYearMeta/tbc-lib-go/sighash"
+	"github.com/LoongYearMeta/tbc-lib-go/util/partialsha256"
 	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
 	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 )
@@ -1215,14 +1216,12 @@ func (p *PoolNFT2) CreatePoolNFT(
 	return []string{txSourceRaw, txMintRaw}, nil
 }
 
-// calculatePartialHash mirrors TS partial_sha256.calculate_partial_hash.
-// It computes the partial SHA256 state after processing prefix bytes.
-// For now we return the SHA256 of the prefix (Go's crypto/sha256 doesn't expose
-// mid-state, so this is a best-effort approximation; callers needing exact
-// parity must use the dedicated partial-sha256 C library).
+// calculatePartialHash mirrors TS partial_sha256.calculate_partial_hash —
+// returns the hex-encoded internal SHA-256 mid-state (8 × uint32) after
+// processing prefix bytes. The pool script verifies this via OP_PARTIAL_HASH
+// on chain, so the value MUST match what tbc-lib-js produces.
 func calculatePartialHash(prefix []byte) string {
-	h := crypto.Sha256(prefix)
-	return hex.EncodeToString(h)
+	return partialsha256.CalculatePartialHash(prefix)
 }
 
 // signP2PKH signs tx input at index 0 with a P2PKH unlock script.
