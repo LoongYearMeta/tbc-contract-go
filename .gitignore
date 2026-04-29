@@ -13,4 +13,15 @@ contract.test
 /ob_cancel_buy_compare
 /multisig_wallet_init
 multisig_wallets_setup.json
+
+# 根目录下 `go build ./...` 产生的 test/* 二进制（与 test/ 子目录同名）
+/ft
+/nft
+/multisig
+/htlc
+/orderbook
+/poolnft2
+/piggybank
+/stablecoin
 docs/superpowers/
+CLAUDE.md

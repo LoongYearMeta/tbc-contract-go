@@ -12,7 +12,7 @@
 | 文件 | 对齐 TS 文档 |
 |------|----------------|
 | [ft.md](./ft.md) | `../../tbc-contract/docs/ft.md` |
-| [stablecoin.md](./stablecoin.md) | `../../tbc-contract/docs/stableCoin.md` |
+| [stablecoin.md](./stablecoin.md) | `../../tbc-contract/docs/stableCoin.md` ⚠️ **Go 端已冻结**：`stablecoin.go` / `api_stablecoin.go` 带 `legacy_stablecoin` 构建标签，默认 `go build ./...` 不参与编译，场景文档仅作 TS 对照用 |
 | [nft.md](./nft.md) | `../../tbc-contract/docs/nft.md` |
 | [orderbook.md](./orderbook.md) | `../../tbc-contract/docs/orderBook.md` |
 | [multisig.md](./multisig.md) | `../../tbc-contract/docs/multiSIg.md` |

@@ -6,7 +6,7 @@
 
 | 文档 | 说明 |
 |------|------|
-| [合约库说明.md](./合约库说明.md) | 模块结构、`lib/contract` / `lib/api` / `lib/util` 能力、环境变量、构建与引用示例 |
+| [合约库说明.md](./合约库说明.md) | 模块结构、`lib/contract` / `lib/api` / `lib/util` 能力、并行规约（parity discipline）、构建与引用示例 |
 | [quick-start-go.md](./quick-start-go.md) | 开头 **参数表** + 可 `go run` 的最小脚本：`GetTBCBalance` / `FetchUTXO`（对齐 `快速开始.md`） |
 | [test-cases/README.md](./test-cases/README.md) | 测试场景总览；各子页含 **可对照 TS 文档的 Go 代码示例**（复制到业务仓库后配置 WIF / 网络即可扩展） |
 
@@ -18,7 +18,7 @@
 |----------------------------------------|------------------------|
 | [快速开始.md](../tbc-contract/docs/快速开始.md)、[Quick Start.md](../tbc-contract/docs/Quick%20Start.md) | [quick-start-go.md](./quick-start-go.md) |
 | [ft.md](../tbc-contract/docs/ft.md) | `lib/contract/ft.go`，场景见 [test-cases/ft.md](./test-cases/ft.md) |
-| [stableCoin.md](../tbc-contract/docs/stableCoin.md) | `lib/contract/stablecoin.go`，场景见 [test-cases/stablecoin.md](./test-cases/stablecoin.md) |
+| [stableCoin.md](../tbc-contract/docs/stableCoin.md) | **Go 侧已冻结**：`lib/contract/stablecoin.go` 与 `lib/api/api_stablecoin.go` 带 `//go:build legacy_stablecoin` 标签，默认不编译；后续重写后再启用，场景见 [test-cases/stablecoin.md](./test-cases/stablecoin.md) |
 | [nft.md](../tbc-contract/docs/nft.md) | `lib/contract/nft.go`，场景见 [test-cases/nft.md](./test-cases/nft.md) |
 | [orderBook.md](../tbc-contract/docs/orderBook.md) | `lib/contract/orderbook.go`，场景见 [test-cases/orderbook.md](./test-cases/orderbook.md) |
 | [multiSIg.md](../tbc-contract/docs/multiSIg.md) | `lib/contract/multisig.go`，场景见 [test-cases/multisig.md](./test-cases/multisig.md) |

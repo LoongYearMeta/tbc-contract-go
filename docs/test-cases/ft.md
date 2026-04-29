@@ -1,39 +1,25 @@
-# 测试场景：FT（同质化代币）
+# FT 测试场景（Go）
 
-**规范对照**：[tbc-contract/docs/ft.md](../../tbc-contract/docs/ft.md)  
-**Go 实现**：`lib/contract/ft.go`；索引与广播：`lib/api`。
+参照 TS：[`../tbc-contract/docs/ft.md`](../../tbc-contract/docs/ft.md)。覆盖铸造（Mint）、单笔转账（Transfer）、批量转账（BatchTransfer）、合并 UTXO（MergeFT）四条主路径。
 
----
+> Go 端 FT 金额统一为 **`*big.Int`**：调用方若手里是十进制字符串（如 `"1000"`），先用 `util.ParseDecimalToBigInt(amount, decimal)` 转换；FT 元数据 `*api.FtInfoResponse` 与 `*contract.FtInfo` 字段一致但是不同结构体，需要手工拷贝（见示例中的 `ftInfoFromAPI`）。
+> Go 端 `Transfer` 的 `tbcAmount` 参数是 `uint64` satoshis，与 TS 的 number TBC 不同；只转 FT 时填 0。
 
 ## 参数定义
 
-| 名称 | 必填 | 说明 | 默认值 |
-|------|------|------|--------|
-| `TBC_WIF` | 是 | 付款方 WIF | — |
-| `TBC_NETWORK` | 否 | `testnet` / `mainnet` | `testnet` |
-| `FT_ACTION` | 否 | `mint`：新铸；`transfer`：已存在合约转账 | `mint` |
-| `FT_CONTRACT_TXID` | `transfer` 时必填 | 已部署 FT 合约（mint 第二笔）txid | — |
-| `FT_TO` | `transfer` 时必填 | 收款地址 | — |
-| `FT_AMOUNT` | 否 | 转账数量（十进制字符串，与 JS 一致） | `1000` |
-| `FT_NAME` | 否 | 新铸名称 | `test` |
-| `FT_SYMBOL` | 否 | 新铸符号 | `test` |
-| `FT_DECIMAL` | 否 | 精度 | `6` |
-| `FT_SUPPLY` | 否 | 总供应（人类可读整数，非最小单位） | `100000000` |
-
----
+| 名称 | 必填 | 说明 |
+|------|------|------|
+| `TBC_WIF_A` | 是 | 发送方 WIF（推导出 `addressA`） |
+| `TBC_ADDRESS_B` | 是 | 接收方 P2PKH 地址 |
+| `TBC_NETWORK` | 否 | `"testnet"` / `"mainnet"`，默认 `"testnet"` |
+| `FT_NAME` / `FT_SYMBOL` | Mint 时必填 | FT 名称 / 符号 |
+| `FT_DECIMAL` | Mint 时必填 | 小数位（建议 6） |
+| `FT_AMOUNT` | Mint 时必填 | 总供应量；精度 6 上限 1 万亿 |
+| `FT_CONTRACT_TXID` | Transfer/Merge 必填 | Mint 后获得的合约 txid |
 
 ## 最小可执行脚本
 
-将下列内容保存为业务模块中的 **`main.go`**（与 `go.mod` 中 `require` / `replace` 已指向本库及 `tbc-lib-go`），然后执行：
-
-```bash
-export TBC_WIF='你的WIF'
-export FT_ACTION=mint          # 或 transfer
-# transfer 时：
-# export FT_CONTRACT_TXID=...
-# export FT_TO=1xxx...
-go run .
-```
+业务模块需先 `require github.com/LoongYearMeta/tbc-contract-go` 并配置 `replace github.com/LoongYearMeta/tbc-lib-go => ../tbc-lib-go`，将下列文件存为 `main.go` 后 `go run .`。
 
 ```go
 package main
@@ -41,166 +27,209 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"os"
-	"strconv"
 	"strings"
 
-	"github.com/LoongYearMeta/tbc-lib-go/bec"
-	"github.com/LoongYearMeta/tbc-lib-go/wif"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
+	"github.com/LoongYearMeta/tbc-lib-go/wif"
+
 	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
 	"github.com/LoongYearMeta/tbc-contract-go/lib/contract"
 	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 )
 
-func envOrDefault(key, def string) string {
-	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
+func env(k, def string) string {
+	if v := strings.TrimSpace(os.Getenv(k)); v != "" {
 		return v
 	}
 	return def
 }
 
-func mustPriv() *bec.PrivateKey {
-	dec, err := wif.DecodeWIF(os.Getenv("TBC_WIF"))
+func must(err error) {
 	if err != nil {
-		panic("TBC_WIF: " + err.Error())
+		panic(err)
 	}
-	return dec.PrivKey
 }
 
-func network() string {
-	return envOrDefault("TBC_NETWORK", "testnet")
-}
-
-func ftInfoFromAPI(info *api.FtInfo) *contract.FtInfo {
-	ts := strings.TrimSpace(info.TotalSupply)
-	total, _ := strconv.ParseInt(ts, 10, 64)
+func ftInfoFromAPI(txid string, info *api.FtInfoResponse) *contract.FtInfo {
 	return &contract.FtInfo{
-		Name: info.Name, Symbol: info.Symbol,
-		Decimal: int(info.Decimal), TotalSupply: total,
-		CodeScript: info.CodeScript, TapeScript: info.TapeScript,
+		ContractTxid: txid,
+		Name:         info.Name,
+		Symbol:       info.Symbol,
+		Decimal:      info.Decimal,
+		TotalSupply:  info.TotalSupply,
+		CodeScript:   info.CodeScript,
+		TapeScript:   info.TapeScript,
 	}
-}
-
-func loadFT(nw, contractTxid string, priv *bec.PrivateKey) (*contract.FT, error) {
-	info, err := api.FetchFtInfo(contractTxid, nw)
-	if err != nil {
-		return nil, err
-	}
-	ft, err := contract.NewFT(contractTxid)
-	if err != nil {
-		return nil, err
-	}
-	ft.Initialize(ftInfoFromAPI(info))
-	return ft, nil
-}
-
-func runMint(priv *bec.PrivateKey, nw string) error {
-	addr, err := bscript.NewAddressFromPublicKey(priv.PubKey(), true)
-	if err != nil {
-		return err
-	}
-	from := addr.AddressString
-	dec, _ := strconv.Atoi(envOrDefault("FT_DECIMAL", "6"))
-	sup, _ := strconv.ParseInt(envOrDefault("FT_SUPPLY", "100000000"), 10, 64)
-	ft, err := contract.NewFT(&contract.FtParams{
-		Name: envOrDefault("FT_NAME", "test"), Symbol: envOrDefault("FT_SYMBOL", "test"),
-		Amount: sup, Decimal: dec,
-	})
-	if err != nil {
-		return err
-	}
-	utxo, err := api.FetchUTXO(from, 0.02, nw)
-	if err != nil {
-		return err
-	}
-	raws, err := ft.MintFT(priv, from, utxo)
-	if err != nil {
-		return err
-	}
-	t0, err := api.BroadcastTXRaw(raws[0], nw)
-	if err != nil {
-		return fmt.Errorf("source: %w", err)
-	}
-	t1, err := api.BroadcastTXRaw(raws[1], nw)
-	if err != nil {
-		return fmt.Errorf("mint: %w", err)
-	}
-	fmt.Println("mint source txid:", t0)
-	fmt.Println("mint txid (常用作合约 id):", t1)
-	return nil
-}
-
-func runTransfer(priv *bec.PrivateKey, nw string) error {
-	cid := strings.TrimSpace(os.Getenv("FT_CONTRACT_TXID"))
-	to := strings.TrimSpace(os.Getenv("FT_TO"))
-	if cid == "" || to == "" {
-		return fmt.Errorf("transfer 需要 FT_CONTRACT_TXID 与 FT_TO")
-	}
-	ft, err := loadFT(nw, cid, priv)
-	if err != nil {
-		return err
-	}
-	fromAddr, _ := bscript.NewAddressFromPublicKey(priv.PubKey(), true)
-	from := fromAddr.AddressString
-	amt := envOrDefault("FT_AMOUNT", "1000")
-
-	cs, err := contract.BuildFTtransferCode(ft.CodeScript, from)
-	if err != nil {
-		return err
-	}
-	codeHex := hex.EncodeToString(cs.Bytes())
-	need := util.ParseDecimalToBigInt(amt, ft.Decimal)
-	ftutxos, err := api.FetchFtUTXOs(cid, from, codeHex, nw, need)
-	if err != nil {
-		return err
-	}
-	preTXs := make([]*bt.Tx, len(ftutxos))
-	prepre := make([]string, len(ftutxos))
-	for i, fu := range ftutxos {
-		preTXs[i], err = api.FetchTXRaw(fu.TxID, nw)
-		if err != nil {
-			return err
-		}
-		prepre[i], err = api.FetchFtPrePreTxData(preTXs[i], int(fu.Vout), nw)
-		if err != nil {
-			return err
-		}
-	}
-	feeUTXO, err := api.FetchUTXO(from, 0.02, nw)
-	if err != nil {
-		return err
-	}
-	raw, err := ft.TransferDecimalString(priv, to, amt, ftutxos, feeUTXO, preTXs, prepre, 0)
-	if err != nil {
-		return err
-	}
-	txid, err := api.BroadcastTXRaw(raw, nw)
-	if err != nil {
-		return err
-	}
-	fmt.Println("transfer txid:", txid)
-	return nil
 }
 
 func main() {
-	priv := mustPriv()
-	nw := network()
-	switch strings.ToLower(strings.TrimSpace(envOrDefault("FT_ACTION", "mint"))) {
-	case "transfer":
-		if err := runTransfer(priv, nw); err != nil {
-			panic(err)
+	network := env("TBC_NETWORK", "testnet")
+	wifStr := strings.TrimSpace(os.Getenv("TBC_WIF_A"))
+	addressB := strings.TrimSpace(os.Getenv("TBC_ADDRESS_B"))
+	if wifStr == "" || addressB == "" {
+		fmt.Println("请设置 TBC_WIF_A 和 TBC_ADDRESS_B")
+		os.Exit(1)
+	}
+	dec, err := wif.DecodeWIF(wifStr)
+	must(err)
+	privA := dec.PrivKey
+	addrA, err := bscript.NewAddressFromPublicKey(privA.PubKey(), true)
+	must(err)
+	addressA := addrA.AddressString
+	ftContractTxid := strings.TrimSpace(os.Getenv("FT_CONTRACT_TXID"))
+
+	// ============ Mint =============
+	{
+		newToken, err := contract.NewFT(&contract.FtParams{
+			Name:    env("FT_NAME", "test"),
+			Symbol:  env("FT_SYMBOL", "test"),
+			Amount:  100000000, // 精度 6，上限 1 万亿
+			Decimal: 6,
+		})
+		must(err)
+		utxo, err := api.FetchUTXO(addressA, 0.01, network)
+		must(err)
+		mintTX, err := newToken.MintFT(privA, addressA, utxo)
+		must(err)
+		_, err = api.BroadcastTXRaw(mintTX[0], network)
+		must(err)
+		fmt.Println("FT Contract ID:")
+		txid, err := api.BroadcastTXRaw(mintTX[1], network)
+		must(err)
+		fmt.Println(txid)
+	}
+
+	// ============ Transfer =============
+	{
+		token, err := contract.NewFT(ftContractTxid)
+		must(err)
+		info, err := api.FetchFtInfo(token.ContractTxid, network)
+		must(err)
+		token.Initialize(ftInfoFromAPI(token.ContractTxid, info))
+
+		var tbcAmount float64 = 0 // 需要同时转 TBC + FT 时设置（单位 TBC）
+		utxo, err := api.FetchUTXO(addressA, tbcAmount+0.01, network)
+		must(err)
+
+		amountBN, err := util.ParseDecimalToBigInt("1000", token.Decimal)
+		must(err)
+
+		ftCode, err := contract.BuildFTtransferCode(token.CodeScript, addressA)
+		must(err)
+		ftCodeHex := hex.EncodeToString(ftCode.Bytes())
+		ftutxos, err := api.FetchFtUTXOs(token.ContractTxid, addressA, ftCodeHex, network, amountBN)
+		must(err)
+
+		preTXs := make([]*bt.Tx, len(ftutxos))
+		prepreTxDatas := make([]string, len(ftutxos))
+		for i, u := range ftutxos {
+			preTXs[i], err = api.FetchTXRaw(hex.EncodeToString(u.TxID), network)
+			must(err)
+			prepreTxDatas[i], err = api.FetchFtPrePreTxData(preTXs[i], int(u.Vout), network)
+			must(err)
 		}
-	default:
-		if err := runMint(priv, nw); err != nil {
-			panic(err)
+
+		// 同时转 TBC：用 uint64(tbcAmount * 1e6) 替换 0
+		var tbcAmountSat uint64 = 0
+		raw, err := token.Transfer(privA, addressB, amountBN, ftutxos, utxo, preTXs, prepreTxDatas, tbcAmountSat)
+		must(err)
+		txid, err := api.BroadcastTXRaw(raw, network)
+		must(err)
+		fmt.Println("Transfer:", txid)
+	}
+
+	// ============ BatchTransfer（最多每 5 人一笔，自动链式拆分） =============
+	{
+		token, err := contract.NewFT(ftContractTxid)
+		must(err)
+		info, err := api.FetchFtInfo(token.ContractTxid, network)
+		must(err)
+		token.Initialize(ftInfoFromAPI(token.ContractTxid, info))
+
+		mustBN := func(s string) *big.Int {
+			n, e := util.ParseDecimalToBigInt(s, token.Decimal)
+			must(e)
+			return n
+		}
+		receivers := []contract.AddressAmount{
+			{Address: addressA, Amount: mustBN("500")},
+			{Address: addressB, Amount: mustBN("700")},
+			// ... 任意条数；每 5 条切成一笔
+		}
+		batchCount := (len(receivers) + 4) / 5
+		transferFee := 0.005 * float64(batchCount)
+		utxo, err := api.FetchUTXO(addressA, transferFee, network)
+		must(err)
+
+		// 给 FetchFtUTXOs 用的总额
+		total := new(big.Int)
+		for _, r := range receivers {
+			total.Add(total, r.Amount)
+		}
+
+		ftCode, err := contract.BuildFTtransferCode(token.CodeScript, addressA)
+		must(err)
+		ftCodeHex := hex.EncodeToString(ftCode.Bytes())
+		ftutxos, err := api.FetchFtUTXOs(token.ContractTxid, addressA, ftCodeHex, network, total)
+		must(err)
+		preTXs := make([]*bt.Tx, len(ftutxos))
+		prepreTxDatas := make([]string, len(ftutxos))
+		for i, u := range ftutxos {
+			preTXs[i], err = api.FetchTXRaw(hex.EncodeToString(u.TxID), network)
+			must(err)
+			prepreTxDatas[i], err = api.FetchFtPrePreTxData(preTXs[i], int(u.Vout), network)
+			must(err)
+		}
+		raws, err := token.BatchTransfer(privA, receivers, ftutxos, utxo, preTXs, prepreTxDatas)
+		must(err)
+		if len(raws) > 0 {
+			_, err = api.BroadcastTXsRaw(raws, network)
+			must(err)
+			fmt.Println("BatchTransfer broadcast:", len(raws))
+		} else {
+			fmt.Println("BatchTransfer failed")
+		}
+	}
+
+	// ============ MergeFT（要求所有 ftutxo 已上链） =============
+	{
+		token, err := contract.NewFT(ftContractTxid)
+		must(err)
+		info, err := api.FetchFtInfo(token.ContractTxid, network)
+		must(err)
+		token.Initialize(ftInfoFromAPI(token.ContractTxid, info))
+
+		ftCode, err := contract.BuildFTtransferCode(token.CodeScript, addressA)
+		must(err)
+		ftCodeHex := hex.EncodeToString(ftCode.Bytes())
+		ftutxos, err := api.FetchFtUTXOList(token.ContractTxid, addressA, ftCodeHex, network)
+		must(err)
+
+		mergeFee := 0.005 * float64(len(ftutxos))
+		utxo, err := api.FetchUTXO(addressA, mergeFee, network)
+		must(err)
+
+		preTXs := make([]*bt.Tx, len(ftutxos))
+		prepreTxDatas := make([]string, len(ftutxos))
+		for i, u := range ftutxos {
+			preTXs[i], err = api.FetchTXRaw(hex.EncodeToString(u.TxID), network)
+			must(err)
+			prepreTxDatas[i], err = api.FetchFtPrePreTxData(preTXs[i], int(u.Vout), network)
+			must(err)
+		}
+		// localTXs 通常传 nil；当 utxo 不来自链上时可注入本地交易
+		raws, err := token.MergeFT(privA, ftutxos, utxo, preTXs, prepreTxDatas, nil)
+		must(err)
+		if len(raws) > 0 {
+			_, err = api.BroadcastTXsRaw(raws, network)
+			must(err)
+			fmt.Println("MergeFT chained txs:", len(raws))
+		} else {
+			fmt.Println("Merge success (already merged)")
 		}
 	}
 }
 ```
-
-## 预期
-
-- `mint`：先广播 `raws[0]` 再 `raws[1]`；第二笔 txid 常作为后续 `FT_CONTRACT_TXID`。
-- `transfer`：`TransferDecimalString` 与 TS `parseDecimalToBigInt` 路径一致；`TotalSupply` 极大时 `ftInfoFromAPI` 的 `ParseInt` 可能溢出，请在生产代码中改为安全解析（见库内其它用法）。

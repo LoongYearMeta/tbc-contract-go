@@ -1,146 +1,110 @@
-# 测试场景：存钱罐（定时锁 TBC）
+# PiggyBank 测试场景（Go）
 
-**规范对照**：TS `lib/contract/piggyBank.ts`  
-**Go 实现**：`lib/contract/piggybank.go`。
+PiggyBank 是「定时锁 TBC」合约：把若干 satoshi 锁到一个 P2SH-like 脚本，到 `lockTime`（unix 秒或区块高度）后再由原地址赎回。TS 侧没有独立大文档，对照源码 `tbc-contract/lib/contract/piggyBank.ts`。
 
----
+> Go 端有两组 API：**带签名** 的 `FreezeTBCWithSign` / `UnfreezeTBCWithSign`（直接得到广播 raw），与 **未签名** 的 `FreezeTBC` / `UnfreezeTBC`（前端 / 钱包侧再签）。
+> 解锁端的 `currentBlockHeight` 必须从 `api.FetchBlockHeaders` 读到，传入交易的 nLockTime；这一步建议放服务侧而不是钱包，避免端机时差导致的解锁失败。
 
 ## 参数定义
 
-| 名称 | 必填 | 说明 | 默认值 |
-|------|------|------|--------|
-| `TBC_WIF` | 是 | 操作私钥 | — |
-| `TBC_NETWORK` | 否 | `testnet` / `mainnet` | `testnet` |
-| `PIGGY_ACTION` | 否 | `freeze` / `unfreeze` | `freeze` |
-| `PIGGY_TBC` | `freeze` | 锁定 TBC 数量（float） | `0.001` |
-| `PIGGY_LOCKTIME` | `freeze` | `nLockTime`（uint32，语义见源码） | `500000` |
-| `PIGGY_FROZEN_TXID` | `unfreeze` | 冻结交易 txid | — |
-| `PIGGY_FROZEN_VOUT` | 否 | 冻结输出索引 | `0` |
-
----
+| 名称 | 必填 | 说明 |
+|------|------|------|
+| `TBC_WIF` | 是 | 操作者 WIF |
+| `TBC_NETWORK` | 否 | 默认 `"testnet"` |
+| `PIGGY_AMOUNT_SAT` | 否 | 冻结金额（satoshi），默认 `200000`（0.2 TBC） |
+| `PIGGY_LOCKTIME` | 否 | 解锁阈值（unix 秒 / 区块高度，自适应），默认 `1774410989` |
 
 ## 最小可执行脚本
-
-```bash
-export TBC_WIF='...'
-export PIGGY_ACTION=freeze
-export PIGGY_TBC=0.001
-export PIGGY_LOCKTIME=500000
-go run .
-```
 
 ```go
 package main
 
 import (
-	"encoding/hex"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
 
-	"github.com/LoongYearMeta/tbc-lib-go/bec"
-	"github.com/LoongYearMeta/tbc-lib-go/wif"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
+	"github.com/LoongYearMeta/tbc-lib-go/wif"
+
 	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
 	"github.com/LoongYearMeta/tbc-contract-go/lib/contract"
 )
 
-func envOrDefault(k, d string) string {
+func env(k, def string) string {
 	if v := strings.TrimSpace(os.Getenv(k)); v != "" {
 		return v
 	}
-	return d
+	return def
 }
 
-func mustPriv() *bec.PrivateKey {
-	d, err := wif.DecodeWIF(os.Getenv("TBC_WIF"))
+func must(err error) {
 	if err != nil {
 		panic(err)
 	}
-	return d.PrivKey
-}
-
-func nw() string { return envOrDefault("TBC_NETWORK", "testnet") }
-
-func runFreeze(priv *bec.PrivateKey) error {
-	addr, err := bscript.NewAddressFromPublicKey(priv.PubKey(), true)
-	if err != nil {
-		return err
-	}
-	tbcF, _ := strconv.ParseFloat(envOrDefault("PIGGY_TBC", "0.001"), 64)
-	// FreezeTBCWithSign takes satoshis (1 TBC = 1_000_000 sat)
-	tbcSat := uint64(tbcF * 1_000_000)
-	lt64, _ := strconv.ParseUint(strings.TrimSpace(envOrDefault("PIGGY_LOCKTIME", "500000")), 10, 32)
-	utxo, err := api.FetchUTXO(addr.AddressString, tbcF+0.03, nw())
-	if err != nil {
-		return err
-	}
-	raw, err := contract.FreezeTBCWithSign(priv, tbcSat, uint32(lt64), []*bt.UTXO{utxo})
-	if err != nil {
-		return err
-	}
-	txid, err := api.BroadcastTXRaw(raw, nw())
-	fmt.Println("freeze txid:", txid)
-	return err
-}
-
-func frozenUtxo() (*bt.UTXO, error) {
-	txid := strings.TrimSpace(os.Getenv("PIGGY_FROZEN_TXID"))
-	if txid == "" {
-		return nil, fmt.Errorf("unfreeze 需要 PIGGY_FROZEN_TXID")
-	}
-	vo, _ := strconv.ParseUint(envOrDefault("PIGGY_FROZEN_VOUT", "0"), 10, 32)
-	tx, err := api.FetchTXRaw(txid, nw())
-	if err != nil {
-		return nil, err
-	}
-	if int(vo) >= len(tx.Outputs) {
-		return nil, fmt.Errorf("vout")
-	}
-	tb, err := hex.DecodeString(strings.TrimSpace(strings.ToLower(txid)))
-	if err != nil || len(tb) != 32 {
-		return nil, fmt.Errorf("txid")
-	}
-	out := tx.Outputs[vo]
-	return &bt.UTXO{TxID: tb, Vout: uint32(vo), LockingScript: out.LockingScript, Satoshis: out.Satoshis}, nil
-}
-
-func runUnfreeze(priv *bec.PrivateKey) error {
-	u, err := frozenUtxo()
-	if err != nil {
-		return err
-	}
-	// UnfreezeTBCWithSign needs the current block height (not a network string).
-	// Use api.FetchTBCLockTime to retrieve it.
-	blockHeight, err := api.FetchTBCLockTime(nw())
-	if err != nil {
-		return err
-	}
-	raw, err := contract.UnfreezeTBCWithSign(priv, []*bt.UTXO{u}, blockHeight)
-	if err != nil {
-		return err
-	}
-	txid, err := api.BroadcastTXRaw(raw, nw())
-	fmt.Println("unfreeze txid:", txid)
-	return err
 }
 
 func main() {
-	priv := mustPriv()
-	var err error
-	if strings.ToLower(strings.TrimSpace(envOrDefault("PIGGY_ACTION", "freeze"))) == "unfreeze" {
-		err = runUnfreeze(priv)
-	} else {
-		err = runFreeze(priv)
+	network := env("TBC_NETWORK", "testnet")
+	wifStr := strings.TrimSpace(os.Getenv("TBC_WIF"))
+	if wifStr == "" {
+		fmt.Println("请设置 TBC_WIF")
+		os.Exit(1)
 	}
-	if err != nil {
-		panic(err)
+	dec, err := wif.DecodeWIF(wifStr)
+	must(err)
+	priv := dec.PrivKey
+	addr, err := bscript.NewAddressFromPublicKey(priv.PubKey(), true)
+	must(err)
+	address := addr.AddressString
+
+	amountSat64, _ := strconv.ParseUint(env("PIGGY_AMOUNT_SAT", "200000"), 10, 64)
+	amountSat := amountSat64
+	lt64, _ := strconv.ParseUint(env("PIGGY_LOCKTIME", "1774410989"), 10, 32)
+	lockTime := uint32(lt64)
+
+	// ============ Freeze（冻结 TBC，至 lockTime） =============
+	{
+		// 至少 amountSat + 一些找零
+		utxos, err := api.GetUTXOs(address, float64(amountSat)/1e6+0.001, network)
+		must(err)
+		raw, err := contract.FreezeTBCWithSign(priv, amountSat, lockTime, utxos)
+		must(err)
+		txid, err := api.BroadcastTXRaw(raw, network)
+		must(err)
+		fmt.Println("Freeze:", txid)
+	}
+
+	// ============ Unfreeze（lockTime 到期后赎回） =============
+	{
+		// 拉取已冻结但已过期的 UTXO 列表
+		frozen, err := api.FetchUnfrozenUTXOList(address, network)
+		must(err)
+		if len(frozen) == 0 {
+			fmt.Println("没有可解锁的 PiggyBank UTXO")
+			return
+		}
+
+		utxos := make([]*bt.UTXO, 0, len(frozen))
+		for _, f := range frozen {
+			u, err := api.FrozenToBTUTXO(f)
+			must(err)
+			utxos = append(utxos, u)
+		}
+
+		headers, err := api.FetchBlockHeaders(0, 1, network)
+		must(err)
+		currentBlockHeight := uint32(headers[0].Height)
+
+		raw, err := contract.UnfreezeTBCWithSign(priv, utxos, currentBlockHeight)
+		must(err)
+		txid, err := api.BroadcastTXRaw(raw, network)
+		must(err)
+		fmt.Println("Unfreeze:", txid)
 	}
 }
 ```
 
-## 预期
-
-- `freeze` 广播后可用索引 **`FetchFrozenUTXOList`** 等核对；`unfreeze` 需在锁定期过后且输入为可花费冻结 UTXO（与 TS 一致）。
+> **未签名版本**：用 `contract.FreezeTBC(address, amountSat, lockTime, utxos)` 与 `contract.UnfreezeTBC(address, utxos, currentBlockHeight)` 拿到 raw，再让钱包对每个 P2PKH 输入做 SIGHASH_ALL|FORKID 签名后填回；具体填回方式参考 `lib/contract/piggybank.go` 中 `*WithSign` 内部实现。
