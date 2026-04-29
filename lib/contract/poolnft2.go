@@ -2662,11 +2662,19 @@ func (p *PoolNFT2) MergeFTLP(
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
 	adjustFeeAndChange(tx, 80)
 
-	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
-	for i, u := range ftutxo {
-		if p.WithLockTime {
+	// Set sequence numbers and lock time BEFORE signing — the sighash
+	// preimage embeds tx.LockTime and each input's sequence number.
+	// Setting these after signing (the previous bug) would produce an
+	// invalid sigHash that the on-chain CHECKSIG would reject.
+	if p.WithLockTime {
+		for i := range ftutxo {
 			tx.Inputs[i].SequenceNumber = 4294967294
 		}
+		tx.LockTime = derivedLockTime
+	}
+
+	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
+	for i, u := range ftutxo {
 		unlock, err2 := ft.GetFTunlock(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], i, int(u.Vout), false)
 		if err2 != nil {
 			return "", err2
@@ -2676,10 +2684,6 @@ func (p *PoolNFT2) MergeFTLP(
 
 	if err := signP2PKHAtIdx(tx, privKey, uint32(count)); err != nil {
 		return "", err
-	}
-
-	if p.WithLockTime {
-		tx.LockTime = derivedLockTime
 	}
 
 	return tx.String(), nil
@@ -3035,11 +3039,12 @@ func (p *PoolNFT2) mergeFTinPoolSingle(
 		tx.Inputs[i+1].UnlockingScript = swapUnlock
 	}
 
-	if feeUTXO != nil {
-		err = signP2PKHAtIdx(tx, privKey, uint32(len(ftutxos)+1))
-		if err != nil {
-			return "", nil, err
-		}
+	// The fee input at index len(ftutxos)+1 is always P2PKH and must be
+	// signed regardless of whether feeUTXO was supplied or sourced from
+	// poolnftPreTX.outputs[last] (chained-merge case). TS sealAsync's
+	// tx.sign(privateKey) signs all P2PKH inputs unconditionally.
+	if err = signP2PKHAtIdx(tx, privKey, uint32(len(ftutxos)+1)); err != nil {
+		return "", nil, err
 	}
 
 	return tx.String(), tx, nil

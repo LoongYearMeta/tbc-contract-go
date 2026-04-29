@@ -509,10 +509,9 @@ func GetCurrentTxOutputsDataforPool2(tx *bt.Tx, option int, withLock int, swapOp
 			return "", fmt.Errorf("GetCurrentTxOutputsDataforPool2: option=3 requires swapOption in {1,2}, got %d", swapOption)
 		}
 		buf, err = poolSwapFTtoTBCOutputsData(tx, swapOption)
-	case 4: // Swap TBC->FT (single layout in TS, swapOption validated but unused)
-		if swapOption != 1 && swapOption != 2 {
-			return "", fmt.Errorf("GetCurrentTxOutputsDataforPool2: option=4 requires swapOption in {1,2}, got %d", swapOption)
-		}
+	case 4: // Swap TBC->FT, also reused by MergeFTinPool. TS does not branch on
+		// swapOption for case 4 (the layout is fixed: 5 outputs). Don't validate
+		// swapOption here — both swapOption=0 (mergeFTinPool) and 1/2 are accepted.
 		buf, err = poolSwapTBCtoFTOutputsData(tx)
 	default:
 		return "", fmt.Errorf("GetCurrentTxOutputsDataforPool2: unknown option %d", option)
