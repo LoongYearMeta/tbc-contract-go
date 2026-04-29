@@ -1378,7 +1378,11 @@ func (p *PoolNFT2) InitPoolNFT(
 	p.FtLpAmount = new(big.Int).Set(tbcAmountBN)
 	p.FtAAmount = new(big.Int).Set(ftAAmountBN)
 
-	if utxo.Satoshis < tbcAmountBN.Uint64() {
+	tbcAmountSats, err := bigIntToSats(tbcAmountBN, "InitPoolNFT tbcAmount")
+	if err != nil {
+		return "", err
+	}
+	if utxo.Satoshis < tbcAmountSats {
 		return "", fmt.Errorf("InitPoolNFT: Insufficient TBC amount, please merge UTXOs")
 	}
 
@@ -1439,7 +1443,7 @@ func (p *PoolNFT2) InitPoolNFT(
 	if err != nil {
 		return "", err
 	}
-	tx.AddOutput(&bt.Output{Satoshis: 1000 + tbcAmountBN.Uint64(), LockingScript: poolNftCodeScript})
+	tx.AddOutput(&bt.Output{Satoshis: 1000 + tbcAmountSats, LockingScript: poolNftCodeScript})
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: poolnftTapeScript})
 
 	// FT-A to pool (code+tape)
@@ -1467,11 +1471,17 @@ func (p *PoolNFT2) InitPoolNFT(
 		// TS validates `lock_time < 0 || lock_time > 4294967295` because TS
 		// number is unbounded; Go's uint32 already enforces the same range
 		// at the type boundary, so no runtime check is needed.
-		ftlpTapeScript = buildFtlpTapeWithLockTime(tbcAmountBN, tapeLen, lockTime)
+		ftlpTapeScript, err = buildFtlpTapeWithLockTime(tbcAmountBN, tapeLen, lockTime)
+		if err != nil {
+			return "", err
+		}
 		newTapeLen := len(ftlpTapeScript.Bytes())
 		ftlpCodeScript, err = p.getFtlpCodeWithLockTime(poolNftSHA256, addressTo, newTapeLen, isCoin, ftVersion)
 	} else {
-		ftlpTapeScript = buildFtlpTape(tbcAmountBN, isCoin, ftaInfo.Name, ftaInfo.Symbol)
+		ftlpTapeScript, err = buildFtlpTape(tbcAmountBN, isCoin, ftaInfo.Name, ftaInfo.Symbol)
+		if err != nil {
+			return "", err
+		}
 		newTapeLen := len(ftlpTapeScript.Bytes())
 		ftlpCodeScript, err = p.getFtlpCode(poolNftSHA256, addressTo, newTapeLen, isCoin, ftVersion)
 	}
@@ -1528,8 +1538,11 @@ func (p *PoolNFT2) InitPoolNFT(
 }
 
 // buildFtlpTape builds the FT-LP tape script (no lock time).
-func buildFtlpTape(amount *big.Int, isCoin bool, name, symbol string) *bscript.Script {
-	amtHex := bigIntToLE8Hex(amount)
+func buildFtlpTape(amount *big.Int, isCoin bool, name, symbol string) (*bscript.Script, error) {
+	amtHex, err := bigIntToLE8Hex(amount)
+	if err != nil {
+		return nil, fmt.Errorf("buildFtlpTape: %w", err)
+	}
 	zero7 := strings.Repeat("0000000000000000", 5)
 	tapeAmount := amtHex + zero7
 	nameHex := hex.EncodeToString([]byte(name))
@@ -1540,15 +1553,21 @@ func buildFtlpTape(amount *big.Int, isCoin bool, name, symbol string) *bscript.S
 	} else {
 		asm = fmt.Sprintf("OP_FALSE OP_RETURN %s 06 %s %s 4654617065", tapeAmount, nameHex, symHex)
 	}
-	s, _ := bscript.NewFromASM(asm)
-	return s
+	s, asmErr := bscript.NewFromASM(asm)
+	if asmErr != nil {
+		return nil, fmt.Errorf("buildFtlpTape NewFromASM: %w", asmErr)
+	}
+	return s, nil
 }
 
 // buildFtlpTapeWithLockTime builds the FT-LP tape script with lock time.
 // isCoin/name/symbol are not embedded in the with-lock-time tape (TS uses an
 // OP_0-padded layout); the caller owns them via the surrounding ftlp code.
-func buildFtlpTapeWithLockTime(amount *big.Int, tapeLen int, lockTime uint32) *bscript.Script {
-	amtHex := bigIntToLE8Hex(amount)
+func buildFtlpTapeWithLockTime(amount *big.Int, tapeLen int, lockTime uint32) (*bscript.Script, error) {
+	amtHex, err := bigIntToLE8Hex(amount)
+	if err != nil {
+		return nil, fmt.Errorf("buildFtlpTapeWithLockTime: %w", err)
+	}
 	zero5 := strings.Repeat("0000000000000000", 5)
 	tapeAmount := amtHex + zero5
 	lockTimeBytes := make([]byte, 4)
@@ -1560,16 +1579,36 @@ func buildFtlpTapeWithLockTime(amount *big.Int, tapeLen int, lockTime uint32) *b
 	}
 	opZeros := strings.Repeat("OP_0 ", fillSize)
 	asm := fmt.Sprintf("OP_FALSE OP_RETURN %s %s %s4654617065", tapeAmount, lockTimeHex, opZeros)
-	s, _ := bscript.NewFromASM(strings.TrimSpace(asm))
-	return s
+	s, asmErr := bscript.NewFromASM(strings.TrimSpace(asm))
+	if asmErr != nil {
+		return nil, fmt.Errorf("buildFtlpTapeWithLockTime NewFromASM: %w", asmErr)
+	}
+	return s, nil
 }
 
-// bigIntToLE8Hex encodes big.Int as 8-byte little-endian hex.
-func bigIntToLE8Hex(n *big.Int) string {
-	buf := make([]byte, 8)
-	v := n.Uint64()
-	binary.LittleEndian.PutUint64(buf, v)
-	return hex.EncodeToString(buf)
+// bigIntToLE8Hex encodes big.Int as 8-byte little-endian hex. Errors on
+// nil / negative / >uint64 overflow so callers don't silently produce a
+// truncated tape entry.
+func bigIntToLE8Hex(n *big.Int) (string, error) {
+	return bigIntToUint64LEHexPool(n)
+}
+
+// bigIntToSats converts a *big.Int to uint64 satoshis with explicit
+// overflow / negative / nil checks. Use at every site that copies a
+// *big.Int amount into bt.Output.Satoshis or compares to a uint64
+// satoshi balance — silent truncation at those sites can produce
+// off-by-2^64 outputs.
+func bigIntToSats(n *big.Int, label string) (uint64, error) {
+	if n == nil {
+		return 0, fmt.Errorf("%s: nil amount", label)
+	}
+	if n.Sign() < 0 {
+		return 0, fmt.Errorf("%s: negative amount %s", label, n.String())
+	}
+	if n.Cmp(maxUint64BI) > 0 {
+		return 0, fmt.Errorf("%s: amount %s exceeds uint64", label, n.String())
+	}
+	return n.Uint64(), nil
 }
 
 // buildFTTransferCodeHex is a helper returning the hex string form.
@@ -1756,7 +1795,11 @@ func (p *PoolNFT2) IncreaseLP(
 	tapeAmountSetIn := []*big.Int{new(big.Int).Set(fttxoA.FtBalance)}
 	amountHex, changeHex := BuildTapeAmountWithFtInputIndex(changeData.FtADifference, tapeAmountSetIn, 1)
 
-	if utxo.Satoshis < tbcBN.Uint64() {
+	tbcSats, err := bigIntToSats(tbcBN, "IncreaseLP tbc amount")
+	if err != nil {
+		return "", err
+	}
+	if utxo.Satoshis < tbcSats {
 		return "", fmt.Errorf("IncreaseLP: Insufficient TBC amount, please merge UTXOs")
 	}
 
@@ -1774,7 +1817,11 @@ func (p *PoolNFT2) IncreaseLP(
 	if err != nil {
 		return "", err
 	}
-	newSats := poolnft.Satoshis + changeData.TbcAmountDifference.Uint64()
+	tbcDiffSats, err := bigIntToSats(changeData.TbcAmountDifference, "IncreaseLP TbcAmountDifference")
+	if err != nil {
+		return "", err
+	}
+	newSats := poolnft.Satoshis + tbcDiffSats
 	tx.AddOutput(&bt.Output{Satoshis: newSats, LockingScript: poolNftCodeScript})
 
 	poolnftTapeScript, err := p.updatePoolNftTape()
@@ -1804,11 +1851,17 @@ func (p *PoolNFT2) IncreaseLP(
 	var ftlpCodeScript *bscript.Script
 	var ftlpTapeScript *bscript.Script
 	if p.WithLockTime {
-		ftlpTapeScript = buildFtlpTapeWithLockTime(changeData.FtLpDifference, tapeLen, lockTime)
+		ftlpTapeScript, err = buildFtlpTapeWithLockTime(changeData.FtLpDifference, tapeLen, lockTime)
+		if err != nil {
+			return "", err
+		}
 		newTapeLen := len(ftlpTapeScript.Bytes())
 		ftlpCodeScript, err = p.getFtlpCodeWithLockTime(poolNftSHA256, addressTo, newTapeLen, isCoin, ftVersion)
 	} else {
-		ftlpTapeScript = buildFtlpTape(changeData.FtLpDifference, isCoin, ftaInfo.Name, ftaInfo.Symbol)
+		ftlpTapeScript, err = buildFtlpTape(changeData.FtLpDifference, isCoin, ftaInfo.Name, ftaInfo.Symbol)
+		if err != nil {
+			return "", err
+		}
 		newTapeLen := len(ftlpTapeScript.Bytes())
 		ftlpCodeScript, err = p.getFtlpCode(poolNftSHA256, addressTo, newTapeLen, isCoin, ftVersion)
 	}
@@ -2025,7 +2078,11 @@ func (p *PoolNFT2) ConsumeLP(
 	if err != nil {
 		return "", err
 	}
-	newSats := poolnft.Satoshis - changeData.TbcAmountFullDiff.Uint64()
+	tbcFullDiffSats, err := bigIntToSats(changeData.TbcAmountFullDiff, "ConsumeLP TbcAmountFullDiff")
+	if err != nil {
+		return "", err
+	}
+	newSats := poolnft.Satoshis - tbcFullDiffSats
 	tx.AddOutput(&bt.Output{Satoshis: newSats, LockingScript: poolNftCodeScript})
 
 	poolnftTapeScript, err := p.updatePoolNftTape()
@@ -2048,7 +2105,7 @@ func (p *PoolNFT2) ConsumeLP(
 
 	// TBC to user (P2PKH)
 	tbcToUserScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
-	tx.AddOutput(&bt.Output{Satoshis: changeData.TbcAmountFullDiff.Uint64(), LockingScript: tbcToUserScript})
+	tx.AddOutput(&bt.Output{Satoshis: tbcFullDiffSats, LockingScript: tbcToUserScript})
 
 	// FT-LP burn output
 	eaterCode, err := BuildFTtransferCode(hex.EncodeToString(ftlpCodeScript.Bytes()), eaterAddress)
@@ -2272,9 +2329,14 @@ func (p *PoolNFT2) SwapToToken(
 
 	amountHex, changeHex := BuildTapeAmountWithFtInputIndex(ftADecrement, tapeAmountSetIn, 2)
 
-	if utxo.Satoshis < amountTBCBN.Uint64() {
+	amountTBCSats, err := bigIntToSats(amountTBCBN, "SwapToToken amountTBC")
+	if err != nil {
+		return "", err
+	}
+	if utxo.Satoshis < amountTBCSats {
 		return "", fmt.Errorf("SwapToToken: Insufficient TBC amount, please merge UTXOs")
 	}
+	_ = amountTBCSats // remaining size estimate is via JSEstimateSize
 
 	poolnft, err := api.FetchPoolNFTUTXO(p.ContractTxID, p.Network)
 	if err != nil {
@@ -2304,7 +2366,11 @@ func (p *PoolNFT2) SwapToToken(
 	if err != nil {
 		return "", err
 	}
-	tx.AddOutput(&bt.Output{Satoshis: poolnft.Satoshis + amountTBCswapLP.Uint64(), LockingScript: poolNftCodeScript})
+	swapLPSats, err := bigIntToSats(amountTBCswapLP, "SwapToToken amountTBCswapLP")
+	if err != nil {
+		return "", err
+	}
+	tx.AddOutput(&bt.Output{Satoshis: poolnft.Satoshis + swapLPSats, LockingScript: poolNftCodeScript})
 
 	poolnftTapeScript, err := p.updatePoolNftTape()
 	if err != nil {
@@ -2334,7 +2400,11 @@ func (p *PoolNFT2) SwapToToken(
 		if err2 != nil {
 			return "", err2
 		}
-		tx.AddOutput(&bt.Output{Satoshis: serviceFeeA.Uint64(), LockingScript: sfScript})
+		sfSats, sfErr := bigIntToSats(serviceFeeA, "SwapToToken serviceFeeA")
+		if sfErr != nil {
+			return "", sfErr
+		}
+		tx.AddOutput(&bt.Output{Satoshis: sfSats, LockingScript: sfScript})
 	}
 
 	// FT-A change to pool
@@ -2494,7 +2564,11 @@ func (p *PoolNFT2) SwapToTBC(
 	if err != nil {
 		return "", err
 	}
-	tx.AddOutput(&bt.Output{Satoshis: poolnft.Satoshis - tbcDecrementSwapLP.Uint64(), LockingScript: poolNftCodeScript})
+	swapLPSats, err := bigIntToSats(tbcDecrementSwapLP, "SwapToTBC tbcDecrementSwapLP")
+	if err != nil {
+		return "", err
+	}
+	tx.AddOutput(&bt.Output{Satoshis: poolnft.Satoshis - swapLPSats, LockingScript: poolNftCodeScript})
 
 	poolnftTapeScript, err := p.updatePoolNftTape()
 	if err != nil {
@@ -2504,7 +2578,11 @@ func (p *PoolNFT2) SwapToTBC(
 
 	// TBC to user
 	tbcToUserScript, _ := bscript.NewP2PKHFromAddress(addressTo)
-	tx.AddOutput(&bt.Output{Satoshis: tbcDecrementSwap.Uint64(), LockingScript: tbcToUserScript})
+	swapSats, err := bigIntToSats(tbcDecrementSwap, "SwapToTBC tbcDecrementSwap")
+	if err != nil {
+		return "", err
+	}
+	tx.AddOutput(&bt.Output{Satoshis: swapSats, LockingScript: tbcToUserScript})
 
 	// FT-A to pool
 	ftAtoPoolCode, err := BuildFTtransferCode(ftaInfo.CodeScript, poolCodeHash160)
@@ -2528,7 +2606,11 @@ func (p *PoolNFT2) SwapToTBC(
 		if err2 != nil {
 			return "", err2
 		}
-		tx.AddOutput(&bt.Output{Satoshis: serviceFeeA.Uint64(), LockingScript: sfScript})
+		sfSats, sfErr := bigIntToSats(serviceFeeA, "SwapToTBC serviceFeeA")
+		if sfErr != nil {
+			return "", sfErr
+		}
+		tx.AddOutput(&bt.Output{Satoshis: sfSats, LockingScript: sfScript})
 	}
 
 	// FT-A change to sender
