@@ -141,20 +141,24 @@ func (f *FT) MintFT(privKey *bec.PrivateKey, addressTo string, utxo *bt.UTXO) ([
 	txSource.AddOutput(&bt.Output{LockingScript: sourceOutputScript, Satoshis: 9900})
 	txSource.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
 
-	// Mirror TS: if txSize < 1000 → fee = 80 sat; else feePerKb=80
-	estSource := txSource.JSEstimateSize()
-	targetSourceFee := mintSourceTargetFeeSat(estSource)
+	// Mirror TS: .change(addr) is appended BEFORE getEstimateSize so the
+	// estimate includes the (yet-unfilled) change output. Append a 0-sat
+	// placeholder, estimate, then set its satoshis using the TS fee schedule
+	// (<1000B → flat 80; else feePerKb(80)).
 	changeScript, err := bscript.NewP2PKHFromAddress(addr.AddressString)
 	if err != nil {
 		return nil, err
 	}
+	txSource.AddOutput(&bt.Output{LockingScript: changeScript, Satoshis: 0})
+	estSource := txSource.JSEstimateSize()
+	targetSourceFee := mintSourceTargetFeeSat(estSource)
 	inSat := txSource.TotalInputSatoshis()
-	outSat := txSource.TotalOutputSatoshis()
+	outSat := txSource.TotalOutputSatoshis() // change is currently 0 → outSat = 9900
 	initialChange := int64(inSat) - int64(outSat) - int64(targetSourceFee)
 	if initialChange < 0 {
 		initialChange = 0
 	}
-	txSource.AddOutput(&bt.Output{LockingScript: changeScript, Satoshis: uint64(initialChange)})
+	txSource.Outputs[len(txSource.Outputs)-1].Satoshis = uint64(initialChange)
 
 	ctx := context.Background()
 	if err := txSource.FillAllInputs(ctx, &unlocker.Getter{PrivateKey: privKey}); err != nil {
@@ -176,16 +180,11 @@ func (f *FT) MintFT(privKey *bec.PrivateKey, addressTo string, utxo *bt.UTXO) ([
 	}
 	txMint.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 500})
 	txMint.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
+	// TS feePerKb(80).change(addr) — pure linear schedule (no <1000 flat
+	// branch). ChangeToAddress already estimates with the change output
+	// included, so this is the TS-faithful path.
 	if err := txMint.ChangeToAddress(addr.AddressString, newFeeQuote80()); err != nil {
-		// fallback: manual
-		mintInSat := txMint.TotalInputSatoshis()
-		mintOutSat := txMint.TotalOutputSatoshis()
-		mintFee := mintSourceTargetFeeSat(txMint.JSEstimateSize())
-		mintChange := int64(mintInSat) - int64(mintOutSat) - int64(mintFee)
-		if mintChange < 0 {
-			mintChange = 0
-		}
-		txMint.AddOutput(&bt.Output{LockingScript: changeScript, Satoshis: uint64(mintChange)})
+		return nil, fmt.Errorf("MintFT: txMint.ChangeToAddress: %w", err)
 	}
 
 	if err := signP2PKHInput(txMint, privKey, 0); err != nil {
