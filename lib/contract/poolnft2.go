@@ -880,9 +880,18 @@ func (p *PoolNFT2) getFtlpCodeWithLockTime(poolNftCodeHash, address string, tape
 // updatePoolNftTape — fetches live tape and replaces amount chunk
 // --------------------------------------------------------------------------
 
-// updatePoolNftTape fetches the live pool NFT tape script from chain (output[1]
-// of contractTxID) and replaces the 24-byte amount chunk (chunk[3]) with the
-// current FtLpAmount/FtAAmount/TbcAmount values. Mirrors TS updatePoolNftTape.
+// updatePoolNftTape fetches the live pool NFT tape script from chain
+// (output[1] of contractTxID) and replaces ONLY the 24-byte amount chunk
+// (chunk[3]) with the current FtLpAmount/FtAAmount/TbcAmount values.
+// Chunks 4..N (lpPlan/withLock/withLockTime/serviceFeeRate/etc.) are
+// preserved verbatim. Mirrors TS updatePoolNftTape, which patches the
+// amount chunk in place rather than re-deriving the whole tape from
+// instance state.
+//
+// Re-deriving the tape from `p.LpPlan`/`p.WithLock`/`p.WithLockTime` was
+// unsafe: those fields are caches and can drift from the on-chain truth,
+// producing a tape with a different sha256 than the one the pool's
+// unlock script expects in OP_PARTIAL_HASH.
 func (p *PoolNFT2) updatePoolNftTape() (*bscript.Script, error) {
 	tx, err := api.FetchTXRaw(p.ContractTxID, p.Network)
 	if err != nil {
@@ -891,7 +900,6 @@ func (p *PoolNFT2) updatePoolNftTape() (*bscript.Script, error) {
 	if len(tx.Outputs) < 2 {
 		return nil, fmt.Errorf("updatePoolNftTape: pool tx missing tape output")
 	}
-	// Encode current amounts as 24-byte LE
 	lpHex, err := bigIntToUint64LEHexPool(p.FtLpAmount)
 	if err != nil {
 		return nil, fmt.Errorf("updatePoolNftTape FtLpAmount: %w", err)
@@ -904,43 +912,29 @@ func (p *PoolNFT2) updatePoolNftTape() (*bscript.Script, error) {
 	if err != nil {
 		return nil, fmt.Errorf("updatePoolNftTape TbcAmount: %w", err)
 	}
-	amountData := lpHex + aHex + tbcHex
-	amountBytes, err := hex.DecodeString(amountData)
+	amountBytes, err := hex.DecodeString(lpHex + aHex + tbcHex)
 	if err != nil {
 		return nil, err
 	}
+	if len(amountBytes) != 24 {
+		return nil, fmt.Errorf("updatePoolNftTape: expected 24 amount bytes, got %d", len(amountBytes))
+	}
 
-	// Rebuild tape: get the live tape, replace chunk[3] buf
 	liveTape := tx.Outputs[1].LockingScript
 	chunks := liveTape.Chunks()
 	if len(chunks) < 4 {
-		return nil, fmt.Errorf("updatePoolNftTape: tape has too few chunks")
+		return nil, fmt.Errorf("updatePoolNftTape: tape has fewer than 4 chunks")
+	}
+	if len(chunks[3].Buf) != 24 {
+		return nil, fmt.Errorf("updatePoolNftTape: tape chunk[3] is %d bytes, expected 24", len(chunks[3].Buf))
 	}
 	chunks[3].Buf = amountBytes
-
-	// Rebuild from ASM using the (now-modified) chunks
-	// We do this by reconstructing from GetPoolNftTape with live config values
-	// extracted from the remaining chunks.
-	extra, err := parsePoolNftTapeExtra(liveTape)
+	chunks[3].Len = len(amountBytes)
+	out, err := bscript.FromChunks(chunks)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("updatePoolNftTape: re-serialize chunks: %w", err)
 	}
-	lpPlan := extra.LpPlan
-	if lpPlan == 0 {
-		lpPlan = p.LpPlan
-	}
-	if lpPlan == 0 {
-		lpPlan = 1
-	}
-	withLock := extra.WithLock
-	if !withLock {
-		withLock = p.WithLock
-	}
-	withLockTime := extra.WithLockTime
-	if !withLockTime {
-		withLockTime = p.WithLockTime
-	}
-	return p.GetPoolNftTape(lpPlan, withLock, withLockTime)
+	return out, nil
 }
 
 // --------------------------------------------------------------------------
@@ -1008,7 +1002,45 @@ func (p *PoolNFT2) fetchFtlpUTXO(address string, amount *big.Int) (*api.LpUTXO, 
 	}
 
 	ftlpCodeHex := hex.EncodeToString(ftlpCodeScript.Bytes())
-	return api.FetchFtLpUTXO(ftlpCodeHex, amount, p.Network)
+	if !p.WithLockTime {
+		return api.FetchFtLpUTXO(ftlpCodeHex, amount, p.Network)
+	}
+
+	// WithLockTime pools: filter out LP UTXOs whose tape lock_time is non-zero.
+	// Mirrors TS' fetchFtlpUTXO + checkLockTime gate (poolNFT2.0.ts:2216-2266).
+	all, err := p.fetchFtlpUTXOList(address)
+	if err != nil {
+		return nil, err
+	}
+	for _, candidate := range all {
+		if candidate.FtBalance == nil || candidate.FtBalance.Cmp(amount) < 0 {
+			continue
+		}
+		preTX, fErr := api.FetchTXRaw(candidate.TxID, p.Network)
+		if fErr != nil {
+			return nil, fmt.Errorf("fetchFtlpUTXO FetchTXRaw[%s]: %w", candidate.TxID, fErr)
+		}
+		tapeIdx := int(candidate.Vout) + 1
+		if tapeIdx >= len(preTX.Outputs) {
+			continue
+		}
+		chunks := preTX.Outputs[tapeIdx].LockingScript.Chunks()
+		if len(chunks) < 4 || len(chunks[3].Buf) < 4 {
+			continue
+		}
+		// chunks[3].Buf is at minimum the 24-byte amount block; the lock-time
+		// 4-byte LE int32 is appended at offset 24..28 in the same chunk per
+		// the WithLockTime tape layout. If the chunk is exactly 24 bytes (the
+		// non-locktime variant), treat lock_time as 0.
+		var lockTimeFromTape uint32
+		if len(chunks[3].Buf) >= 28 {
+			lockTimeFromTape = binary.LittleEndian.Uint32(chunks[3].Buf[24:28])
+		}
+		if lockTimeFromTape == 0 {
+			return candidate, nil
+		}
+	}
+	return nil, fmt.Errorf("fetchFtlpUTXO: no unlocked FT-LP UTXO with sufficient balance")
 }
 
 // lpUTXOTobtUTXO converts api.LpUTXO to *bt.UTXO for transaction building.
