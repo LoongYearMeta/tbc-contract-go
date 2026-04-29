@@ -173,8 +173,12 @@ func FillSigWithdraw(withdrawTxRaw, secret, sig, publicKey string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	// ASM: <sig> <pubkey> <secret> 1
-	asm := sig + " " + publicKey + " " + secret + " 1"
+	// ASM: <sig> <pubkey> <secret> OP_TRUE
+	// Use OP_TRUE rather than the literal "1": tbc-lib-go's bscript.NewFromASM
+	// only special-cases registered opcode names; bare numeric tokens are
+	// hex-decoded, and "1" is odd-length hex → ErrInvalidOpCode. WithdrawWithSign
+	// below uses the same OP_TRUE convention.
+	asm := sig + " " + publicKey + " " + secret + " OP_TRUE"
 	us, err := bscript.NewFromASM(asm)
 	if err != nil {
 		return "", err
@@ -192,8 +196,9 @@ func FillSigRefund(refundTxRaw, sig, publicKey string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// ASM: <sig> <pubkey> 0
-	asm := sig + " " + publicKey + " 0"
+	// ASM: <sig> <pubkey> OP_FALSE
+	// See FillSigWithdraw above for why we cannot use literal "0".
+	asm := sig + " " + publicKey + " OP_FALSE"
 	us, err := bscript.NewFromASM(asm)
 	if err != nil {
 		return "", err
