@@ -81,6 +81,9 @@ func FetchPoolNFTInfo(contractTxID, network string) (*PoolNFTInfo, error) {
 	if err := json.Unmarshal(body, &r); err != nil {
 		return nil, fmt.Errorf("解析 Pool NFT Info 失败: %w", err)
 	}
+	if err := apiCodeError(body); err != nil {
+		return nil, err
+	}
 
 	lpBal, _ := parseBigIntOrUint64(r.Data.LpBalance)
 	tokenBal, _ := parseBigIntOrUint64(r.Data.TokenBalance)
@@ -156,6 +159,9 @@ func FetchFtLpBalance(ftlpCode, network string) (*big.Int, error) {
 	if err := json.Unmarshal(body, &r); err != nil {
 		return nil, err
 	}
+	if err := apiCodeError(body); err != nil {
+		return nil, err
+	}
 
 	sum := new(big.Int)
 	for _, u := range r.Data.UTXOs {
@@ -183,6 +189,9 @@ func FetchFtLpUTXOList(ftlpCode, network string) ([]*LpUTXO, error) {
 
 	var r lpUtxoListResponse
 	if err := json.Unmarshal(body, &r); err != nil {
+		return nil, err
+	}
+	if err := apiCodeError(body); err != nil {
 		return nil, err
 	}
 
@@ -219,6 +228,9 @@ func FetchFtLpUTXO(ftlpCode string, amount *big.Int, network string) (*LpUTXO, e
 
 	var r lpUtxoListResponse
 	if err := json.Unmarshal(body, &r); err != nil {
+		return nil, err
+	}
+	if err := apiCodeError(body); err != nil {
 		return nil, err
 	}
 	if len(r.Data.UTXOs) == 0 {

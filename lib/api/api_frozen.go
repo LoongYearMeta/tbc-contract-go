@@ -50,6 +50,9 @@ func FetchFrozenTBCBalance(address, network string) (uint64, error) {
 	if err := json.Unmarshal(body, &r); err != nil {
 		return 0, err
 	}
+	if err := apiCodeError(body); err != nil {
+		return 0, err
+	}
 	return r.Data.Balance, nil
 }
 
@@ -90,6 +93,9 @@ func FetchFrozenUTXOList(addr, network string) ([]*FrozenUTXO, error) {
 
 	var r frozenUtxoListResponse
 	if err := json.Unmarshal(body, &r); err != nil {
+		return nil, err
+	}
+	if err := apiCodeError(body); err != nil {
 		return nil, err
 	}
 

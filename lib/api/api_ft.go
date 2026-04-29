@@ -184,6 +184,9 @@ func getFTBalanceByHash(contractTxID, hash, network string) (*big.Int, error) {
 	if err := json.Unmarshal(body, &r); err != nil {
 		return nil, fmt.Errorf("解析 FT 余额响应失败: %w", err)
 	}
+	if err := apiCodeError(body); err != nil {
+		return nil, err
+	}
 	return parseBigIntOrUint64(r.Data.Balance)
 }
 
@@ -197,6 +200,9 @@ func getFTBalanceByAddress(contractTxID, address, network string) (*big.Int, err
 	var r ftBalanceResponse
 	if err := json.Unmarshal(body, &r); err != nil {
 		return nil, fmt.Errorf("解析 FT 按地址余额响应失败: %w", err)
+	}
+	if err := apiCodeError(body); err != nil {
+		return nil, err
 	}
 	return parseBigIntOrUint64(r.Data.Balance)
 }
@@ -253,6 +259,9 @@ func fetchFtUTXOListResponse(contractTxID, hash, network string) (ftUtxoListResp
 	var r ftUtxoListResponse
 	if err := json.Unmarshal(body, &r); err != nil {
 		return ftUtxoListResponse{}, fmt.Errorf("解析 FT UTXO 响应失败: %w", err)
+	}
+	if err := apiCodeError(body); err != nil {
+		return ftUtxoListResponse{}, err
 	}
 	return r, nil
 }

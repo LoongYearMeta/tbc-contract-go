@@ -110,6 +110,9 @@ func FetchNFTUTXO(script, txHash, network string) (*bt.UTXO, error) {
 	if err := json.Unmarshal(body, &r); err != nil {
 		return nil, err
 	}
+	if err := apiCodeError(body); err != nil {
+		return nil, err
+	}
 	if len(r.Data.UTXOs) == 0 {
 		return nil, fmt.Errorf("No matching UTXO found.")
 	}
@@ -168,6 +171,9 @@ func FetchNFTUTXOs(script, txHash, network string) ([]*bt.UTXO, error) {
 	if err := json.Unmarshal(body, &r); err != nil {
 		return nil, err
 	}
+	if err := apiCodeError(body); err != nil {
+		return nil, err
+	}
 
 	want := strings.TrimSpace(txHash)
 	var filtered []nftUtxoRaw
@@ -219,6 +225,9 @@ func FetchNFTInfo(contractID, network string) (*util.NFTInfo, error) {
 	if err := json.Unmarshal(body, &r); err != nil {
 		return nil, err
 	}
+	if err := apiCodeError(body); err != nil {
+		return nil, err
+	}
 	return &util.NFTInfo{
 		CollectionID:         r.Data.CollectionID,
 		CollectionIndex:      r.Data.CollectionIndex,
@@ -245,6 +254,9 @@ func FetchNFTs(collectionID, address string, start, end int, network string) ([]
 
 	var r nftListResponse
 	if err := json.Unmarshal(body, &r); err != nil {
+		return nil, err
+	}
+	if err := apiCodeError(body); err != nil {
 		return nil, err
 	}
 	var result []*util.NFTBrief

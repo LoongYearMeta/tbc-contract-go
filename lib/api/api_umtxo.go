@@ -70,6 +70,9 @@ func FetchUMTXO(scriptASM string, tbcAmount float64, network string) (*bt.UTXO, 
 	if err := json.Unmarshal(body, &r); err != nil {
 		return nil, err
 	}
+	if err := apiCodeError(body); err != nil {
+		return nil, err
+	}
 	if len(r.Data.UTXOs) == 0 {
 		return nil, fmt.Errorf("The balance in the account is zero.")
 	}
@@ -132,6 +135,9 @@ func FetchUMTXOs(scriptASM string, network string) ([]*bt.UTXO, error) {
 
 	var r utxoByScriptHashResponse
 	if err := json.Unmarshal(body, &r); err != nil {
+		return nil, err
+	}
+	if err := apiCodeError(body); err != nil {
 		return nil, err
 	}
 	if len(r.Data.UTXOs) == 0 {

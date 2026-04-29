@@ -99,6 +99,40 @@ func httpGetWithRetry(url string) ([]byte, error) {
 	return io.ReadAll(resp.Body)
 }
 
+// apiCodeError returns an error if the response body's top-level `code`
+// field is set to a non-success value. The TBC indexer convention is
+// `code: "200"` on success — any other non-empty value indicates a logical
+// error (auth, rate limit, missing object, etc.) returned via HTTP 200.
+//
+// Returns nil when:
+//   - The body is not a JSON object (e.g., array, scalar, malformed).
+//   - The body has no `code` field at all (some endpoints don't include one).
+//   - The `code` field is empty, "200", or "0".
+//
+// So this helper is safe to call after every json.Unmarshal: at worst it's
+// a no-op for endpoints that don't surface a code field.
+func apiCodeError(body []byte) error {
+	var env struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+		Error   string `json:"error"`
+	}
+	if err := json.Unmarshal(body, &env); err != nil {
+		return nil
+	}
+	if env.Code == "" || env.Code == "200" || env.Code == "0" {
+		return nil
+	}
+	msg := env.Message
+	if msg == "" {
+		msg = env.Error
+	}
+	if msg == "" {
+		msg = "(no message)"
+	}
+	return fmt.Errorf("api: code=%s: %s", env.Code, msg)
+}
+
 // indexerP2PKHLookupAddress converts testnet addresses for the TBC indexer.
 // The public testnet indexer (api.tbcdev.org) expects legacy mainnet-style
 // addresses for P2PKH balance/UTXO lookups. Custom base URLs are not rewritten.
@@ -268,6 +302,9 @@ func GetTBCBalance(address, network string) (uint64, error) {
 	if err := json.Unmarshal(body, &br); err != nil {
 		return 0, fmt.Errorf("解析余额响应失败: %w", err)
 	}
+	if err := apiCodeError(body); err != nil {
+		return 0, err
+	}
 	return br.Data.Balance, nil
 }
 
@@ -284,6 +321,9 @@ func FetchUTXOList(address, network string) ([]*bt.UTXO, error) {
 	var ur utxoListResponse
 	if err := json.Unmarshal(body, &ur); err != nil {
 		return nil, fmt.Errorf("解析 UTXO 响应失败: %w", err)
+	}
+	if err := apiCodeError(body); err != nil {
+		return nil, err
 	}
 	if len(ur.Data.UTXOs) == 0 {
 		return nil, fmt.Errorf("该地址没有可用的 UTXO")
@@ -322,6 +362,9 @@ func fetchUTXOInternal(address string, amountTBC float64, network string) (*bt.U
 	var ur utxoListResponse
 	if err := json.Unmarshal(body, &ur); err != nil {
 		return nil, "", fmt.Errorf("解析 UTXO 响应失败: %w", err)
+	}
+	if err := apiCodeError(body); err != nil {
+		return nil, "", err
 	}
 	if len(ur.Data.UTXOs) == 0 {
 		return nil, "", fmt.Errorf("该地址没有可用的 UTXO")
@@ -386,6 +429,9 @@ func FetchUTXOs(address, network string) ([]*bt.UTXO, error) {
 	var ur utxoListResponse
 	if err := json.Unmarshal(body, &ur); err != nil {
 		return nil, fmt.Errorf("解析 UTXO 响应失败: %w", err)
+	}
+	if err := apiCodeError(body); err != nil {
+		return nil, err
 	}
 	if len(ur.Data.UTXOs) == 0 {
 		return nil, fmt.Errorf("The balance in the account is zero.")
@@ -689,6 +735,9 @@ func FetchBlockHeaders(start, end int, network string) ([]BlockHeaderInfo, error
 	var r blockHeadersResponse
 	if err := json.Unmarshal(body, &r); err != nil {
 		return nil, fmt.Errorf("解析区块头响应失败: %w", err)
+	}
+	if err := apiCodeError(body); err != nil {
+		return nil, err
 	}
 	return r.Data, nil
 }
