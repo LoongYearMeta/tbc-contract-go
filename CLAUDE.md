@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Go implementation of TBC (TuringBitChain) on-chain contracts and the indexer/API client. **Strict 1:1 parity with the TypeScript reference repo `tbc-contract`** (sibling at `../tbc-contract`). Whenever behavior is ambiguous, the TS source (`../tbc-contract/lib/...`) is authoritative — new Go code must reproduce JS wire output byte-for-byte (sizes, sighash preimages, push encodings, fees, change).
 
-This is a **library-only** repo: no `cmd/`, no `*_test.go`. Behavior is verified in downstream business repos using the `package main` templates under `docs/test-cases/`.
+This is a **library-first** repo: `lib/` is the actual library; there are no `*_test.go` files. The repo also ships runnable smoke programs under `test/<contract>/main.go` (one `package main` per contract, configured via top-of-file `const ( … )`) — these mirror the templates in `docs/test-cases/` and broadcast real txns when their `do*` switches are toggled. Library users can ignore `test/` entirely; downstream business repos still verify behavior using their own copies of the `docs/test-cases/` templates.
 
 ## Build & develop
 
@@ -14,6 +14,8 @@ This is a **library-only** repo: no `cmd/`, no `*_test.go`. Behavior is verified
 go build ./...        # the only check this repo runs
 go vet ./...
 ```
+
+Note: `go build ./...` (without `-o`) compiles each `package main` under `test/<contract>/` and drops a binary by that name into the **current working directory** (i.e. the repo root). The .gitignore lists those eight names (`/ft`, `/nft`, …, `/stablecoin`) so they don't get tracked, but for a clean check prefer `go build -o /dev/null ./test/...` or just `go vet ./test/...`.
 
 `go mod tidy` will fail because the build-tagged `stablecoin.go` / `api_stablecoin.go` reference symbols that no longer exist (see "stablecoin" below). Don't run tidy unless you've also re-enabled stablecoin; the current `go.mod` is hand-tuned and correct.
 
@@ -100,5 +102,6 @@ When the rewrite happens: don't lift code 1:1, port from TS `tbc-contract/lib/co
 
 - `README.md`, `docs/合约库说明.md`, `docs/quick-start-go.md` — user-facing overview, library surface, and a minimal `go run` example.
 - `docs/test-cases/*.md` — one per contract family. Each starts with a parameter table and ends with a single-file `package main` runnable from a downstream module after configuring `replace`. These are the canonical integration-test templates; mirror the structure when adding a new scenario.
+- `test/<contract>/main.go` — in-repo runnable counterpart of each `docs/test-cases/*.md`. Configuration is via constants at the top (`wifA`, `ftContractTxid`, `do*` switches, etc.); no env vars. Build with `go build -o /dev/null ./test/...` to avoid littering the repo root with binaries. `test/stablecoin` is a placeholder (just prints a frozen notice) — see "Stablecoin (frozen)" below.
 - Spec source-of-truth stays at `../tbc-contract/docs/` (TS repo). `docs/README.md` has the TS↔Go mapping table — update it when adding or renaming a Go counterpart.
 - `docs/superpowers/specs/` and `docs/superpowers/plans/` hold design / planning artifacts (gitignored, do not commit).
