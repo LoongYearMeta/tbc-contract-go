@@ -539,6 +539,45 @@ func poolNFTSign(tx *bt.Tx, inputIdx uint32, privKey *bec.PrivateKey) (sigHex, p
 // uint64 — silently truncating would corrupt the pool tape.
 var maxUint64BI = new(big.Int).SetUint64(^uint64(0))
 
+// snapshotPoolAmounts captures pool reserve values for a deferred rollback
+// on the error path of UpdatePoolNFT-using methods (Increase/Consume/Swap/...).
+// Each PoolNFT2 instance is mutable through these methods; if any downstream
+// API/build/sign step fails, the receiver would otherwise be left in a
+// half-updated state and a retry would compound the error.
+func snapshotPoolAmounts(p *PoolNFT2) (ftA, ftLp, tbc, tbcFull *big.Int) {
+	if p.FtAAmount != nil {
+		ftA = new(big.Int).Set(p.FtAAmount)
+	}
+	if p.FtLpAmount != nil {
+		ftLp = new(big.Int).Set(p.FtLpAmount)
+	}
+	if p.TbcAmount != nil {
+		tbc = new(big.Int).Set(p.TbcAmount)
+	}
+	if p.TbcAmountFull != nil {
+		tbcFull = new(big.Int).Set(p.TbcAmountFull)
+	}
+	return
+}
+
+// restorePoolAmounts reverts the receiver to the snapshot taken by
+// snapshotPoolAmounts. Skips fields whose snapshot was nil (the original
+// receiver field was nil too).
+func restorePoolAmounts(p *PoolNFT2, ftA, ftLp, tbc, tbcFull *big.Int) {
+	if ftA != nil {
+		p.FtAAmount = ftA
+	}
+	if ftLp != nil {
+		p.FtLpAmount = ftLp
+	}
+	if tbc != nil {
+		p.TbcAmount = tbc
+	}
+	if tbcFull != nil {
+		p.TbcAmountFull = tbcFull
+	}
+}
+
 func bigIntToUint64LEHexPool(n *big.Int) (string, error) {
 	if n == nil {
 		return "", fmt.Errorf("bigIntToUint64LEHexPool: nil amount")
@@ -1665,6 +1704,14 @@ func (p *PoolNFT2) IncreaseLP(
 	ftVersion, isCoin := ftVersionFromCodeLen(codeLen)
 	tapeLen := len(ftaInfo.TapeScript) / 2
 
+	// Snapshot pool state for rollback on any downstream error.
+	preFtA, preFtLp, preTbc, preTbcFull := snapshotPoolAmounts(p)
+	lpSuccess := false
+	defer func() {
+		if !lpSuccess {
+			restorePoolAmounts(p, preFtA, preFtLp, preTbc, preTbcFull)
+		}
+	}()
 	changeData, err := p.UpdatePoolNFT(amountTBC, ftaInfo.Decimal, 2)
 	if err != nil {
 		return "", err
@@ -1827,6 +1874,7 @@ func (p *PoolNFT2) IncreaseLP(
 		return "", err
 	}
 
+	lpSuccess = true
 	return tx.String(), nil
 }
 
@@ -1856,6 +1904,13 @@ func (p *PoolNFT2) ConsumeLP(
 		return "", fmt.Errorf("ConsumeLP: Invalid FT-LP amount input")
 	}
 
+	preFtA, preFtLp, preTbc, preTbcFull := snapshotPoolAmounts(p)
+	consumeSuccess := false
+	defer func() {
+		if !consumeSuccess {
+			restorePoolAmounts(p, preFtA, preFtLp, preTbc, preTbcFull)
+		}
+	}()
 	changeData, err := p.UpdatePoolNFT(amountLP, ftaInfo.Decimal, 1)
 	if err != nil {
 		return "", err
@@ -2069,6 +2124,20 @@ func (p *PoolNFT2) ConsumeLP(
 	}
 	tx.Inputs[0].UnlockingScript = poolUnlock
 
+	// TS poolNFT2.0.ts:1265-1266 sets sequence=0xFFFFFFFE on the LP input
+	// (input 1) for with_lock_time pools so tx.LockTime is honored. Without
+	// this, the consumed LP UTXO's lock-time gate isn't released even if the
+	// caller has separately broadcast the unlockFTLP precursor.
+	//
+	// NOTE: TS also calls `unlockFTLP` BEFORE this method runs, broadcasts
+	// it, and uses unlockTX.outputs[2] as the fee input. The Go port does
+	// not (yet) implement that precursor flow — for with-lock-time pools
+	// the caller must broadcast their own unlock tx and pass its
+	// outputs[2] as `utxo` for ConsumeLP to work end-to-end.
+	if p.WithLockTime {
+		tx.Inputs[1].SequenceNumber = 4294967294
+	}
+
 	// LP input unlock
 	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
 	lpUnlock, err := ft.GetFTunlock(privKey, tx, lpPreTX, lpPrePreTxData, 1, int(fttxoLP.Vout), false)
@@ -2089,16 +2158,13 @@ func (p *PoolNFT2) ConsumeLP(
 		tx.Inputs[i+2].UnlockingScript = swapUnlock
 	}
 
-	// sign fee utxo
+	// Fee input is always P2PKH; sign unconditionally.
 	feeIdx := len(fttxosC) + 2
-	if p.WithLockTime {
-		// with lock time the utxo comes from a previous unlock tx output[2]; skip
-	}
-	err = signP2PKHAtIdx(tx, privKey, uint32(feeIdx))
-	if err != nil {
+	if err := signP2PKHAtIdx(tx, privKey, uint32(feeIdx)); err != nil {
 		return "", err
 	}
 
+	consumeSuccess = true
 	return tx.String(), nil
 }
 
