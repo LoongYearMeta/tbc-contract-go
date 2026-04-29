@@ -1727,7 +1727,14 @@ func (p *PoolNFT2) IncreaseLP(
 		if tbcBN.Sign() <= 0 {
 			return "", fmt.Errorf("IncreaseLP: TBC amount must be greater than LP cost of %s", costDec)
 		}
-		amountTBC = fmt.Sprintf("%d.%06d", tbcBN.Uint64()/1000000, tbcBN.Uint64()%1000000)
+		// Format the post-subtract big.Int back to "X.YYYYYY" decimal TBC.
+		// The previous code did `tbcBN.Uint64() / 1e6` which silently truncated
+		// values > uint64-max — use big.Int QuoRem so any amount round-trips
+		// cleanly through util.ParseDecimalToBigInt below.
+		divisor := big.NewInt(1000000)
+		whole, rem := new(big.Int), new(big.Int)
+		whole.QuoRem(tbcBN, divisor, rem)
+		amountTBC = whole.String() + "." + fmt.Sprintf("%06d", rem.Int64())
 	}
 
 	tbcBN, err := util.ParseDecimalToBigInt(amountTBC, 6)
@@ -2706,6 +2713,10 @@ func (p *PoolNFT2) MergeFTLP(
 		currentTime := uint32(time.Now().Unix()) - 1800
 		var lockTimeMax uint32
 
+		// TS uses `lock_time` truthiness (poolNFT2.0.ts:2540), so a caller
+		// passing 0 falls through to the chain-derived lockTimeMax path.
+		// Mirror that: treat *lockTime==0 the same as lockTime==nil.
+		hasLockTime := lockTime != nil && *lockTime != 0
 		for i := 0; i < len(ftUtxoList) && len(ftutxo) < 6; i++ {
 			ltape, lerr := api.FetchTXRaw(ftUtxoList[i].TxID, p.Network)
 			if lerr != nil {
@@ -2721,7 +2732,7 @@ func (p *PoolNFT2) MergeFTLP(
 			}
 			lockTimeFromTape := binary.LittleEndian.Uint32(chunks[3].Buf[:4])
 
-			if lockTime != nil {
+			if hasLockTime {
 				lt := *lockTime
 				switch {
 				case lockTimeFromTape == 0:
@@ -2746,7 +2757,7 @@ func (p *PoolNFT2) MergeFTLP(
 		if len(ftutxo) == 0 {
 			return "", fmt.Errorf("no unlockable FTLP UTXO")
 		}
-		if lockTime != nil {
+		if hasLockTime {
 			derivedLockTime = *lockTime
 		} else if lockTimeMax < 500_000_000 {
 			if lockTimeMax > currentBlockHeight {
@@ -3049,15 +3060,25 @@ func (p *PoolNFT2) MergeFTinPool(
 		if i == 0 {
 			feeUTXO = utxo
 		} else if lastTX != nil {
-			// use last output of previous tx; TxID is forward bytes (no reverse)
-			lastOut := lastTX.Outputs[len(lastTX.Outputs)-1]
+			// Mirror TS poolNFT2.0.ts:2980 `addInputFromPrevTx(poolnftPreTX, 4)`
+			// — the P2PKH change output is always at vout=4 for the case-4
+			// merge layout (5 outputs: pool code, pool tape, merged code,
+			// merged tape, P2PKH change). Using len(Outputs)-1 silently picked
+			// the merged FT tape if adjustFeeAndChange had dropped the change
+			// (sub-dust), turning the next iteration into a fail-loop with no
+			// signable P2PKH at the assumed offset.
+			const feeVout = 4
+			if len(lastTX.Outputs) <= feeVout {
+				return nil, fmt.Errorf("MergeFTinPool: lastTX has %d outputs, expected >=5 (P2PKH change at vout=4)", len(lastTX.Outputs))
+			}
+			lastOut := lastTX.Outputs[feeVout]
 			lastTxIDBytes, err := hex.DecodeString(lastTX.TxID())
 			if err != nil {
 				return nil, fmt.Errorf("decode lastTX txid: %w", err)
 			}
 			feeUTXO = &bt.UTXO{
 				TxID:          lastTxIDBytes,
-				Vout:          uint32(len(lastTX.Outputs) - 1),
+				Vout:          uint32(feeVout),
 				LockingScript: lastOut.LockingScript,
 				Satoshis:      lastOut.Satoshis,
 			}
@@ -3146,14 +3167,20 @@ func (p *PoolNFT2) mergeFTinPoolSingle(
 			return "", nil, fmt.Errorf("mergeFTinPoolSingle tx.FromUTXOs feeUTXO: %w", err)
 		}
 	} else {
-		// add last output of poolnftPreTX as fee input
-		lastIdx := len(poolnftPreTX.Outputs) - 1
+		// poolnftPreTX is the on-chain pool creation/update tx; TS hardcodes
+		// `addInputFromPrevTx(poolnftPreTX, 4)` (poolNFT2.0.ts:2980). vout=4
+		// is the P2PKH change. len(Outputs)-1 worked only when the tx had
+		// exactly 5 outputs.
+		const feeVout = 4
+		if len(poolnftPreTX.Outputs) <= feeVout {
+			return "", nil, fmt.Errorf("mergeFTinPoolSingle: poolnftPreTX has %d outputs, expected >=5 (P2PKH change at vout=4)", len(poolnftPreTX.Outputs))
+		}
 		lastTxIDBytes := poolnftPreTX.TxIDBytes()
 		if err := tx.FromUTXOs(&bt.UTXO{
 			TxID:          lastTxIDBytes,
-			Vout:          uint32(lastIdx),
-			LockingScript: poolnftPreTX.Outputs[lastIdx].LockingScript,
-			Satoshis:      poolnftPreTX.Outputs[lastIdx].Satoshis,
+			Vout:          uint32(feeVout),
+			LockingScript: poolnftPreTX.Outputs[feeVout].LockingScript,
+			Satoshis:      poolnftPreTX.Outputs[feeVout].Satoshis,
 		}); err != nil {
 			return "", nil, fmt.Errorf("mergeFTinPoolSingle tx.FromUTXOs lastOut: %w", err)
 		}
@@ -3198,7 +3225,16 @@ func (p *PoolNFT2) mergeFTinPoolSingle(
 		inputsTXs[len(ftutxos)] = poolnftPreTX
 	}
 
+	// Snapshot the pre-adjust output count: the case-4 unlock validator
+	// (poolSwapTBCtoFTOutputsData) reads outputs[2..4] unconditionally. If
+	// adjustFeeAndChange drops the trailing P2PKH change as dust the tx
+	// loses an output and the unlock script's OP_HASH256 OP_7 OP_PUSH_META
+	// OP_EQUAL check fails. Refuse to proceed.
+	preAdjustCount := len(tx.Outputs)
 	adjustFeeAndChange(tx, 80)
+	if len(tx.Outputs) != preAdjustCount {
+		return "", nil, fmt.Errorf("mergeFTinPoolSingle: P2PKH change dropped (post-fee=%d, pre=%d) — fee input too small for non-dust change; supply a larger feeUTXO", len(tx.Outputs), preAdjustCount)
+	}
 
 	withLockInt := isLockByCodeLen(p.PoolNftCode)
 	poolUnlock, err := p.GetPoolNftUnlockOffLine(privKey, tx, 0, poolnftPreTX, poolnftPrePreTX, inputsTXs, withLockInt, 4, 0)
