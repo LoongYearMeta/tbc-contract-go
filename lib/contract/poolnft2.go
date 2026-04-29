@@ -3087,7 +3087,10 @@ func (p *PoolNFT2) MergeFTinPool(
 		rawTX, newTX, err2 := p.mergeFTinPoolSingle(privKey, poolnftPreTX, poolnftPrePreTX, ftutxos, ftaInfo, ftVersion, isCoin, feeUTXO)
 		if err2 != nil {
 			if len(txsraw) > 0 {
-				break // return what we have
+				// Return what we managed to build, but surface the partial-
+				// failure rather than silently treating it as success. The
+				// caller can decide whether to broadcast the partial chain.
+				return txsraw, fmt.Errorf("MergeFTinPool: partial success at iteration %d: %w", i, err2)
 			}
 			return nil, err2
 		}
