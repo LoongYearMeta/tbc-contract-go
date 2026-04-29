@@ -461,18 +461,7 @@ func nftAddrMainnet(network string) bool {
 // unlockerGetter. Returns the raw tx hex.
 func nftApplyJSFeeAndSign(tx *bt.Tx, ug bt.UnlockerGetter) error {
 	ctx := context.Background()
-	if err := tx.FillAllInputs(ctx, ug); err != nil {
-		return err
-	}
-	actualBytes := len(tx.Bytes())
-	targetFee := nftTargetFee(actualBytes)
-	if adjustErr := tx.AdjustImplicitFeeToTarget(targetFee); adjustErr == nil {
-		// Re-sign after fee adjustment; reset unlocker step counter via new getter.
-		if err := tx.FillAllInputs(ctx, ug); err != nil {
-			return err
-		}
-	}
-	return nil
+	return tx.FillAllInputs(ctx, ug)
 }
 
 // CreateNFT mirrors NFT.createNFT.

@@ -191,16 +191,6 @@ func (f *FT) MintFT(privKey *bec.PrivateKey, addressTo string, utxo *bt.UTXO) ([
 	if err := signP2PKHInput(txMint, privKey, 0); err != nil {
 		return nil, err
 	}
-	// Adjust fee to actual signed size
-	actualMintBytes := len(txMint.Bytes())
-	mintActualFee := int(math.Ceil(float64(actualMintBytes) * float64(ftSatPerKB) / 1000.0))
-	if err := txMint.AdjustImplicitFeeToTarget(mintActualFee); err != nil {
-		return nil, fmt.Errorf("MintFT: AdjustImplicitFeeToTarget: %w", err)
-	}
-	// Re-sign after adjustment
-	if err := signP2PKHInput(txMint, privKey, 0); err != nil {
-		return nil, err
-	}
 
 	f.ContractTxid = txMint.TxID()
 	return []string{txSourceRaw, hex.EncodeToString(txMint.Bytes())}, nil
@@ -286,21 +276,6 @@ func (f *FT) Transfer(
 	}
 	if err := ftInsertUnlocks(tx, ftUnlocks, nFt); err != nil {
 		return "", err
-	}
-	// Adjust fee and re-sign
-	actualBytes := len(tx.Bytes())
-	targetFee := int(math.Ceil(float64(actualBytes) * float64(ftSatPerKB) / 1000.0))
-	if adjustErr := tx.AdjustImplicitFeeToTarget(targetFee); adjustErr == nil {
-		if err2 := ftSignFeeInputs(tx, privKey, nFt); err2 != nil {
-			return "", err2
-		}
-		ftUnlocks2, err2 := f.buildFTUnlocks(privKey, tx, preTXs, prepreTxDatas, ftutxos)
-		if err2 != nil {
-			return "", err2
-		}
-		if err2 := ftInsertUnlocks(tx, ftUnlocks2, nFt); err2 != nil {
-			return "", err2
-		}
 	}
 
 	return hex.EncodeToString(tx.Bytes()), nil
@@ -441,25 +416,6 @@ func (f *FT) BatchTransfer(
 		}
 		if err := ftInsertUnlocks(tx, ftUnlocks, nFt); err != nil {
 			return nil, err
-		}
-		actualBytes := len(tx.Bytes())
-		targetFee := int(math.Ceil(float64(actualBytes) * float64(ftSatPerKB) / 1000.0))
-		if adjustErr := tx.AdjustImplicitFeeToTarget(targetFee); adjustErr == nil {
-			if err2 := ftSignFeeInputs(tx, privKey, nFt); err2 != nil {
-				return nil, err2
-			}
-			var ftUnlocks2 []*bscript.Script
-			if b == 0 {
-				ftUnlocks2, err = f.buildFTUnlocks(privKey, tx, currentPreTXs, currentPrepreTxDatas, currentFtutxos)
-			} else {
-				ftUnlocks2, err = f.buildFTUnlocksFromPrevVouts(privKey, tx, currentPreTXs, currentPrepreTxDatas, []int{ftChangeIndex})
-			}
-			if err != nil {
-				return nil, err
-			}
-			if err2 := ftInsertUnlocks(tx, ftUnlocks2, nFt); err2 != nil {
-				return nil, err2
-			}
 		}
 
 		txsraw = append(txsraw, hex.EncodeToString(tx.Bytes()))
@@ -692,20 +648,6 @@ func (f *FT) mergeFTSingle(
 	}
 	if err := ftInsertUnlocks(tx, ftUnlocks, nFt); err != nil {
 		return nil, err
-	}
-	actualBytes := len(tx.Bytes())
-	targetFee := int(math.Ceil(float64(actualBytes) * float64(ftSatPerKB) / 1000.0))
-	if adjustErr := tx.AdjustImplicitFeeToTarget(targetFee); adjustErr == nil {
-		if err2 := ftSignFeeInputs(tx, privKey, nFt); err2 != nil {
-			return nil, err2
-		}
-		ftUnlocks2, err2 := f.buildFTUnlocks(privKey, tx, preTXs, prepreTxDatas, ftutxos)
-		if err2 != nil {
-			return nil, err2
-		}
-		if err2 := ftInsertUnlocks(tx, ftUnlocks2, nFt); err2 != nil {
-			return nil, err2
-		}
 	}
 	return tx, nil
 }
