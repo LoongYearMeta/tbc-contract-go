@@ -1505,6 +1505,11 @@ func signP2PKHAtIdx(tx *bt.Tx, privKey *bec.PrivateKey, utxo *bt.UTXO, idx uint3
 	return nil
 }
 
+// poolDustAmount mirrors tbc-lib-js Transaction.DUST_AMOUNT (42 sat). Outputs
+// with satoshis below this are pruned by tbc-lib-js's tx.change() helper —
+// match that behavior for hex parity with JS.
+const poolDustAmount uint64 = 42
+
 // adjustFeeAndChange sets the last output's satoshis to input sum minus all
 // other outputs and fee. Fee schedule mirrors TS exactly:
 //
@@ -1512,6 +1517,9 @@ func signP2PKHAtIdx(tx *bt.Tx, privKey *bec.PrivateKey, utxo *bt.UTXO, idx uint3
 //	size ≥ 1000 → fee = ceil(size * satPerKB / 1000)
 //
 // (TS: `txSize < 1000 ? 80 : Math.ceil(txSize / 1000 * 80)`.)
+//
+// If the resulting last-output value would be below poolDustAmount, the
+// output is removed entirely — matching tbc-lib-js .change() behavior.
 func adjustFeeAndChange(tx *bt.Tx, satPerKB uint64) {
 	est := uint64(tx.JSEstimateSize())
 	var fee uint64
@@ -1531,9 +1539,18 @@ func adjustFeeAndChange(tx *bt.Tx, satPerKB uint64) {
 			outSum += out.Satoshis
 		}
 	}
-	if inputSum > outSum+fee {
-		tx.Outputs[len(tx.Outputs)-1].Satoshis = inputSum - outSum - fee
+	if inputSum <= outSum+fee {
+		// No change — drop the placeholder change output to mirror tbc-lib-js
+		// (which doesn't add a change output if available - fee < dust).
+		tx.Outputs = tx.Outputs[:len(tx.Outputs)-1]
+		return
 	}
+	change := inputSum - outSum - fee
+	if change < poolDustAmount {
+		tx.Outputs = tx.Outputs[:len(tx.Outputs)-1]
+		return
+	}
+	tx.Outputs[len(tx.Outputs)-1].Satoshis = change
 }
 
 // --------------------------------------------------------------------------
