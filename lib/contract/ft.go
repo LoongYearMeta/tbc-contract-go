@@ -1306,6 +1306,13 @@ func strip0xHexPushesInASM(asm string) string {
 	return strings.Join(parts, " ")
 }
 
+// signP2PKHInput signs an input that is either standard P2PKH or "P2PKH-like"
+// (e.g., the FT mint source output: P2PKH followed by `OP_RETURN <flag>`).
+// When the previous-tx script parses cleanly as P2PKH, the function asserts
+// the destination matches privKey's pubkey hash (mismatch returns an error,
+// per fix H-1). For non-P2PKH-but-P2PKH-prefixed scripts the PKH-equality
+// check is skipped and signing proceeds; that's why the name does not strictly
+// claim "P2PKH only".
 func signP2PKHInput(tx *bt.Tx, privKey *bec.PrivateKey, inputIdx uint32) error {
 	in := tx.Inputs[inputIdx]
 	if in.PreviousTxScript != nil && in.PreviousTxScript.IsP2PKH() {

@@ -66,33 +66,9 @@ func isRetryableHTTPGetErr(err error) bool {
 		strings.Contains(msg, "unexpected eof")
 }
 
-// httpGetWithRetry retries GET on transient transport errors.
-// POST broadcasts MUST NOT use this.
-func httpGetWithRetry(url string) ([]byte, error) {
-	const maxAttempts = 4
-	var lastErr error
-	for attempt := 0; attempt < maxAttempts; attempt++ {
-		if attempt > 0 {
-			time.Sleep(time.Duration(300*attempt) * time.Millisecond)
-		}
-		resp, err := defaultHTTPClient.Get(url)
-		if err == nil {
-			defer resp.Body.Close()
-			body, readErr := io.ReadAll(resp.Body)
-			if readErr != nil {
-				return nil, readErr
-			}
-			return body, nil
-		}
-		lastErr = err
-		if !isRetryableHTTPGetErr(err) {
-			return nil, err
-		}
-	}
-	return nil, lastErr
-}
-
-// httpGetResponseWithRetry retries GET on transient transport errors, returning *http.Response.
+// httpGetResponseWithRetry retries GET on transient transport errors. Caller
+// owns the returned *http.Response and MUST close its Body. POST broadcasts
+// MUST NOT use this — only idempotent GETs are safe to retry.
 func httpGetResponseWithRetry(url string) (*http.Response, error) {
 	const maxAttempts = 4
 	var lastErr error
@@ -110,6 +86,17 @@ func httpGetResponseWithRetry(url string) (*http.Response, error) {
 		}
 	}
 	return nil, lastErr
+}
+
+// httpGetWithRetry is the read-and-discard variant of httpGetResponseWithRetry:
+// it returns the response body bytes and closes the response.
+func httpGetWithRetry(url string) ([]byte, error) {
+	resp, err := httpGetResponseWithRetry(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	return io.ReadAll(resp.Body)
 }
 
 // indexerP2PKHLookupAddress converts testnet addresses for the TBC indexer.
