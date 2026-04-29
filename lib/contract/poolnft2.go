@@ -2050,14 +2050,23 @@ func (p *PoolNFT2) SwapToToken(
 		amountTBCswapLP = new(big.Int).Sub(amountTBCBN, serviceFeeA)
 	}
 
-	// Update pool state
+	// Update pool state. Save snapshots so we can roll back if any
+	// downstream API/build step fails — leaving the receiver half-updated
+	// would compound errors on retry.
+	preFtAAmount := new(big.Int).Set(p.FtAAmount)
+	preTbcAmount := new(big.Int).Set(p.TbcAmount)
+	swapSuccess := false
+	defer func() {
+		if !swapSuccess {
+			p.FtAAmount = preFtAAmount
+			p.TbcAmount = preTbcAmount
+		}
+	}()
 	ftAold := new(big.Int).Set(p.FtAAmount)
-	tbcOld := new(big.Int).Set(p.TbcAmount)
 	poolMul := new(big.Int).Mul(p.FtAAmount, p.TbcAmount)
 	p.TbcAmount.Add(p.TbcAmount, amountTBCswap)
 	p.FtAAmount.Div(poolMul, p.TbcAmount)
 	ftADecrement := new(big.Int).Sub(ftAold, p.FtAAmount)
-	_ = tbcOld
 
 	poolCodeHash160, err := poolNFTSHA256thenHash160(p.PoolNftCode)
 	if err != nil {
@@ -2197,6 +2206,7 @@ func (p *PoolNFT2) SwapToToken(
 		return "", err
 	}
 
+	swapSuccess = true
 	return tx.String(), nil
 }
 
@@ -2237,7 +2247,18 @@ func (p *PoolNFT2) SwapToTBC(
 		return "", err
 	}
 
-	// Update pool state
+	// Update pool state. Save snapshots so we can roll back if any
+	// downstream API/build step fails — leaving the receiver half-updated
+	// would compound errors on retry.
+	preFtAAmount := new(big.Int).Set(p.FtAAmount)
+	preTbcAmount := new(big.Int).Set(p.TbcAmount)
+	swapSuccess := false
+	defer func() {
+		if !swapSuccess {
+			p.FtAAmount = preFtAAmount
+			p.TbcAmount = preTbcAmount
+		}
+	}()
 	poolMul := new(big.Int).Mul(p.FtAAmount, p.TbcAmount)
 	tbcOld := new(big.Int).Set(p.TbcAmount)
 	p.FtAAmount.Add(p.FtAAmount, amountFTBN)
@@ -2371,6 +2392,7 @@ func (p *PoolNFT2) SwapToTBC(
 		return "", err
 	}
 
+	swapSuccess = true
 	return tx.String(), nil
 }
 
