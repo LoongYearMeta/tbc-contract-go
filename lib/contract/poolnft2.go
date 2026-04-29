@@ -41,6 +41,12 @@ var poolNFT2FtlpCodeTemplate string
 //go:embed poolnft2_ftlp_locktime_code.tmpl
 var poolNFT2FtlpLockTimeCodeTemplate string
 
+//go:embed poolnft2_lock_code_pre.tmpl
+var poolNFT2LockCodePreTemplate string
+
+//go:embed poolnft2_lock_code_last.tmpl
+var poolNFT2LockCodeLastTemplate string
+
 const (
 	poolNFT2Version       = 2
 	poolNFT2DefaultFeeBPS = 35 // 万分之35
@@ -819,6 +825,144 @@ func (p *PoolNFT2) getPoolNftCode(txid string, vout uint32, lpPlan, ftVersion in
 }
 
 // --------------------------------------------------------------------------
+// getPoolNftCodeWithLock — mirrors TS poolNFT2.getPoolNftCodeWithLock
+// --------------------------------------------------------------------------
+
+// getPoolNftCodeWithLock builds the multisig-locked pool NFT locking script.
+// Mirrors poolNFT2.0.ts:4656.
+//
+// Compared to getPoolNftCode this variant adds:
+//   - lpCostAddress / lpCostTBC: the LP-cost recipient and amount that gets
+//     paid out on every LP add-liquidity (gives liquidity-cost economics).
+//   - pubKeyLock: an array of 1..10 hex-encoded public keys whose signatures
+//     are required (any-of semantics) to update the pool. All must have the
+//     same hex length (33-byte compressed = 66 hex, or 65-byte uncompressed
+//     = 130 hex).
+//
+// The final script is built as concat(pre, firstCode, lastCode, last) with
+// the same `Script.fromString(pre + " " + first + " " + last + " " + tail)`
+// pattern TS uses.
+func (p *PoolNFT2) getPoolNftCodeWithLock(
+	txid string,
+	vout uint32,
+	lpPlan int,
+	lpCostAddress string,
+	lpCostTBC float64,
+	pubKeyLock []string,
+	ftVersion int,
+	tag string,
+	isCoin bool,
+) (*bscript.Script, error) {
+	if len(pubKeyLock) < 1 || len(pubKeyLock) > 10 {
+		return nil, fmt.Errorf("getPoolNftCodeWithLock: pubKeyLock must have 1..10 elements, got %d", len(pubKeyLock))
+	}
+	pubKeyLockHexLen := len(pubKeyLock[0])
+	for i, k := range pubKeyLock {
+		if k == "" {
+			return nil, fmt.Errorf("getPoolNftCodeWithLock: pubKeyLock[%d] is empty", i)
+		}
+		if len(k) != pubKeyLockHexLen {
+			return nil, fmt.Errorf("getPoolNftCodeWithLock: pubKeyLock entries must share the same length; pubKeyLock[%d] differs", i)
+		}
+	}
+	if lpCostAddress == "" {
+		return nil, fmt.Errorf("getPoolNftCodeWithLock: lpCostAddress must be non-empty")
+	}
+	if lpCostTBC <= 0 {
+		return nil, fmt.Errorf("getPoolNftCodeWithLock: lpCostTBC must be > 0")
+	}
+
+	utxoHex, err := utxoHexFromTxIDVout(txid, vout)
+	if err != nil {
+		return nil, err
+	}
+
+	lpCostAddressHex, err := pubKeyHashFromAddress(lpCostAddress)
+	if err != nil {
+		return nil, fmt.Errorf("getPoolNftCodeWithLock lpCostAddress: %w", err)
+	}
+
+	// lpCostAmount is parseDecimalToBigInt(lpCostTBC, 6) — convert TBC to sat.
+	lpCostFloat := strconv.FormatFloat(lpCostTBC, 'f', 6, 64)
+	lpCostBN, err := util.ParseDecimalToBigInt(lpCostFloat, 6)
+	if err != nil {
+		return nil, fmt.Errorf("getPoolNftCodeWithLock parse lpCostTBC: %w", err)
+	}
+	lpCostAmountHex, err := bigIntToUint64LEHexPool(lpCostBN)
+	if err != nil {
+		return nil, fmt.Errorf("getPoolNftCodeWithLock encode lpCostAmount: %w", err)
+	}
+
+	sfAddr, err := getServiceFeeAddress(lpPlan)
+	if err != nil {
+		return nil, err
+	}
+	pumpPKH, err := pubKeyHashFromAddress(sfAddr)
+	if err != nil {
+		return nil, err
+	}
+	codeSize := ftCodeSizeHex(isCoin, ftVersion)
+	if tag == "" {
+		tag = "NULL"
+	}
+	tagLenHex := fmt.Sprintf("%02x", len(tag))
+	tagHex := hex.EncodeToString([]byte(tag))
+
+	pubKeyByteLen := pubKeyLockHexLen / 2
+	scriptLength, err := util.GetOpCode(pubKeyByteLen)
+	if err != nil {
+		return nil, fmt.Errorf("getPoolNftCodeWithLock pubKey length opcode: %w", err)
+	}
+
+	preASM := strings.NewReplacer(
+		"${utxoHex}", utxoHex,
+		"${ftCodeSize}", codeSize,
+		"${pumpPublicKeyHash}", pumpPKH,
+		"${lpCostAddressHex}", lpCostAddressHex,
+		"${lpCostAmountHex}", lpCostAmountHex,
+	).Replace(poolNFT2LockCodePreTemplate)
+
+	lastASM := strings.NewReplacer(
+		"${ftCodeSize}", codeSize,
+		"${tagLengthHex}", tagLenHex,
+		"${tagHex}", tagHex,
+	).Replace(poolNFT2LockCodeLastTemplate)
+
+	firstASM := fmt.Sprintf("OP_DUP %s OP_SPLIT OP_DROP", scriptLength)
+
+	// lastCode encodes the multi-pubkey "any-of" check:
+	//   single key:  <pk> OP_EQUALVERIFY OP_CHECKSIGVERIFY
+	//   N keys:      OP_DUP <pk0> OP_EQUAL OP_IF OP_DROP OP_ELSE
+	//                OP_DUP <pk1> OP_EQUAL OP_IF OP_DROP OP_ELSE ...
+	//                <pkN-1> OP_EQUALVERIFY OP_ENDIF ... OP_ENDIF OP_CHECKSIGVERIFY
+	var multiKeyASM string
+	if len(pubKeyLock) == 1 {
+		multiKeyASM = pubKeyLock[0] + " OP_EQUALVERIFY OP_CHECKSIGVERIFY"
+	} else {
+		var b strings.Builder
+		for i := 0; i < len(pubKeyLock)-1; i++ {
+			b.WriteString("OP_DUP ")
+			b.WriteString(pubKeyLock[i])
+			b.WriteString(" OP_EQUAL OP_IF OP_DROP OP_ELSE ")
+		}
+		b.WriteString(pubKeyLock[len(pubKeyLock)-1])
+		b.WriteString(" OP_EQUALVERIFY")
+		for i := 0; i < len(pubKeyLock)-1; i++ {
+			b.WriteString(" OP_ENDIF")
+		}
+		b.WriteString(" OP_CHECKSIGVERIFY")
+		multiKeyASM = b.String()
+	}
+
+	fullASM := preASM + " " + firstASM + " " + multiKeyASM + " " + lastASM
+	out, err := bscript.NewFromASM(fullASM)
+	if err != nil {
+		return nil, fmt.Errorf("getPoolNftCodeWithLock NewFromASM: %w", err)
+	}
+	return out, nil
+}
+
+// --------------------------------------------------------------------------
 // getFtlpCode — mirrors TS poolNFT2.getFtlpCode
 // --------------------------------------------------------------------------
 
@@ -1374,6 +1518,171 @@ func (p *PoolNFT2) CreatePoolNFT(
 	_ = prevTxIDBytes // already wired into txMint via FromUTXOs upstream
 	_ = srcOut
 
+	txMintRaw := txMint.String()
+	return []string{txSourceRaw, txMintRaw}, nil
+}
+
+// CreatePoolNFTWithLock creates a multisig-locked pool NFT.
+// Mirrors TS poolNFT2.0.ts:281 createPoolNftWithLock.
+//
+// Differences from CreatePoolNFT:
+//   - Locking script is built via getPoolNftCodeWithLock with the supplied
+//     lpCostAddress / lpCostTBC / pubKeyLock parameters (1..10 keys, any-of
+//     signature semantics, all keys must share the same hex length).
+//   - Pool tape uses withLock=true (vs the standard variant's withLock=false).
+//
+// Returns [txSourceRaw, txMintRaw] in broadcast order.
+func (p *PoolNFT2) CreatePoolNFTWithLock(
+	privKey *bec.PrivateKey,
+	utxo *bt.UTXO,
+	tag string,
+	lpCostAddress string,
+	lpCostTBC float64,
+	pubKeyLock []string,
+	serviceFeeRate int,
+	lpPlan int,
+	withLockTime bool,
+) ([]string, error) {
+	if lpPlan < 1 || lpPlan > 5 {
+		lpPlan = 1
+	}
+
+	// --- txSource: P2PKH with "for poolnft mint" flag ---
+	addr, err := bscript.NewAddressFromPublicKeyHash(crypto.Hash160(privKey.PubKey().SerialiseCompressed()), true)
+	if err != nil {
+		return nil, err
+	}
+	pkhHex := addr.PublicKeyHash
+	flagHex := hex.EncodeToString([]byte("for poolnft mint"))
+	flagASM := fmt.Sprintf("OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG OP_RETURN %s", pkhHex, flagHex)
+	flagScript, err := bscript.NewFromASM(flagASM)
+	if err != nil {
+		return nil, err
+	}
+
+	txSource := newFTTx()
+	if err := txSource.FromUTXOs(utxo); err != nil {
+		return nil, fmt.Errorf("CreatePoolNFTWithLock txSource.FromUTXOs: %w", err)
+	}
+	txSource.AddOutput(&bt.Output{Satoshis: 9800, LockingScript: flagScript})
+	changeScript, err := bscript.NewP2PKHFromAddress(addr.AddressString)
+	if err != nil {
+		return nil, err
+	}
+	txSource.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
+
+	estSize := txSource.JSEstimateSize()
+	fee := uint64(80)
+	if estSize >= 1000 {
+		fee = (uint64(estSize)*80 + 999) / 1000
+	}
+	inputTotal := utxo.Satoshis
+	outputTotal := uint64(9800) + fee
+	if inputTotal <= outputTotal {
+		return nil, fmt.Errorf("CreatePoolNFTWithLock: insufficient UTXO for source tx")
+	}
+	change := inputTotal - outputTotal
+	txSource.Outputs[1].Satoshis = change
+
+	if err := signP2PKH(txSource, privKey); err != nil {
+		return nil, fmt.Errorf("CreatePoolNFTWithLock sign source: %w", err)
+	}
+	txSourceRaw := txSource.String()
+	txSourceTxID := txSource.TxID()
+
+	// --- Fetch FT info for the token in the pool ---
+	ftaInfo, err := api.FetchFtInfo(p.FtAContractTxID, p.Network)
+	if err != nil {
+		return nil, fmt.Errorf("CreatePoolNFTWithLock FetchFtInfo: %w", err)
+	}
+	codeLen := len(ftaInfo.CodeScript) / 2
+	ftVersion, isCoin := ftVersionFromCodeLen(codeLen)
+	tapeLen := len(ftaInfo.TapeScript) / 2
+
+	// Build poolNft code with multisig lock
+	poolNftCodeScript, err := p.getPoolNftCodeWithLock(
+		txSourceTxID, 0, lpPlan, lpCostAddress, lpCostTBC, pubKeyLock, ftVersion, tag, isCoin,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("CreatePoolNFTWithLock getPoolNftCodeWithLock: %w", err)
+	}
+	p.PoolNftCode = hex.EncodeToString(poolNftCodeScript.Bytes())
+
+	// Build ftlp code
+	poolNftSHA256, err := poolNFTCodeSHA256(p.PoolNftCode)
+	if err != nil {
+		return nil, err
+	}
+	var ftlpCodeScript *bscript.Script
+	if withLockTime {
+		ftlpCodeScript, err = p.getFtlpCodeWithLockTime(poolNftSHA256, addr.AddressString, tapeLen, isCoin, ftVersion)
+	} else {
+		ftlpCodeScript, err = p.getFtlpCode(poolNftSHA256, addr.AddressString, tapeLen, isCoin, ftVersion)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("CreatePoolNFTWithLock getFtlpCode: %w", err)
+	}
+
+	ftlpCodeBytes := ftlpCodeScript.Bytes()
+	ftaCodeBytes, err := hex.DecodeString(ftaInfo.CodeScript)
+	if err != nil {
+		return nil, err
+	}
+	offset := ftV2PartialOffset
+	if isCoin {
+		offset = coinPartialOffset
+	} else if ftVersion == 1 {
+		offset = ftV1PartialOffset
+	}
+	p.FtLpPartialHash = calculatePartialHash(ftlpCodeBytes[:offset])
+	p.FtAPartialHash = calculatePartialHash(ftaCodeBytes[:offset])
+
+	if serviceFeeRate > 0 {
+		p.ServiceFeeRate = serviceFeeRate
+	}
+
+	// Build pool NFT tape with withLock=true (the structural difference vs
+	// CreatePoolNFT which uses withLock=false). Mirrors TS line 369.
+	poolnftTapeScript, err := p.GetPoolNftTape(lpPlan, true, withLockTime)
+	if err != nil {
+		return nil, err
+	}
+
+	// --- txMint: spends txSource.outputs[0] into poolnft code+tape ---
+	txMint := newFTTx()
+	prevTxIDBytes, err := hex.DecodeString(txSourceTxID)
+	if err != nil {
+		return nil, fmt.Errorf("CreatePoolNFTWithLock decode source txid: %w", err)
+	}
+	srcOut := txSource.Outputs[0]
+	if err := txMint.FromUTXOs(&bt.UTXO{
+		TxID:          prevTxIDBytes,
+		Vout:          0,
+		LockingScript: srcOut.LockingScript,
+		Satoshis:      srcOut.Satoshis,
+	}); err != nil {
+		return nil, fmt.Errorf("CreatePoolNFTWithLock txMint.FromUTXOs: %w", err)
+	}
+	txMint.AddOutput(&bt.Output{Satoshis: 1000, LockingScript: poolNftCodeScript})
+	txMint.AddOutput(&bt.Output{Satoshis: 0, LockingScript: poolnftTapeScript})
+	txMint.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
+
+	est2 := txMint.JSEstimateSize()
+	fee2 := uint64(80)
+	if est2 >= 1000 {
+		fee2 = (uint64(est2)*80 + 999) / 1000
+	}
+	in2 := srcOut.Satoshis
+	out2 := uint64(1000) + fee2
+	if in2 <= out2 {
+		txMint.Outputs[2].Satoshis = 0
+	} else {
+		txMint.Outputs[2].Satoshis = in2 - out2
+	}
+
+	if err := signP2PKH(txMint, privKey); err != nil {
+		return nil, fmt.Errorf("CreatePoolNFTWithLock sign mint: %w", err)
+	}
 	txMintRaw := txMint.String()
 	return []string{txSourceRaw, txMintRaw}, nil
 }
