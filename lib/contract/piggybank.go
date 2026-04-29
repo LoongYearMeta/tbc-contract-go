@@ -226,7 +226,8 @@ func UnfreezeTBCWithSign(privKey *bec.PrivateKey, utxos []*bt.UTXO, currentBlock
 
 // FetchTBCLockTimeFromScript extracts the lockTime from a PiggyBank locking script.
 // Mirrors piggyBank.ts fetchTBCLockTime.
-// The script is expected to be 106 bytes (53 opcodes).
+// The script is expected to be 53 bytes (TS validates the equivalent
+// 106-character hex string; the byte form is half that).
 // Returns the lockTime as a uint32.
 func FetchTBCLockTimeFromScript(lockingScript *bscript.Script) (uint32, error) {
 	b := lockingScript.Bytes()

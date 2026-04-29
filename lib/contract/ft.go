@@ -565,21 +565,28 @@ func (f *FT) MergeFT(
 		})
 	}
 
-	if len(localTXs) == 0 {
-		localTXs = preTXsCopy
+	// `localTXs` is the merge-history pool that BuildFtPrePreTxData walks
+	// when looking for grand-parents of an FT input. The first iteration
+	// receives an empty slice from the caller; in that case seed it with
+	// preTXsCopy (the pre-txs we just built txsraw from) so prepre lookups
+	// in this iteration succeed. The recursive call below is then handed
+	// `newPreTXs` — the pool tracking only what's relevant to the next
+	// iteration's inputs — to keep the lookup window bounded.
+	prepreLookup := localTXs
+	if len(prepreLookup) == 0 {
+		prepreLookup = preTXsCopy
 	}
 
 	newPrepreTxDatas := make([]string, 0)
 	for i := nonEmpty; i < len(newPreTXs); i++ {
-		ppd, err := util.BuildFtPrePreTxData(newPreTXs[i], 0, localTXs)
+		ppd, err := util.BuildFtPrePreTxData(newPreTXs[i], 0, prepreLookup)
 		if err != nil {
 			return nil, fmt.Errorf("BuildFtPrePreTxData merge: %w", err)
 		}
 		newPrepreTxDatas = append(newPrepreTxDatas, ppd)
 	}
-	localTXs = newPreTXs
 
-	recursiveResults, err := f.MergeFT(privKey, newFtutxos, newFeeUTXO, newPreTXs, newPrepreTxDatas, localTXs)
+	recursiveResults, err := f.MergeFT(privKey, newFtutxos, newFeeUTXO, newPreTXs, newPrepreTxDatas, newPreTXs)
 	if err != nil {
 		return nil, err
 	}

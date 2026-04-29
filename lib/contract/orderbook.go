@@ -8,7 +8,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"math"
 	"math/big"
 	"regexp"
 
@@ -1063,11 +1062,15 @@ func (o *OrderBook) MatchOrder(
 // Internal helpers
 // ---------------------------------------------------------------------------
 
+// obTargetFee mirrors TS `txSize < 1000 ? 80 : Math.ceil(txSize/1000*80)`.
+// Uses integer ceiling (sz*80+999)/1000 instead of math.Ceil(float64) so that
+// satoshi-precision arithmetic never goes through a float64 representation
+// (which only has 53-bit mantissa precision).
 func obTargetFee(estimatedBytes int) int {
 	if estimatedBytes < 1000 {
 		return 80
 	}
-	return int(math.Ceil(float64(estimatedBytes) / 1000.0 * 80.0))
+	return (estimatedBytes*80 + 999) / 1000
 }
 
 func obIsValidSHA256Hex(s string) bool {
