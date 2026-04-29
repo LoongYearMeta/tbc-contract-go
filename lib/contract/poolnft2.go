@@ -356,7 +356,19 @@ func (p *PoolNFT2) updateWhenTbcAmountChange(increment *big.Int) error {
 
 // GetPoolNftTape 对齐 TS poolNFT2.getPoolNftTape。
 func (p *PoolNFT2) GetPoolNftTape(lpPlan int, withLock, withLockTime bool) (*bscript.Script, error) {
-	amountData := bigIntToUint64LEHexPool(p.FtLpAmount) + bigIntToUint64LEHexPool(p.FtAAmount) + bigIntToUint64LEHexPool(p.TbcAmount)
+	lpHex, err := bigIntToUint64LEHexPool(p.FtLpAmount)
+	if err != nil {
+		return nil, fmt.Errorf("GetPoolNftTape FtLpAmount: %w", err)
+	}
+	aHex, err := bigIntToUint64LEHexPool(p.FtAAmount)
+	if err != nil {
+		return nil, fmt.Errorf("GetPoolNftTape FtAAmount: %w", err)
+	}
+	tbcHex, err := bigIntToUint64LEHexPool(p.TbcAmount)
+	if err != nil {
+		return nil, fmt.Errorf("GetPoolNftTape TbcAmount: %w", err)
+	}
+	amountData := lpHex + aHex + tbcHex
 	feeRateHex := fmt.Sprintf("%02x", p.ServiceFeeRate)
 	lpPlanHex := fmt.Sprintf("%02x", lpPlan)
 	withLockHex := "00"
@@ -522,7 +534,21 @@ func poolNFTSign(tx *bt.Tx, inputIdx uint32, privKey *bec.PrivateKey) (sigHex, p
 // Internal helpers
 // --------------------------------------------------------------------------
 
-func bigIntToUint64LEHexPool(n *big.Int) string {
+// bigIntToUint64LEHexPool serializes a non-negative big.Int as 8 LE bytes
+// and returns its hex string. Returns an error if n is negative or exceeds
+// uint64 — silently truncating would corrupt the pool tape.
+var maxUint64BI = new(big.Int).SetUint64(^uint64(0))
+
+func bigIntToUint64LEHexPool(n *big.Int) (string, error) {
+	if n == nil {
+		return "", fmt.Errorf("bigIntToUint64LEHexPool: nil amount")
+	}
+	if n.Sign() < 0 {
+		return "", fmt.Errorf("bigIntToUint64LEHexPool: negative amount %s", n.String())
+	}
+	if n.Cmp(maxUint64BI) > 0 {
+		return "", fmt.Errorf("bigIntToUint64LEHexPool: amount %s exceeds uint64", n.String())
+	}
 	buf := make([]byte, 8)
 	val := n.Uint64()
 	buf[0] = byte(val)
@@ -533,7 +559,7 @@ func bigIntToUint64LEHexPool(n *big.Int) string {
 	buf[5] = byte(val >> 40)
 	buf[6] = byte(val >> 48)
 	buf[7] = byte(val >> 56)
-	return hex.EncodeToString(buf)
+	return hex.EncodeToString(buf), nil
 }
 
 func parseDecimalToBigIntPool(amount string, decimal int) *big.Int {
@@ -879,9 +905,19 @@ func (p *PoolNFT2) updatePoolNftTape() (*bscript.Script, error) {
 		return nil, fmt.Errorf("updatePoolNftTape: pool tx missing tape output")
 	}
 	// Encode current amounts as 24-byte LE
-	amountData := bigIntToUint64LEHexPool(p.FtLpAmount) +
-		bigIntToUint64LEHexPool(p.FtAAmount) +
-		bigIntToUint64LEHexPool(p.TbcAmount)
+	lpHex, err := bigIntToUint64LEHexPool(p.FtLpAmount)
+	if err != nil {
+		return nil, fmt.Errorf("updatePoolNftTape FtLpAmount: %w", err)
+	}
+	aHex, err := bigIntToUint64LEHexPool(p.FtAAmount)
+	if err != nil {
+		return nil, fmt.Errorf("updatePoolNftTape FtAAmount: %w", err)
+	}
+	tbcHex, err := bigIntToUint64LEHexPool(p.TbcAmount)
+	if err != nil {
+		return nil, fmt.Errorf("updatePoolNftTape TbcAmount: %w", err)
+	}
+	amountData := lpHex + aHex + tbcHex
 	amountBytes, err := hex.DecodeString(amountData)
 	if err != nil {
 		return nil, err
