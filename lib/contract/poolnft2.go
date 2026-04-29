@@ -1169,10 +1169,11 @@ func (p *PoolNFT2) CreatePoolNFT(
 
 	// Build mint tx
 	txMint := newFTTx()
-	prevTxIDBytes, _ := hex.DecodeString(txSourceTxID)
-	// reverse for internal format
-	for i, j := 0, len(prevTxIDBytes)-1; i < j; i, j = i+1, j-1 {
-		prevTxIDBytes[i], prevTxIDBytes[j] = prevTxIDBytes[j], prevTxIDBytes[i]
+	// bt.UTXO.TxID is forward (display-order) bytes per the convention used
+	// throughout this repo (see ft.go and util/util.go); no reversal here.
+	prevTxIDBytes, err := hex.DecodeString(txSourceTxID)
+	if err != nil {
+		return nil, fmt.Errorf("decode source txid: %w", err)
 	}
 	srcOut := txSource.Outputs[0]
 	if err := txMint.FromUTXOs(&bt.UTXO{
@@ -2677,11 +2678,11 @@ func (p *PoolNFT2) MergeFTinPool(
 		if i == 0 {
 			feeUTXO = utxo
 		} else if lastTX != nil {
-			// use last output of previous tx
+			// use last output of previous tx; TxID is forward bytes (no reverse)
 			lastOut := lastTX.Outputs[len(lastTX.Outputs)-1]
-			lastTxIDBytes, _ := hex.DecodeString(lastTX.TxID())
-			for l, r := 0, len(lastTxIDBytes)-1; l < r; l, r = l+1, r-1 {
-				lastTxIDBytes[l], lastTxIDBytes[r] = lastTxIDBytes[r], lastTxIDBytes[l]
+			lastTxIDBytes, err := hex.DecodeString(lastTX.TxID())
+			if err != nil {
+				return nil, fmt.Errorf("decode lastTX txid: %w", err)
 			}
 			feeUTXO = &bt.UTXO{
 				TxID:          lastTxIDBytes,
@@ -2814,13 +2815,8 @@ func (p *PoolNFT2) mergeFTinPoolSingle(
 	inputsTXs := make([]*bt.Tx, len(ftutxos)+1)
 	copy(inputsTXs, ftPreTXs)
 	if feeUTXO != nil {
-		feeTxID := hex.EncodeToString(feeUTXO.TxID)
-		// reverse
-		b, _ := hex.DecodeString(feeTxID)
-		for l, r := 0, len(b)-1; l < r; l, r = l+1, r-1 {
-			b[l], b[r] = b[r], b[l]
-		}
-		inputsTXs[len(ftutxos)], err = api.FetchTXRaw(hex.EncodeToString(b), p.Network)
+		// feeUTXO.TxID is already forward bytes — encode straight to hex.
+		inputsTXs[len(ftutxos)], err = api.FetchTXRaw(hex.EncodeToString(feeUTXO.TxID), p.Network)
 		if err != nil {
 			return "", nil, err
 		}
