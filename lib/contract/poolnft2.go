@@ -1956,25 +1956,77 @@ func (p *PoolNFT2) IncreaseLP(
 // --------------------------------------------------------------------------
 
 // ConsumeLP burns FT-LP and withdraws proportional FT-A and TBC from the pool.
+//
+// Returns a slice of raw tx hex to broadcast IN ORDER:
+//   - For non-with-lock-time pools: a single-element slice containing the
+//     consume tx.
+//   - For with-lock-time pools where the caller's LP UTXOs need an unlock
+//     precursor: a two-element slice [unlockRaw, consumeRaw]. Broadcast
+//     unlockRaw first, wait for confirmation (TS sleeps 3s), then broadcast
+//     consumeRaw. The consume tx's fee input is taken from
+//     unlockTX.outputs[2] automatically (no extra fee UTXO needed when
+//     unlocking).
+//   - For with-lock-time pools where unlockFTLP determines no unlock is
+//     needed (already-unlocked single LP UTXO): a single-element slice with
+//     the consume tx using the caller's `utxo`.
+//
+// `lockTime` is the optional lock-time argument forwarded to UnlockFTLP
+// when p.WithLockTime; nil or *uint32(0) lets UnlockFTLP derive it from
+// chain. Ignored for non-with-lock-time pools.
+//
+// Mirrors poolNFT2.0.ts consumeLP(privateKey, addressTo, utxo, amount_lp, lock_time?).
 func (p *PoolNFT2) ConsumeLP(
 	privKey *bec.PrivateKey,
 	addressTo string,
 	utxo *bt.UTXO,
 	amountLP string,
-) (string, error) {
+	lockTime *uint32,
+) ([]string, error) {
 	ftaInfo, err := api.FetchFtInfo(p.FtAContractTxID, p.Network)
 	if err != nil {
-		return "", fmt.Errorf("ConsumeLP FetchFtInfo: %w", err)
+		return nil, fmt.Errorf("ConsumeLP FetchFtInfo: %w", err)
 	}
 	codeLen := len(ftaInfo.CodeScript) / 2
 	ftVersion, isCoin := ftVersionFromCodeLen(codeLen)
 
 	amountLPBN, err := util.ParseDecimalToBigInt(amountLP, 6)
 	if err != nil {
-		return "", fmt.Errorf("ConsumeLP parse amount_lp: %w", err)
+		return nil, fmt.Errorf("ConsumeLP parse amount_lp: %w", err)
 	}
 	if p.FtLpAmount.Cmp(amountLPBN) < 0 {
-		return "", fmt.Errorf("ConsumeLP: Invalid FT-LP amount input")
+		return nil, fmt.Errorf("ConsumeLP: Invalid FT-LP amount input")
+	}
+
+	// If with-lock-time, optionally produce a precursor "unlock" tx that
+	// re-encodes the locked LP UTXOs with lock_time=0. The consume tx then
+	// spends from unlockTX.outputs[2] for fee.
+	var unlockRaw string
+	var consumeFeeUTXO = utxo
+	if p.WithLockTime {
+		raw, uErr := p.UnlockFTLP(privKey, utxo, lockTime)
+		if uErr != nil {
+			return nil, fmt.Errorf("ConsumeLP UnlockFTLP: %w", uErr)
+		}
+		if raw != "" {
+			unlockRaw = raw
+			unlockTX, parseErr := bt.NewTxFromString(raw)
+			if parseErr != nil {
+				return nil, fmt.Errorf("ConsumeLP parse unlockTX: %w", parseErr)
+			}
+			if len(unlockTX.Outputs) <= 2 {
+				return nil, fmt.Errorf("ConsumeLP: unlockTX has %d outputs, expected >=3 (P2PKH change at vout=2)", len(unlockTX.Outputs))
+			}
+			unlockTxIDBytes, err2 := hex.DecodeString(unlockTX.TxID())
+			if err2 != nil {
+				return nil, fmt.Errorf("ConsumeLP decode unlockTX txid: %w", err2)
+			}
+			consumeFeeUTXO = &bt.UTXO{
+				TxID:          unlockTxIDBytes,
+				Vout:          2,
+				LockingScript: unlockTX.Outputs[2].LockingScript,
+				Satoshis:      unlockTX.Outputs[2].Satoshis,
+			}
+		}
 	}
 
 	preFtA, preFtLp, preTbc, preTbcFull := snapshotPoolAmounts(p)
@@ -1986,44 +2038,44 @@ func (p *PoolNFT2) ConsumeLP(
 	}()
 	changeData, err := p.UpdatePoolNFT(amountLP, ftaInfo.Decimal, 1)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	poolCodeHash160, err := poolNFTSHA256thenHash160(p.PoolNftCode)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	addr, err := bscript.NewAddressFromPublicKeyHash(crypto.Hash160(privKey.PubKey().SerialiseCompressed()), true)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Fetch FT-LP UTXO
 	fttxoLP, err := p.fetchFtlpUTXO(addr.AddressString, changeData.FtLpDifference)
 	if err != nil {
-		return "", fmt.Errorf("ConsumeLP fetchFtlpUTXO: %w", err)
+		return nil, fmt.Errorf("ConsumeLP fetchFtlpUTXO: %w", err)
 	}
 	lpPreTX, err := api.FetchTXRaw(fttxoLP.TxID, p.Network)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	lpPrePreTxData, err := api.FetchFtPrePreTxData(lpPreTX, int(fttxoLP.Vout), p.Network)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Fetch FT-A UTXOs from pool
 	ftutxoCodeScript, err := buildFTTransferCodeHex(ftaInfo.CodeScript, poolCodeHash160)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	fttxosC, err := api.FetchFtUTXOsForPool(p.FtAContractTxID, poolCodeHash160, ftutxoCodeScript, p.Network, changeData.FtADifference, 3)
 	if err != nil {
 		if strings.Contains(err.Error(), "Insufficient FTbalance") {
-			return "", fmt.Errorf("Insufficient PoolFT, please merge FT UTXOs")
+			return nil, fmt.Errorf("Insufficient PoolFT, please merge FT UTXOs")
 		}
-		return "", err
+		return nil, err
 	}
 
 	// Pre-tx data for FT-A
@@ -2034,11 +2086,11 @@ func (p *PoolNFT2) ConsumeLP(
 	for i, ftu := range fttxosC {
 		ftPreTXs[i], err = api.FetchTXRaw(hex.EncodeToString(ftu.TxID), p.Network)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		ftPrePreTxDatas[i], err = api.FetchFtPrePreTxData(ftPreTXs[i], int(ftu.Vout), p.Network)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		tapeAmountSetIn[i] = new(big.Int).Set(ftu.FtBalance)
 		tapeAmountSum.Add(tapeAmountSum, ftu.FtBalance)
@@ -2050,17 +2102,17 @@ func (p *PoolNFT2) ConsumeLP(
 
 	poolnft, err := api.FetchPoolNFTUTXO(p.ContractTxID, p.Network)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	contractTX, err := api.FetchTXRaw(hex.EncodeToString(poolnft.TxID), p.Network)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Build FT-LP code script
 	poolNftSHA256, err := poolNFTCodeSHA256(p.PoolNftCode)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	tapeLen := len(ftaInfo.TapeScript) / 2
 	var ftlpCodeScript *bscript.Script
@@ -2070,55 +2122,57 @@ func (p *PoolNFT2) ConsumeLP(
 		ftlpCodeScript, err = p.getFtlpCode(poolNftSHA256, addr.AddressString, tapeLen, isCoin, ftVersion)
 	}
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	tx := newFTTx()
 	if err := tx.FromUTXOs(poolnft); err != nil {
-		return "", fmt.Errorf("ConsumeLP tx.FromUTXOs poolnft: %w", err)
+		return nil, fmt.Errorf("ConsumeLP tx.FromUTXOs poolnft: %w", err)
 	}
 	lpUTXO, err := lpUTXOTobtUTXO(fttxoLP)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if err := tx.FromUTXOs(lpUTXO); err != nil {
-		return "", fmt.Errorf("ConsumeLP tx.FromUTXOs lpUTXO: %w", err)
+		return nil, fmt.Errorf("ConsumeLP tx.FromUTXOs lpUTXO: %w", err)
 	}
 	for _, ftu := range fttxosC {
 		if err := tx.FromUTXOs(util.FtUTXOToUTXO(ftu)); err != nil {
-			return "", fmt.Errorf("ConsumeLP tx.FromUTXOs ftu: %w", err)
+			return nil, fmt.Errorf("ConsumeLP tx.FromUTXOs ftu: %w", err)
 		}
 	}
-	if err := tx.FromUTXOs(utxo); err != nil {
-		return "", fmt.Errorf("ConsumeLP tx.FromUTXOs utxo: %w", err)
+	// Use the unlocked-tx output[2] as fee input when WithLockTime + unlocking
+	// happened, else the caller-supplied utxo.
+	if err := tx.FromUTXOs(consumeFeeUTXO); err != nil {
+		return nil, fmt.Errorf("ConsumeLP tx.FromUTXOs feeUTXO: %w", err)
 	}
 
 	// pool NFT output
 	poolNftCodeScript, err := bscript.NewFromHexString(p.PoolNftCode)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	tbcFullDiffSats, err := bigIntToSats(changeData.TbcAmountFullDiff, "ConsumeLP TbcAmountFullDiff")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	newSats := poolnft.Satoshis - tbcFullDiffSats
 	tx.AddOutput(&bt.Output{Satoshis: newSats, LockingScript: poolNftCodeScript})
 
 	poolnftTapeScript, err := p.updatePoolNftTape()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: poolnftTapeScript})
 
 	// FT-A to user
 	ftAbyACode, err := BuildFTtransferCode(ftaInfo.CodeScript, addressTo)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	ftAbyATape, err := BuildFTtransferTape(ftaInfo.TapeScript, ftAbyAHex)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	tx.AddOutput(&bt.Output{Satoshis: 500, LockingScript: ftAbyACode})
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: ftAbyATape})
@@ -2130,7 +2184,7 @@ func (p *PoolNFT2) ConsumeLP(
 	// FT-LP burn output
 	eaterCode, err := BuildFTtransferCode(hex.EncodeToString(ftlpCodeScript.Bytes()), eaterAddress)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// FT-LP tape (zeroed amounts)
@@ -2157,7 +2211,7 @@ func (p *PoolNFT2) ConsumeLP(
 
 	eaterBurnTape, err := BuildFTtransferTape(hex.EncodeToString(ftlpBurnTape.Bytes()), ftlpBurnHex)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	tx.AddOutput(&bt.Output{Satoshis: fttxoLP.Satoshis, LockingScript: eaterCode})
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: eaterBurnTape})
@@ -2166,11 +2220,11 @@ func (p *PoolNFT2) ConsumeLP(
 	if fttxoLP.FtBalance.Cmp(changeData.FtLpDifference) > 0 {
 		ftlpChangeCode, err2 := BuildFTtransferCode(hex.EncodeToString(ftlpCodeScript.Bytes()), addressTo)
 		if err2 != nil {
-			return "", err2
+			return nil, err2
 		}
 		ftlpChangeTape, err2 := BuildFTtransferTape(hex.EncodeToString(ftlpBurnTape.Bytes()), ftlpChangeHex)
 		if err2 != nil {
-			return "", err2
+			return nil, err2
 		}
 		tx.AddOutput(&bt.Output{Satoshis: fttxoLP.Satoshis, LockingScript: ftlpChangeCode})
 		tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: ftlpChangeTape})
@@ -2180,11 +2234,11 @@ func (p *PoolNFT2) ConsumeLP(
 	if changeData.FtADifference.Cmp(tapeAmountSum) < 0 {
 		ftAbyCCode, err2 := BuildFTtransferCode(ftaInfo.CodeScript, poolCodeHash160)
 		if err2 != nil {
-			return "", err2
+			return nil, err2
 		}
 		ftAbyCTape, err2 := BuildFTtransferTape(ftaInfo.TapeScript, ftAbyCHex)
 		if err2 != nil {
-			return "", err2
+			return nil, err2
 		}
 		tx.AddOutput(&bt.Output{Satoshis: 500, LockingScript: ftAbyCCode})
 		tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: ftAbyCTape})
@@ -2197,7 +2251,7 @@ func (p *PoolNFT2) ConsumeLP(
 	withLockInt := isLockByCodeLen(p.PoolNftCode)
 	poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), withLockInt, 2, 0)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	tx.Inputs[0].UnlockingScript = poolUnlock
 
@@ -2219,7 +2273,7 @@ func (p *PoolNFT2) ConsumeLP(
 	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
 	lpUnlock, err := ft.GetFTunlock(privKey, tx, lpPreTX, lpPrePreTxData, 1, int(fttxoLP.Vout), false)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	tx.Inputs[1].UnlockingScript = lpUnlock
 
@@ -2230,7 +2284,7 @@ func (p *PoolNFT2) ConsumeLP(
 		}
 		swapUnlock, err2 := ft.GetFTunlockSwap(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], contractTX, i+2, int(ftu.Vout), ftVersion, isCoin)
 		if err2 != nil {
-			return "", err2
+			return nil, err2
 		}
 		tx.Inputs[i+2].UnlockingScript = swapUnlock
 	}
@@ -2238,11 +2292,15 @@ func (p *PoolNFT2) ConsumeLP(
 	// Fee input is always P2PKH; sign unconditionally.
 	feeIdx := len(fttxosC) + 2
 	if err := signP2PKHAtIdx(tx, privKey, uint32(feeIdx)); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	consumeSuccess = true
-	return tx.String(), nil
+	consumeRaw := tx.String()
+	if unlockRaw != "" {
+		return []string{unlockRaw, consumeRaw}, nil
+	}
+	return []string{consumeRaw}, nil
 }
 
 // --------------------------------------------------------------------------
@@ -2682,6 +2740,217 @@ func (p *PoolNFT2) SwapToTBC(
 // --------------------------------------------------------------------------
 
 // MergeFTLP merges LP UTXOs. Returns "" if already merged (1 UTXO).
+// UnlockFTLP collects the caller's time-locked FT-LP UTXOs (up to 6) and
+// produces a tx that re-encodes them with lock_time = 0, allowing a
+// subsequent ConsumeLP to spend them. The returned tx must be broadcast
+// before ConsumeLP. If only one already-unlocked LP UTXO matches, no
+// unlock is needed and (nil, nil) is returned.
+//
+// Mirrors poolNFT2.0.ts unlockFTLP(privateKey, utxo, lock_time?).
+//
+// lockTime semantics match TS' truthy check: nil or *uint32(0) → derive
+// from chain (lockTimeMax capped to currentBlockHeight / currentTime).
+// Returns (raw hex string, builder error). When the second return value
+// of the form (rawTx string, didProduceUnlock bool, err error)... but to
+// keep the signature minimal, we return rawTx="" when no unlock is
+// needed and let the caller compare against "".
+func (p *PoolNFT2) UnlockFTLP(
+	privKey *bec.PrivateKey,
+	utxo *bt.UTXO,
+	lockTime *uint32,
+) (string, error) {
+	if !p.WithLockTime {
+		return "", fmt.Errorf("UnlockFTLP: pool is not with-lock-time; call ConsumeLP directly")
+	}
+	ftaInfo, err := api.FetchFtInfo(p.FtAContractTxID, p.Network)
+	if err != nil {
+		return "", fmt.Errorf("UnlockFTLP FetchFtInfo: %w", err)
+	}
+
+	addr, err := bscript.NewAddressFromPublicKeyHash(crypto.Hash160(privKey.PubKey().SerialiseCompressed()), true)
+	if err != nil {
+		return "", err
+	}
+
+	ftUtxoList, err := p.fetchFtlpUTXOList(addr.AddressString)
+	if err != nil {
+		return "", fmt.Errorf("UnlockFTLP fetchFtlpUTXOList: %w", err)
+	}
+	if len(ftUtxoList) == 0 {
+		return "", fmt.Errorf("UnlockFTLP: no FT-LP UTXO available")
+	}
+	headers, hErr := api.FetchBlockHeaders(0, 1, p.Network)
+	if hErr != nil || len(headers) == 0 {
+		return "", fmt.Errorf("UnlockFTLP FetchBlockHeaders: %w", hErr)
+	}
+	currentBlockHeight := uint32(headers[0].Height) - 2
+	currentTime := uint32(time.Now().Unix()) - 1800
+
+	var lockTimeMax uint32
+	zeroLockTimeCount := 0
+	hasLockTime := lockTime != nil && *lockTime != 0
+
+	var ftutxo []*api.LpUTXO
+	for i := 0; i < len(ftUtxoList) && len(ftutxo) < 6; i++ {
+		ltape, lerr := api.FetchTXRaw(ftUtxoList[i].TxID, p.Network)
+		if lerr != nil {
+			return "", fmt.Errorf("UnlockFTLP FetchTXRaw[%d]: %w", i, lerr)
+		}
+		tapeOutIdx := int(ftUtxoList[i].Vout) + 1
+		if tapeOutIdx >= len(ltape.Outputs) {
+			return "", fmt.Errorf("UnlockFTLP: tape vout %d out of range", tapeOutIdx)
+		}
+		chunks := ltape.Outputs[tapeOutIdx].LockingScript.Chunks()
+		if len(chunks) < 4 || len(chunks[3].Buf) < 4 {
+			return "", fmt.Errorf("UnlockFTLP: ftlp tape chunks[3] missing or short")
+		}
+		lockTimeFromTape := binary.LittleEndian.Uint32(chunks[3].Buf[:4])
+
+		if hasLockTime {
+			lt := *lockTime
+			switch {
+			case lockTimeFromTape == 0:
+				ftutxo = append(ftutxo, ftUtxoList[i])
+				zeroLockTimeCount++
+			case lt < 500_000_000 && lockTimeFromTape <= lt:
+				ftutxo = append(ftutxo, ftUtxoList[i])
+			case lockTimeFromTape >= 500_000_000 && lockTimeFromTape <= lt:
+				ftutxo = append(ftutxo, ftUtxoList[i])
+			}
+		} else {
+			if lockTimeFromTape > lockTimeMax {
+				lockTimeMax = lockTimeFromTape
+			}
+			switch {
+			case lockTimeFromTape == 0:
+				ftutxo = append(ftutxo, ftUtxoList[i])
+				zeroLockTimeCount++
+			case lockTimeFromTape < 500_000_000 && lockTimeFromTape <= currentBlockHeight:
+				ftutxo = append(ftutxo, ftUtxoList[i])
+			case lockTimeFromTape >= 500_000_000 && lockTimeFromTape <= currentTime:
+				ftutxo = append(ftutxo, ftUtxoList[i])
+			}
+		}
+	}
+
+	// If the only matching UTXO is already unlocked (lock_time==0), there's
+	// no work to do — TS returns null here and ConsumeLP skips the precursor
+	// broadcast. Mirror by returning ("", nil).
+	if zeroLockTimeCount == len(ftutxo) && zeroLockTimeCount == 1 {
+		return "", nil
+	}
+
+	var derivedLockTime uint32
+	if hasLockTime {
+		derivedLockTime = *lockTime
+	} else if lockTimeMax < 500_000_000 {
+		if lockTimeMax > currentBlockHeight {
+			derivedLockTime = currentBlockHeight
+		} else {
+			derivedLockTime = lockTimeMax
+		}
+	} else {
+		if lockTimeMax > currentTime {
+			derivedLockTime = currentTime
+		} else {
+			derivedLockTime = lockTimeMax
+		}
+	}
+
+	if len(ftutxo) == 0 {
+		return "", fmt.Errorf("UnlockFTLP: no unlockable FTLP UTXO")
+	}
+
+	count := len(ftutxo)
+	ftutxoCodeScript := ftutxo[0].Script
+	tapeAmountSetIn := make([]*big.Int, count)
+	ftPreTXs := make([]*bt.Tx, count)
+	ftPrePreTxDatas := make([]string, count)
+	tapeAmountSum := new(big.Int)
+	for i, u := range ftutxo {
+		tapeAmountSetIn[i] = new(big.Int).Set(u.FtBalance)
+		tapeAmountSum.Add(tapeAmountSum, u.FtBalance)
+		ftPreTXs[i], err = api.FetchTXRaw(u.TxID, p.Network)
+		if err != nil {
+			return "", err
+		}
+		ftPrePreTxDatas[i], err = api.FetchFtPrePreTxData(ftPreTXs[i], int(u.Vout), p.Network)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	amountHex, changeHex := BuildTapeAmount(tapeAmountSum, tapeAmountSetIn)
+	if changeHex != strings.Repeat("00", 48) {
+		return "", fmt.Errorf("UnlockFTLP: change amount is not zero")
+	}
+
+	tx := newFTTx()
+	for _, u := range ftutxo {
+		lpb, err2 := lpUTXOTobtUTXO(u)
+		if err2 != nil {
+			return "", err2
+		}
+		if err := tx.FromUTXOs(lpb); err != nil {
+			return "", fmt.Errorf("UnlockFTLP tx.FromUTXOs lpb: %w", err)
+		}
+	}
+	if err := tx.FromUTXOs(utxo); err != nil {
+		return "", fmt.Errorf("UnlockFTLP tx.FromUTXOs utxo: %w", err)
+	}
+
+	mergedCode, err := BuildFTtransferCode(ftutxoCodeScript, addr.AddressString)
+	if err != nil {
+		return "", err
+	}
+	tx.AddOutput(&bt.Output{Satoshis: 500, LockingScript: mergedCode})
+
+	// FTLP tape with all-zero amounts and lock_time = 0 — re-encodes the
+	// LP UTXOs as unlocked. This is the structural difference from
+	// MergeFTLP, which preserves the cumulative amounts.
+	fillSize := len(ftaInfo.TapeScript)/2 - 62
+	if fillSize < 0 {
+		fillSize = 0
+	}
+	opZeros := strings.Repeat("OP_0 ", fillSize)
+	baseTape, asmErr := bscript.NewFromASM(fmt.Sprintf("OP_FALSE OP_RETURN %s 00000000 %s4654617065",
+		strings.Repeat("0000000000000000", 6), opZeros))
+	if asmErr != nil {
+		return "", fmt.Errorf("UnlockFTLP build base tape: %w", asmErr)
+	}
+	tapeScript, err := BuildFTtransferTape(hex.EncodeToString(baseTape.Bytes()), amountHex)
+	if err != nil {
+		return "", err
+	}
+	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: tapeScript})
+
+	changeScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
+	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
+	adjustFeeAndChange(tx, 80)
+
+	// Set sequence numbers and lock time BEFORE signing — same correctness
+	// requirement as MergeFTLP fix C4.
+	for i := range ftutxo {
+		tx.Inputs[i].SequenceNumber = 4294967294
+	}
+	tx.LockTime = derivedLockTime
+
+	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
+	for i, u := range ftutxo {
+		unlock, err2 := ft.GetFTunlock(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], i, int(u.Vout), false)
+		if err2 != nil {
+			return "", err2
+		}
+		tx.Inputs[i].UnlockingScript = unlock
+	}
+
+	if err := signP2PKHAtIdx(tx, privKey, uint32(count)); err != nil {
+		return "", err
+	}
+
+	return tx.String(), nil
+}
+
 // MergeFTLP merges up to 5 (or 6 with_lock_time) FT-LP UTXOs at the sender
 // address into one. lockTime is optional: when nil and p.WithLockTime, the
 // derived lock time falls back to the max tape-lock-time observed in the
