@@ -2020,10 +2020,10 @@ func (p *PoolNFT2) SwapToToken(
 	codeLen := len(ftaInfo.CodeScript) / 2
 	ftVersion, isCoin := ftVersionFromCodeLen(codeLen)
 
-	if lpPlan < 1 || lpPlan > 5 {
+	// TS precedence: instance value wins over caller param.
+	if p.LpPlan >= 1 && p.LpPlan <= 5 {
 		lpPlan = p.LpPlan
-	}
-	if lpPlan < 1 || lpPlan > 5 {
+	} else if lpPlan < 1 || lpPlan > 5 {
 		lpPlan = 1
 	}
 
@@ -2220,10 +2220,10 @@ func (p *PoolNFT2) SwapToTBC(
 	ftVersion, isCoin := ftVersionFromCodeLen(codeLen)
 	_ = ftVersion
 
-	if lpPlan < 1 || lpPlan > 5 {
+	// TS precedence: instance value wins over caller param.
+	if p.LpPlan >= 1 && p.LpPlan <= 5 {
 		lpPlan = p.LpPlan
-	}
-	if lpPlan < 1 || lpPlan > 5 {
+	} else if lpPlan < 1 || lpPlan > 5 {
 		lpPlan = 1
 	}
 
