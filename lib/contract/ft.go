@@ -1280,7 +1280,7 @@ func signP2PKHInput(tx *bt.Tx, privKey *bec.PrivateKey, inputIdx uint32) error {
 		if err == nil {
 			keyPKH := crypto.Hash160(privKey.PubKey().SerialiseCompressed())
 			if !bytes.Equal(scriptPKH, keyPKH) {
-				return nil
+				return fmt.Errorf("signP2PKHInput: input %d is P2PKH for a different pubkey hash than the signing key", inputIdx)
 			}
 		}
 	}
