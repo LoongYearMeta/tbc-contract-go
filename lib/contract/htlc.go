@@ -82,7 +82,7 @@ func DeployHTLC(
 		return "", err
 	}
 
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(utxo); err != nil {
 		return "", err
 	}
@@ -103,7 +103,7 @@ func DeployHTLC(
 // Withdraw builds an unsigned HTLC withdrawal tx.
 // Mirrors htlc.ts withdraw.
 func Withdraw(receiver string, htlcUtxo *bt.UTXO) (string, error) {
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(htlcUtxo); err != nil {
 		return "", err
 	}
@@ -125,7 +125,7 @@ func Withdraw(receiver string, htlcUtxo *bt.UTXO) (string, error) {
 // Refund builds an unsigned HTLC refund tx (with timelock + sequence).
 // Mirrors htlc.ts refund.
 func Refund(sender string, htlcUtxo *bt.UTXO, timelock uint32) (string, error) {
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(htlcUtxo); err != nil {
 		return "", err
 	}
@@ -250,7 +250,7 @@ func DeployHTLCWithSign(
 	if err != nil {
 		return "", err
 	}
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(utxo); err != nil {
 		return "", err
 	}
@@ -276,7 +276,7 @@ func WithdrawWithSign(
 	htlcUtxo *bt.UTXO,
 	secret string,
 ) (string, error) {
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(htlcUtxo); err != nil {
 		return "", err
 	}
@@ -314,7 +314,7 @@ func RefundWithSign(
 	privKey *bec.PrivateKey,
 	timelock uint32,
 ) (string, error) {
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(htlcUtxo); err != nil {
 		return "", err
 	}

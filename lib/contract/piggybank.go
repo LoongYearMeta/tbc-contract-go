@@ -72,7 +72,7 @@ func FreezeTBC(address string, tbcAmountSat uint64, lockTime uint32, utxos []*bt
 	if err != nil {
 		return "", err
 	}
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(utxos...); err != nil {
 		return "", err
 	}
@@ -101,7 +101,7 @@ func UnfreezeTBC(address string, utxos []*bt.UTXO, currentBlockHeight uint32) (s
 	for _, u := range utxos {
 		sumAmount += u.Satoshis
 	}
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(utxos...); err != nil {
 		return "", err
 	}
@@ -138,7 +138,7 @@ func FreezeTBCWithSign(privKey *bec.PrivateKey, tbcAmountSat uint64, lockTime ui
 	if err != nil {
 		return "", err
 	}
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(utxos...); err != nil {
 		return "", err
 	}
@@ -175,7 +175,7 @@ func UnfreezeTBCWithSign(privKey *bec.PrivateKey, utxos []*bt.UTXO, currentBlock
 	for _, u := range utxos {
 		sumAmount += u.Satoshis
 	}
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(utxos...); err != nil {
 		return "", err
 	}

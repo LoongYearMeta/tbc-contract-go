@@ -337,7 +337,7 @@ func CreateMultiSigWallet(
 		return "", err
 	}
 
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(utxos...); err != nil {
 		return "", err
 	}
@@ -387,7 +387,7 @@ func P2PKHToMultiSigSendTBC(
 	if err != nil {
 		return "", err
 	}
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(utxos...); err != nil {
 		return "", err
 	}
@@ -433,7 +433,7 @@ func BuildMultiSigTransactionSendTBC(
 	}
 	fee := uint64((len(utxos)+9)/10) * 1000 // ceil(len/10)*1000
 
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(utxos...); err != nil {
 		return nil, err
 	}
@@ -612,7 +612,7 @@ func P2PKHToMultiSigTransferFT(
 	}
 
 	// Inputs: FT inputs first, then the TBC UTXO
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(util.FtUTXOsToUTXOs(ftutxos)...); err != nil {
 		return "", err
 	}
@@ -732,7 +732,7 @@ func BuildMultiSigTransactionTransferFT(
 		return nil, err
 	}
 
-	tx := bt.NewTx()
+	tx := newFTTx()
 	// Input order: utxo (multisig), then FT inputs
 	if err := tx.FromUTXOs(utxo); err != nil {
 		return nil, err

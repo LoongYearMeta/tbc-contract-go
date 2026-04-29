@@ -1077,7 +1077,7 @@ func (p *PoolNFT2) CreatePoolNFT(
 		return nil, err
 	}
 
-	txSource := bt.NewTx()
+	txSource := newFTTx()
 	if err := txSource.FromUTXOs(utxo); err != nil {
 		return nil, fmt.Errorf("txSource.FromUTXOs: %w", err)
 	}
@@ -1167,7 +1167,7 @@ func (p *PoolNFT2) CreatePoolNFT(
 	}
 
 	// Build mint tx
-	txMint := bt.NewTx()
+	txMint := newFTTx()
 	prevTxIDBytes, _ := hex.DecodeString(txSourceTxID)
 	// reverse for internal format
 	for i, j := 0, len(prevTxIDBytes)-1; i < j; i, j = i+1, j-1 {
@@ -1337,7 +1337,7 @@ func (p *PoolNFT2) InitPoolNFT(
 		return "", fmt.Errorf("InitPoolNFT FetchPoolNFTUTXO: %w", err)
 	}
 
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(poolnft, util.FtUTXOToUTXO(fttxoA), utxo); err != nil {
 		return "", fmt.Errorf("InitPoolNFT tx.FromUTXOs: %w", err)
 	}
@@ -1634,7 +1634,7 @@ func (p *PoolNFT2) IncreaseLP(
 		return "", err
 	}
 
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(poolnft, util.FtUTXOToUTXO(fttxoA), utxo); err != nil {
 		return "", fmt.Errorf("IncreaseLP tx.FromUTXOs: %w", err)
 	}
@@ -1855,7 +1855,7 @@ func (p *PoolNFT2) ConsumeLP(
 		return "", err
 	}
 
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(poolnft); err != nil {
 		return "", fmt.Errorf("ConsumeLP tx.FromUTXOs poolnft: %w", err)
 	}
@@ -2113,7 +2113,7 @@ func (p *PoolNFT2) SwapToToken(
 		return "", err
 	}
 
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(poolnft, utxo); err != nil {
 		return "", fmt.Errorf("SwapToToken tx.FromUTXOs: %w", err)
 	}
@@ -2290,7 +2290,7 @@ func (p *PoolNFT2) SwapToTBC(
 		return "", err
 	}
 
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(poolnft, util.FtUTXOToUTXO(fttxoA), utxo); err != nil {
 		return "", fmt.Errorf("SwapToTBC tx.FromUTXOs: %w", err)
 	}
@@ -2436,7 +2436,7 @@ func (p *PoolNFT2) MergeFTLP(
 		return "", fmt.Errorf("Change amount is not zero")
 	}
 
-	tx := bt.NewTx()
+	tx := newFTTx()
 	for _, u := range ftutxo {
 		lpb, err2 := lpUTXOTobtUTXO(u)
 		if err2 != nil {
@@ -2558,7 +2558,7 @@ func (p *PoolNFT2) BurnFTLP(
 		return "", fmt.Errorf("Change amount is not zero")
 	}
 
-	tx := bt.NewTx()
+	tx := newFTTx()
 	for _, u := range ftutxo {
 		lpb, err2 := lpUTXOTobtUTXO(u)
 		if err2 != nil {
@@ -2761,7 +2761,7 @@ func (p *PoolNFT2) mergeFTinPoolSingle(
 		return "", nil, fmt.Errorf("mergeFTinPool: Change amount is not zero")
 	}
 
-	tx := bt.NewTx()
+	tx := newFTTx()
 	if err := tx.FromUTXOs(poolnft); err != nil {
 		return "", nil, fmt.Errorf("mergeFTinPoolSingle tx.FromUTXOs poolnft: %w", err)
 	}
