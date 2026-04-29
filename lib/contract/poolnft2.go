@@ -1401,7 +1401,7 @@ func (p *PoolNFT2) InitPoolNFT(
 	// fee + change
 	changeScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
-	adjustFeeAndChange(tx, 80, utxo)
+	adjustFeeAndChange(tx, 80)
 
 	// sign pool NFT input
 	poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), 0, 1, 0)
@@ -1505,20 +1505,26 @@ func signP2PKHAtIdx(tx *bt.Tx, privKey *bec.PrivateKey, utxo *bt.UTXO, idx uint3
 	return nil
 }
 
-// adjustFeeAndChange sets the last output's satoshis to input sum minus all other outputs and fee.
-func adjustFeeAndChange(tx *bt.Tx, satPerKB uint64, feeUTXO *bt.UTXO) {
-	// Estimate size and fee
-	est := tx.JSEstimateSize()
-	fee := satPerKB
-	if est >= 1000 {
-		fee = uint64((int(est)/1000 + 1)) * satPerKB
+// adjustFeeAndChange sets the last output's satoshis to input sum minus all
+// other outputs and fee. Fee schedule mirrors TS exactly:
+//
+//	size < 1000 → fee = satPerKB (flat)
+//	size ≥ 1000 → fee = ceil(size * satPerKB / 1000)
+//
+// (TS: `txSize < 1000 ? 80 : Math.ceil(txSize / 1000 * 80)`.)
+func adjustFeeAndChange(tx *bt.Tx, satPerKB uint64) {
+	est := uint64(tx.JSEstimateSize())
+	var fee uint64
+	if est < 1000 {
+		fee = satPerKB
+	} else {
+		// ceil(est * satPerKB / 1000)
+		fee = (est*satPerKB + 999) / 1000
 	}
-	// Sum inputs
 	inputSum := uint64(0)
 	for _, in := range tx.Inputs {
 		inputSum += in.PreviousTxSatoshis
 	}
-	// Sum outputs except last
 	outSum := uint64(0)
 	for i, out := range tx.Outputs {
 		if i < len(tx.Outputs)-1 {
@@ -1711,7 +1717,7 @@ func (p *PoolNFT2) IncreaseLP(
 
 	changeScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
-	adjustFeeAndChange(tx, 80, utxo)
+	adjustFeeAndChange(tx, 80)
 
 	withLockInt := 0
 	if lockStatus {
@@ -1959,7 +1965,7 @@ func (p *PoolNFT2) ConsumeLP(
 
 	changeScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
-	adjustFeeAndChange(tx, 80, utxo)
+	adjustFeeAndChange(tx, 80)
 
 	withLockInt := isLockByCodeLen(p.PoolNftCode)
 	poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), withLockInt, 2, 0)
@@ -2180,7 +2186,7 @@ func (p *PoolNFT2) SwapToToken(
 
 	changeScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
-	adjustFeeAndChange(tx, 80, utxo)
+	adjustFeeAndChange(tx, 80)
 
 	withLockInt := isLockByCodeLen(p.PoolNftCode)
 	poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), withLockInt, 3, 1)
@@ -2368,7 +2374,7 @@ func (p *PoolNFT2) SwapToTBC(
 
 	changeScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
-	adjustFeeAndChange(tx, 80, utxo)
+	adjustFeeAndChange(tx, 80)
 
 	withLockInt := isLockByCodeLen(p.PoolNftCode)
 	poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), withLockInt, 3, 2)
@@ -2573,7 +2579,7 @@ func (p *PoolNFT2) MergeFTLP(
 
 	changeScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
-	adjustFeeAndChange(tx, 80, utxo)
+	adjustFeeAndChange(tx, 80)
 
 	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
 	for i, u := range ftutxo {
@@ -2679,7 +2685,7 @@ func (p *PoolNFT2) BurnFTLP(
 
 	changeScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
-	adjustFeeAndChange(tx, 80, utxo)
+	adjustFeeAndChange(tx, 80)
 
 	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
 	for i, u := range ftutxo {
@@ -2921,7 +2927,7 @@ func (p *PoolNFT2) mergeFTinPoolSingle(
 		inputsTXs[len(ftutxos)] = poolnftPreTX
 	}
 
-	adjustFeeAndChange(tx, 80, feeUTXO)
+	adjustFeeAndChange(tx, 80)
 
 	withLockInt := isLockByCodeLen(p.PoolNftCode)
 	poolUnlock, err := p.GetPoolNftUnlockOffLine(privKey, tx, 0, poolnftPreTX, poolnftPrePreTX, inputsTXs, withLockInt, 4, 0)
