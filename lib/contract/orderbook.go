@@ -30,7 +30,6 @@ const (
 	obOrderDataEncodedLen = 114
 
 	// FT code script lengths (from TS orderBook.ts)
-	obFTv2Length   = 1884
 	obCoinLength   = 2012
 	obFTv2Partial  = 1856
 	obCoinPartial  = 1984

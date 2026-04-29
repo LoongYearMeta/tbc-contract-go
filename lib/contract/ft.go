@@ -1169,11 +1169,6 @@ func newFeeQuote80() *bt.FeeQuote {
 	return fq
 }
 
-// newFeeQuoteNFT returns a fee quote for NFT operations (same rate as FT).
-func newFeeQuoteNFT() *bt.FeeQuote {
-	return newFeeQuote80()
-}
-
 func mintSourceTargetFeeSat(estBytes int) int {
 	if estBytes < 1000 {
 		return ftSatPerKB
@@ -1313,10 +1308,6 @@ type ftTransferUnlockerGetter struct {
 	ftScripts []*bscript.Script
 	privKey   *bec.PrivateKey
 	callIdx   int
-}
-
-func newFTTransferUnlockerGetter(ftScripts []*bscript.Script, privKey *bec.PrivateKey) *ftTransferUnlockerGetter {
-	return &ftTransferUnlockerGetter{ftScripts: ftScripts, privKey: privKey}
 }
 
 func (g *ftTransferUnlockerGetter) Unlocker(_ context.Context, _ *bscript.Script) (bt.Unlocker, error) {

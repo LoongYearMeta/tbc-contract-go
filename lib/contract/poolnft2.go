@@ -634,12 +634,11 @@ func getServiceFeeAddress(lpPlan int) (string, error) {
 // --------------------------------------------------------------------------
 
 const (
-	ftV1Length          = 1564
-	ftV2Length          = 1884
-	coinLength          = 2012
-	ftV1PartialOffset   = 1536
-	ftV2PartialOffset   = 1856
-	coinPartialOffset   = 1984
+	ftV2Length        = 1884
+	coinLength        = 2012
+	ftV1PartialOffset = 1536
+	ftV2PartialOffset = 1856
+	coinPartialOffset = 1984
 )
 
 // ftVersionFromCodeLen returns (ftVersion, isCoin) from codeScript byte length.
@@ -662,18 +661,6 @@ func ftCodeSizeHex(isCoin bool, ftVersion int) string {
 		return "1c06"
 	}
 	return "5c07"
-}
-
-// poolNFTCodeHash160 computes SHA256(poolNftCode) then RIPEMD160 of that.
-func poolNFTCodeHash160(poolNftCodeHex string) (string, error) {
-	raw, err := hex.DecodeString(poolNftCodeHex)
-	if err != nil {
-		return "", err
-	}
-	h256 := crypto.Sha256(raw)
-	h160 := crypto.Hash160(raw)
-	_ = h256
-	return hex.EncodeToString(h160), nil
 }
 
 // poolNFTCodeSHA256 returns SHA256(poolNftCode) as hex.
@@ -1141,7 +1128,7 @@ func (p *PoolNFT2) CreatePoolNFT(
 	txSource.Outputs[1].Satoshis = change
 
 	// Sign txSource with P2PKH unlocker
-	err = signP2PKH(txSource, privKey, utxo)
+	err = signP2PKH(txSource, privKey)
 	if err != nil {
 		return nil, fmt.Errorf("CreatePoolNFT sign source: %w", err)
 	}
@@ -1240,15 +1227,11 @@ func (p *PoolNFT2) CreatePoolNFT(
 		txMint.Outputs[2].Satoshis = in2 - out2
 	}
 
-	err = signP2PKH(txMint, privKey, &bt.UTXO{
-		TxID:          prevTxIDBytes,
-		Vout:          0,
-		LockingScript: srcOut.LockingScript,
-		Satoshis:      srcOut.Satoshis,
-	})
-	if err != nil {
+	if err := signP2PKH(txMint, privKey); err != nil {
 		return nil, fmt.Errorf("CreatePoolNFT sign mint: %w", err)
 	}
+	_ = prevTxIDBytes // already wired into txMint via FromUTXOs upstream
+	_ = srcOut
 
 	txMintRaw := txMint.String()
 	return []string{txSourceRaw, txMintRaw}, nil
@@ -1263,7 +1246,8 @@ func calculatePartialHash(prefix []byte) string {
 }
 
 // signP2PKH signs tx input at index 0 with a P2PKH unlock script.
-func signP2PKH(tx *bt.Tx, privKey *bec.PrivateKey, utxo *bt.UTXO) error {
+// signP2PKH is a thin convenience wrapper around signP2PKHAtIdx for input 0.
+func signP2PKH(tx *bt.Tx, privKey *bec.PrivateKey) error {
 	sh, err := tx.CalcInputSignatureHash(0, sighash.AllForkID)
 	if err != nil {
 		return err
@@ -1406,10 +1390,10 @@ func (p *PoolNFT2) InitPoolNFT(
 	var ftlpTapeScript *bscript.Script
 
 	if p.WithLockTime {
-		if lockTime > 4294967295 {
-			return "", fmt.Errorf("InitPoolNFT: Invalid lock time")
-		}
-		ftlpTapeScript = buildFtlpTapeWithLockTime(tbcAmountBN, tapeLen, lockTime, isCoin, ftaInfo.Name, ftaInfo.Symbol)
+		// TS validates `lock_time < 0 || lock_time > 4294967295` because TS
+		// number is unbounded; Go's uint32 already enforces the same range
+		// at the type boundary, so no runtime check is needed.
+		ftlpTapeScript = buildFtlpTapeWithLockTime(tbcAmountBN, tapeLen, lockTime)
 		newTapeLen := len(ftlpTapeScript.Bytes())
 		ftlpCodeScript, err = p.getFtlpCodeWithLockTime(poolNftSHA256, addressTo, newTapeLen, isCoin, ftVersion)
 	} else {
@@ -1458,7 +1442,7 @@ func (p *PoolNFT2) InitPoolNFT(
 	tx.Inputs[1].UnlockingScript = ftUnlock
 
 	// sign P2PKH utxo
-	err = signP2PKHAtIdx(tx, privKey, utxo, 2)
+	err = signP2PKHAtIdx(tx, privKey, 2)
 	if err != nil {
 		return "", fmt.Errorf("InitPoolNFT sign utxo: %w", err)
 	}
@@ -1484,7 +1468,9 @@ func buildFtlpTape(amount *big.Int, isCoin bool, name, symbol string) *bscript.S
 }
 
 // buildFtlpTapeWithLockTime builds the FT-LP tape script with lock time.
-func buildFtlpTapeWithLockTime(amount *big.Int, tapeLen int, lockTime uint32, isCoin bool, name, symbol string) *bscript.Script {
+// isCoin/name/symbol are not embedded in the with-lock-time tape (TS uses an
+// OP_0-padded layout); the caller owns them via the surrounding ftlp code.
+func buildFtlpTapeWithLockTime(amount *big.Int, tapeLen int, lockTime uint32) *bscript.Script {
 	amtHex := bigIntToLE8Hex(amount)
 	zero5 := strings.Repeat("0000000000000000", 5)
 	tapeAmount := amtHex + zero5
@@ -1519,7 +1505,7 @@ func buildFTTransferCodeHex(codeHex, address string) (string, error) {
 }
 
 // signP2PKHAtIdx signs tx input at the given index.
-func signP2PKHAtIdx(tx *bt.Tx, privKey *bec.PrivateKey, utxo *bt.UTXO, idx uint32) error {
+func signP2PKHAtIdx(tx *bt.Tx, privKey *bec.PrivateKey, idx uint32) error {
 	sh, err := tx.CalcInputSignatureHash(idx, sighash.AllForkID)
 	if err != nil {
 		return err
@@ -1730,7 +1716,7 @@ func (p *PoolNFT2) IncreaseLP(
 	var ftlpCodeScript *bscript.Script
 	var ftlpTapeScript *bscript.Script
 	if p.WithLockTime {
-		ftlpTapeScript = buildFtlpTapeWithLockTime(changeData.FtLpDifference, tapeLen, lockTime, isCoin, ftaInfo.Name, ftaInfo.Symbol)
+		ftlpTapeScript = buildFtlpTapeWithLockTime(changeData.FtLpDifference, tapeLen, lockTime)
 		newTapeLen := len(ftlpTapeScript.Bytes())
 		ftlpCodeScript, err = p.getFtlpCodeWithLockTime(poolNftSHA256, addressTo, newTapeLen, isCoin, ftVersion)
 	} else {
@@ -1792,7 +1778,7 @@ func (p *PoolNFT2) IncreaseLP(
 	}
 	tx.Inputs[1].UnlockingScript = ftUnlock
 
-	err = signP2PKHAtIdx(tx, privKey, utxo, 2)
+	err = signP2PKHAtIdx(tx, privKey, 2)
 	if err != nil {
 		return "", err
 	}
@@ -2052,7 +2038,7 @@ func (p *PoolNFT2) ConsumeLP(
 	if p.WithLockTime {
 		// with lock time the utxo comes from a previous unlock tx output[2]; skip
 	}
-	err = signP2PKHAtIdx(tx, privKey, utxo, uint32(feeIdx))
+	err = signP2PKHAtIdx(tx, privKey, uint32(feeIdx))
 	if err != nil {
 		return "", err
 	}
@@ -2260,7 +2246,7 @@ func (p *PoolNFT2) SwapToToken(
 		tx.Inputs[i+2].UnlockingScript = swapUnlock
 	}
 
-	err = signP2PKHAtIdx(tx, privKey, utxo, 1)
+	err = signP2PKHAtIdx(tx, privKey, 1)
 	if err != nil {
 		return "", err
 	}
@@ -2446,7 +2432,7 @@ func (p *PoolNFT2) SwapToTBC(
 	}
 	tx.Inputs[1].UnlockingScript = ftUnlock
 
-	err = signP2PKHAtIdx(tx, privKey, utxo, 2)
+	err = signP2PKHAtIdx(tx, privKey, 2)
 	if err != nil {
 		return "", err
 	}
@@ -2646,7 +2632,7 @@ func (p *PoolNFT2) MergeFTLP(
 		tx.Inputs[i].UnlockingScript = unlock
 	}
 
-	if err := signP2PKHAtIdx(tx, privKey, utxo, uint32(count)); err != nil {
+	if err := signP2PKHAtIdx(tx, privKey, uint32(count)); err != nil {
 		return "", err
 	}
 
@@ -2752,7 +2738,7 @@ func (p *PoolNFT2) BurnFTLP(
 		tx.Inputs[i].UnlockingScript = unlock
 	}
 
-	err = signP2PKHAtIdx(tx, privKey, utxo, uint32(count))
+	err = signP2PKHAtIdx(tx, privKey, uint32(count))
 	if err != nil {
 		return "", err
 	}
@@ -3002,7 +2988,7 @@ func (p *PoolNFT2) mergeFTinPoolSingle(
 	}
 
 	if feeUTXO != nil {
-		err = signP2PKHAtIdx(tx, privKey, feeUTXO, uint32(len(ftutxos)+1))
+		err = signP2PKHAtIdx(tx, privKey, uint32(len(ftutxos)+1))
 		if err != nil {
 			return "", nil, err
 		}
