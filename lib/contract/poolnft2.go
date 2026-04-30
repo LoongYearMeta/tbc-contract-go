@@ -1909,33 +1909,44 @@ func (p *PoolNFT2) InitPoolNFT(
 		tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeTape})
 	}
 
-	// fee + change
+	// fee + change — first pass against estimated size so unlock sighashes
+	// commit to a non-zero change output.
 	changeScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
 	adjustFeeAndChange(tx, 80)
 
-	// sign pool NFT input
-	poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), 0, 1, 0)
-	if err != nil {
-		return "", fmt.Errorf("InitPoolNFT pool unlock: %w", err)
-	}
-	tx.Inputs[0].UnlockingScript = poolUnlock
-
-	// sign FT-A input
 	if isCoin {
 		tx.Inputs[1].SequenceNumber = 4294967294
 	}
 	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
-	ftUnlock, err := ft.GetFTunlock(privKey, tx, ftPreTX, ftPrePreTxData, 1, int(fttxoA.Vout), isCoin)
-	if err != nil {
-		return "", fmt.Errorf("InitPoolNFT ft unlock: %w", err)
-	}
-	tx.Inputs[1].UnlockingScript = ftUnlock
 
-	// sign P2PKH utxo
-	err = signP2PKHAtIdx(tx, privKey, 2)
-	if err != nil {
-		return "", fmt.Errorf("InitPoolNFT sign utxo: %w", err)
+	signAll := func() error {
+		poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), 0, 1, 0)
+		if err != nil {
+			return fmt.Errorf("InitPoolNFT pool unlock: %w", err)
+		}
+		tx.Inputs[0].UnlockingScript = poolUnlock
+		ftUnlock, err := ft.GetFTunlock(privKey, tx, ftPreTX, ftPrePreTxData, 1, int(fttxoA.Vout), isCoin)
+		if err != nil {
+			return fmt.Errorf("InitPoolNFT ft unlock: %w", err)
+		}
+		tx.Inputs[1].UnlockingScript = ftUnlock
+		if err := signP2PKHAtIdx(tx, privKey, 2); err != nil {
+			return fmt.Errorf("InitPoolNFT sign utxo: %w", err)
+		}
+		return nil
+	}
+	if err := signAll(); err != nil {
+		return "", err
+	}
+
+	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
+	// byte length is deterministic across re-signs so this converges.
+	if err := adjustFeeFromActualSize(tx, 80); err != nil {
+		return "", err
+	}
+	if err := signAll(); err != nil {
+		return "", err
 	}
 
 	return tx.String(), nil
