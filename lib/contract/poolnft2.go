@@ -2958,29 +2958,42 @@ func (p *PoolNFT2) SwapToToken(
 
 	changeScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
+	// First pass — provisional change so unlock sighashes commit to non-zero.
 	adjustFeeAndChange(tx, 80)
 
 	withLockInt := isLockByCodeLen(p.PoolNftCode)
-	poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), withLockInt, 3, 1)
-	if err != nil {
-		return "", err
-	}
-	tx.Inputs[0].UnlockingScript = poolUnlock
-
-	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
-	for i, ftu := range fttxosC {
-		if isCoin {
+	if isCoin {
+		for i := range fttxosC {
 			tx.Inputs[i+2].SequenceNumber = 4294967294
 		}
-		swapUnlock, err2 := ft.GetFTunlockSwap(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], contractTX, i+2, int(ftu.Vout), ftVersion, isCoin)
-		if err2 != nil {
-			return "", err2
+	}
+	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
+
+	signAll := func() error {
+		poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), withLockInt, 3, 1)
+		if err != nil {
+			return err
 		}
-		tx.Inputs[i+2].UnlockingScript = swapUnlock
+		tx.Inputs[0].UnlockingScript = poolUnlock
+		for i, ftu := range fttxosC {
+			swapUnlock, err2 := ft.GetFTunlockSwap(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], contractTX, i+2, int(ftu.Vout), ftVersion, isCoin)
+			if err2 != nil {
+				return err2
+			}
+			tx.Inputs[i+2].UnlockingScript = swapUnlock
+		}
+		return signP2PKHAtIdx(tx, privKey, 1)
+	}
+	if err := signAll(); err != nil {
+		return "", err
 	}
 
-	err = signP2PKHAtIdx(tx, privKey, 1)
-	if err != nil {
+	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
+	// byte length is deterministic across re-signs so this converges.
+	if err := adjustFeeFromActualSize(tx, 80); err != nil {
+		return "", err
+	}
+	if err := signAll(); err != nil {
 		return "", err
 	}
 
