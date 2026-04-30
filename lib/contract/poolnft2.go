@@ -2048,6 +2048,44 @@ const poolDustAmount uint64 = 42
 //
 // If the resulting last-output value would be below poolDustAmount, the
 // output is removed entirely — matching tbc-lib-js .change() behavior.
+// adjustFeeFromActualSize re-adjusts the trailing change output based on the
+// REAL serialised tx length (must be called AFTER all unlocks are inserted).
+//
+// `adjustFeeAndChange` above relies on `tx.JSEstimateSize()`, which only
+// counts 41 B per non-P2PKH input — that's a ~1 KB underestimate for an FT
+// unlock and a ~2 KB underestimate for a pool NFT unlock, and the resulting
+// fee fails the 80 sat/KB relay floor with `66: insufficient priority`.
+//
+// Caller must afterwards re-sign every input whose sighash includes the
+// trailing change output (i.e. all SIGHASH_ALL signatures), because we just
+// changed an output's satoshi value. Unlock script *byte length* is
+// deterministic across re-signs (signature length is fixed), so a single
+// redo converges and `tx.Bytes()` length stays stable.
+func adjustFeeFromActualSize(tx *bt.Tx, satPerKB uint64) error {
+	actualSize := uint64(len(tx.Bytes()))
+	var fee uint64
+	if actualSize < 1000 {
+		fee = satPerKB
+	} else {
+		fee = (actualSize*satPerKB + 999) / 1000 // ceil
+	}
+	inputSum := uint64(0)
+	for _, in := range tx.Inputs {
+		inputSum += in.PreviousTxSatoshis
+	}
+	outSum := uint64(0)
+	for i, out := range tx.Outputs {
+		if i < len(tx.Outputs)-1 {
+			outSum += out.Satoshis
+		}
+	}
+	if inputSum < outSum+fee {
+		return fmt.Errorf("adjustFeeFromActualSize: insufficient inputs to cover %d sat fee (size=%d)", fee, actualSize)
+	}
+	tx.Outputs[len(tx.Outputs)-1].Satoshis = inputSum - outSum - fee
+	return nil
+}
+
 func adjustFeeAndChange(tx *bt.Tx, satPerKB uint64) {
 	est := uint64(tx.JSEstimateSize())
 	var fee uint64
@@ -2297,30 +2335,45 @@ func (p *PoolNFT2) IncreaseLP(
 
 	changeScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
+
+	// First pass: provisional change via JSEstimateSize (which underestimates
+	// non-P2PKH inputs) so unlocks can sign against a tx with non-zero change.
 	adjustFeeAndChange(tx, 80)
 
 	withLockInt := 0
 	if lockStatus {
 		withLockInt = 1
 	}
-	poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), withLockInt, 1, 0)
-	if err != nil {
-		return "", err
-	}
-	tx.Inputs[0].UnlockingScript = poolUnlock
-
 	if isCoin {
 		tx.Inputs[1].SequenceNumber = 4294967294
 	}
 	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
-	ftUnlock, err := ft.GetFTunlock(privKey, tx, ftPreTX, ftPrePreTxData, 1, int(fttxoA.Vout), isCoin)
-	if err != nil {
+
+	signAll := func() error {
+		poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), withLockInt, 1, 0)
+		if err != nil {
+			return err
+		}
+		tx.Inputs[0].UnlockingScript = poolUnlock
+		ftUnlock, err := ft.GetFTunlock(privKey, tx, ftPreTX, ftPrePreTxData, 1, int(fttxoA.Vout), isCoin)
+		if err != nil {
+			return err
+		}
+		tx.Inputs[1].UnlockingScript = ftUnlock
+		return signP2PKHAtIdx(tx, privKey, 2)
+	}
+	if err := signAll(); err != nil {
 		return "", err
 	}
-	tx.Inputs[1].UnlockingScript = ftUnlock
 
-	err = signP2PKHAtIdx(tx, privKey, 2)
-	if err != nil {
+	// Second pass: now that the actual unlock-script bytes are known,
+	// recompute fee from `len(tx.Bytes())` (truth), update the trailing
+	// change output, and re-sign all SIGHASH_ALL inputs. Unlock byte length
+	// is deterministic across re-signs so this converges in one redo.
+	if err := adjustFeeFromActualSize(tx, 80); err != nil {
+		return "", err
+	}
+	if err := signAll(); err != nil {
 		return "", err
 	}
 
