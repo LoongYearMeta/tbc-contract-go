@@ -3177,27 +3177,38 @@ func (p *PoolNFT2) SwapToTBC(
 
 	changeScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
+	// First pass — provisional change so unlock sighashes commit to non-zero.
 	adjustFeeAndChange(tx, 80)
 
 	withLockInt := isLockByCodeLen(p.PoolNftCode)
-	poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), withLockInt, 3, 2)
-	if err != nil {
-		return "", err
-	}
-	tx.Inputs[0].UnlockingScript = poolUnlock
-
 	if isCoin {
 		tx.Inputs[1].SequenceNumber = 4294967294
 	}
 	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
-	ftUnlock, err := ft.GetFTunlock(privKey, tx, ftPreTX, ftPrePreTxData, 1, int(fttxoA.Vout), isCoin)
-	if err != nil {
+
+	signAll := func() error {
+		poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), withLockInt, 3, 2)
+		if err != nil {
+			return err
+		}
+		tx.Inputs[0].UnlockingScript = poolUnlock
+		ftUnlock, err := ft.GetFTunlock(privKey, tx, ftPreTX, ftPrePreTxData, 1, int(fttxoA.Vout), isCoin)
+		if err != nil {
+			return err
+		}
+		tx.Inputs[1].UnlockingScript = ftUnlock
+		return signP2PKHAtIdx(tx, privKey, 2)
+	}
+	if err := signAll(); err != nil {
 		return "", err
 	}
-	tx.Inputs[1].UnlockingScript = ftUnlock
 
-	err = signP2PKHAtIdx(tx, privKey, 2)
-	if err != nil {
+	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
+	// byte length is deterministic across re-signs so this converges.
+	if err := adjustFeeFromActualSize(tx, 80); err != nil {
+		return "", err
+	}
+	if err := signAll(); err != nil {
 		return "", err
 	}
 
@@ -3396,6 +3407,7 @@ func (p *PoolNFT2) UnlockFTLP(
 
 	changeScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
+	// First pass — provisional change so unlock sighashes commit to non-zero.
 	adjustFeeAndChange(tx, 80)
 
 	// Set sequence numbers and lock time BEFORE signing — same correctness
@@ -3406,15 +3418,27 @@ func (p *PoolNFT2) UnlockFTLP(
 	tx.LockTime = derivedLockTime
 
 	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
-	for i, u := range ftutxo {
-		unlock, err2 := ft.GetFTunlock(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], i, int(u.Vout), false)
-		if err2 != nil {
-			return "", err2
+
+	signAll := func() error {
+		for i, u := range ftutxo {
+			unlock, err2 := ft.GetFTunlock(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], i, int(u.Vout), false)
+			if err2 != nil {
+				return err2
+			}
+			tx.Inputs[i].UnlockingScript = unlock
 		}
-		tx.Inputs[i].UnlockingScript = unlock
+		return signP2PKHAtIdx(tx, privKey, uint32(count))
+	}
+	if err := signAll(); err != nil {
+		return "", err
 	}
 
-	if err := signP2PKHAtIdx(tx, privKey, uint32(count)); err != nil {
+	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
+	// byte length is deterministic across re-signs so this converges.
+	if err := adjustFeeFromActualSize(tx, 80); err != nil {
+		return "", err
+	}
+	if err := signAll(); err != nil {
 		return "", err
 	}
 
@@ -3603,6 +3627,7 @@ func (p *PoolNFT2) MergeFTLP(
 
 	changeScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
+	// First pass — provisional change so unlock sighashes commit to non-zero.
 	adjustFeeAndChange(tx, 80)
 
 	// Set sequence numbers and lock time BEFORE signing — the sighash
@@ -3617,15 +3642,27 @@ func (p *PoolNFT2) MergeFTLP(
 	}
 
 	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
-	for i, u := range ftutxo {
-		unlock, err2 := ft.GetFTunlock(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], i, int(u.Vout), false)
-		if err2 != nil {
-			return "", err2
+
+	signAll := func() error {
+		for i, u := range ftutxo {
+			unlock, err2 := ft.GetFTunlock(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], i, int(u.Vout), false)
+			if err2 != nil {
+				return err2
+			}
+			tx.Inputs[i].UnlockingScript = unlock
 		}
-		tx.Inputs[i].UnlockingScript = unlock
+		return signP2PKHAtIdx(tx, privKey, uint32(count))
+	}
+	if err := signAll(); err != nil {
+		return "", err
 	}
 
-	if err := signP2PKHAtIdx(tx, privKey, uint32(count)); err != nil {
+	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
+	// byte length is deterministic across re-signs so this converges.
+	if err := adjustFeeFromActualSize(tx, 80); err != nil {
+		return "", err
+	}
+	if err := signAll(); err != nil {
 		return "", err
 	}
 
@@ -3716,22 +3753,36 @@ func (p *PoolNFT2) BurnFTLP(
 
 	changeScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
+	// First pass — provisional change so unlock sighashes commit to non-zero.
 	adjustFeeAndChange(tx, 80)
 
-	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
-	for i, u := range ftutxo {
-		if p.WithLockTime {
+	if p.WithLockTime {
+		for i := range ftutxo {
 			tx.Inputs[i].SequenceNumber = 4294967294
 		}
-		unlock, err2 := ft.GetFTunlock(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], i, int(u.Vout), false)
-		if err2 != nil {
-			return "", err2
+	}
+	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
+
+	signAll := func() error {
+		for i, u := range ftutxo {
+			unlock, err2 := ft.GetFTunlock(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], i, int(u.Vout), false)
+			if err2 != nil {
+				return err2
+			}
+			tx.Inputs[i].UnlockingScript = unlock
 		}
-		tx.Inputs[i].UnlockingScript = unlock
+		return signP2PKHAtIdx(tx, privKey, uint32(count))
+	}
+	if err := signAll(); err != nil {
+		return "", err
 	}
 
-	err = signP2PKHAtIdx(tx, privKey, uint32(count))
-	if err != nil {
+	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
+	// byte length is deterministic across re-signs so this converges.
+	if err := adjustFeeFromActualSize(tx, 80); err != nil {
+		return "", err
+	}
+	if err := signAll(); err != nil {
 		return "", err
 	}
 
@@ -3986,35 +4037,51 @@ func (p *PoolNFT2) mergeFTinPoolSingle(
 	// loses an output and the unlock script's OP_HASH256 OP_7 OP_PUSH_META
 	// OP_EQUAL check fails. Refuse to proceed.
 	preAdjustCount := len(tx.Outputs)
+	// First pass — provisional change so unlock sighashes commit to non-zero.
 	adjustFeeAndChange(tx, 80)
 	if len(tx.Outputs) != preAdjustCount {
 		return "", nil, fmt.Errorf("mergeFTinPoolSingle: P2PKH change dropped (post-fee=%d, pre=%d) — fee input too small for non-dust change; supply a larger feeUTXO", len(tx.Outputs), preAdjustCount)
 	}
 
 	withLockInt := isLockByCodeLen(p.PoolNftCode)
-	poolUnlock, err := p.GetPoolNftUnlockOffLine(privKey, tx, 0, poolnftPreTX, poolnftPrePreTX, inputsTXs, withLockInt, 4, 0)
-	if err != nil {
-		return "", nil, err
-	}
-	tx.Inputs[0].UnlockingScript = poolUnlock
-
-	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
-	for i, ftu := range ftutxos {
-		if isCoin {
+	if isCoin {
+		for i := range ftutxos {
 			tx.Inputs[i+1].SequenceNumber = 4294967294
 		}
-		swapUnlock, err2 := ft.GetFTunlockSwap(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], poolnftPreTX, i+1, int(ftu.Vout), ftVersion, isCoin)
-		if err2 != nil {
-			return "", nil, err2
+	}
+	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
+
+	signAll := func() error {
+		poolUnlock, err := p.GetPoolNftUnlockOffLine(privKey, tx, 0, poolnftPreTX, poolnftPrePreTX, inputsTXs, withLockInt, 4, 0)
+		if err != nil {
+			return err
 		}
-		tx.Inputs[i+1].UnlockingScript = swapUnlock
+		tx.Inputs[0].UnlockingScript = poolUnlock
+		for i, ftu := range ftutxos {
+			swapUnlock, err2 := ft.GetFTunlockSwap(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], poolnftPreTX, i+1, int(ftu.Vout), ftVersion, isCoin)
+			if err2 != nil {
+				return err2
+			}
+			tx.Inputs[i+1].UnlockingScript = swapUnlock
+		}
+		// The fee input at index len(ftutxos)+1 is always P2PKH and must be
+		// signed regardless of whether feeUTXO was supplied or sourced from
+		// poolnftPreTX.outputs[last] (chained-merge case). TS sealAsync's
+		// tx.sign(privateKey) signs all P2PKH inputs unconditionally.
+		return signP2PKHAtIdx(tx, privKey, uint32(len(ftutxos)+1))
+	}
+	if err := signAll(); err != nil {
+		return "", nil, err
 	}
 
-	// The fee input at index len(ftutxos)+1 is always P2PKH and must be
-	// signed regardless of whether feeUTXO was supplied or sourced from
-	// poolnftPreTX.outputs[last] (chained-merge case). TS sealAsync's
-	// tx.sign(privateKey) signs all P2PKH inputs unconditionally.
-	if err = signP2PKHAtIdx(tx, privKey, uint32(len(ftutxos)+1)); err != nil {
+	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
+	// byte length is deterministic across re-signs so this converges.
+	// adjustFeeFromActualSize never drops the change output (only scales it),
+	// so the case-4 outputs[2..4] invariant is preserved.
+	if err := adjustFeeFromActualSize(tx, 80); err != nil {
+		return "", nil, err
+	}
+	if err := signAll(); err != nil {
 		return "", nil, err
 	}
 
