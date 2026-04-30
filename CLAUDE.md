@@ -61,6 +61,7 @@ These rules collectively prevent regressions of bugs that were already found and
 - **Set `tx.LockTime` and per-input `SequenceNumber` BEFORE calling `ft.GetFTunlock` / `signP2PKHAtIdx`.** The sighash preimage embeds both fields; setting them after the unlocker would invalidate every signature.
 - **`bt.UTXO.TxID` is forward (display-order) bytes** throughout this repo. `hex.DecodeString(tx.TxID())` gives the right bytes; do NOT reverse them. Three pool sites previously had this bug.
 - `BuildFTtransferCode` returns `(*bscript.Script, error)`. There is no byte-offset fallback for "v1 layout" — the chunks-walk path is the only correct path; a fallback that patches `[1537:1558]` would silently corrupt FT-LP scripts (which have different padding offsets).
+- **Any ASM emitted from an embedded template (or `fmt.Sprintf` with `0x<hex>` tokens) must go through `strip0xHexPushesInASM` before `bscript.NewFromASM`.** tbc-lib-js's `Script.fromString` accepts `0x<hex>` push-data syntax; tbc-lib-go's `NewFromASM` does not (it returns `invalid opcode data`). FT/NFT/stablecoin mint paths and all four pool template paths (`getPoolNftCode`, `getPoolNftCodeWithLock`, `getFtlpCode`, `getFtlpCodeWithLockTime`) route through this strip helper. When porting a new template-based contract from TS, do the same.
 
 ### Pool-specific
 
