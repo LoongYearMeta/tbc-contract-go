@@ -467,6 +467,16 @@ func (f *FT) MergeFT(
 	prepreTxDatas []string,
 	localTXs []*bt.Tx,
 ) ([]string, error) {
+	// Already merged (or nothing to merge): return empty slice, mirroring
+	// the TS test-doc convention `mergeTX.length > 0 ? broadcast : "Merge success"`.
+	// TS itself doesn't guard at the top and would fall into the recursive
+	// phase with a single leftover ftutxo (eventually crashing on
+	// preTXs.pop() == undefined), so this is a deliberate Go-side
+	// ergonomics fix on top of the TS port.
+	if len(ftutxos) <= 1 {
+		return nil, nil
+	}
+
 	preTXsCopy := make([]*bt.Tx, len(preTXs))
 	copy(preTXsCopy, preTXs)
 
@@ -674,6 +684,12 @@ func (f *FT) mergeFTSingle(
 		nFt = 5
 	}
 
+	// First pass: sign every input so we know the true tx byte size. The
+	// initial ChangeToAddress only saw `JSEstimateSize` which assigns 41 B
+	// per non-P2PKH input — fine for 1-2 FT inputs but grossly wrong for a
+	// 5-FT merge (actual FT unlock is ~1200 B/input). Without this two-pass
+	// adjust, a 5-input merge underpays the relay by ~470 sat and the
+	// indexer rejects with "66: insufficient priority".
 	if err := ftSignFeeInputs(tx, privKey, nFt); err != nil {
 		return nil, err
 	}
@@ -682,6 +698,43 @@ func (f *FT) mergeFTSingle(
 		return nil, err
 	}
 	if err := ftInsertUnlocks(tx, ftUnlocks, nFt); err != nil {
+		return nil, err
+	}
+
+	// Second pass: recompute fee from actual signed bytes, adjust change,
+	// re-sign every input (sighash includes the change output). The unlock
+	// script *size* is deterministic across re-signs, so a single redo is
+	// enough — no further iteration needed.
+	actualSize := len(tx.Bytes())
+	var targetFee uint64
+	if actualSize < 1000 {
+		targetFee = 80
+	} else {
+		targetFee = (uint64(actualSize)*80 + 999) / 1000 // ceil
+	}
+	inputSum := uint64(0)
+	for _, in := range tx.Inputs {
+		inputSum += in.PreviousTxSatoshis
+	}
+	nonChangeSum := uint64(0)
+	for i, out := range tx.Outputs {
+		if i < len(tx.Outputs)-1 {
+			nonChangeSum += out.Satoshis
+		}
+	}
+	if inputSum < nonChangeSum+targetFee {
+		return nil, fmt.Errorf("merge: insufficient inputs to cover %d sat fee", targetFee)
+	}
+	tx.Outputs[len(tx.Outputs)-1].Satoshis = inputSum - nonChangeSum - targetFee
+
+	if err := ftSignFeeInputs(tx, privKey, nFt); err != nil {
+		return nil, err
+	}
+	ftUnlocks2, err := f.buildFTUnlocks(privKey, tx, preTXs, prepreTxDatas, ftutxos)
+	if err != nil {
+		return nil, err
+	}
+	if err := ftInsertUnlocks(tx, ftUnlocks2, nFt); err != nil {
 		return nil, err
 	}
 	return tx, nil
