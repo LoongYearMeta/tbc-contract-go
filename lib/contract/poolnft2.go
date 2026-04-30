@@ -466,7 +466,14 @@ func (p *PoolNFT2) GetPoolNftUnlockOffLine(
 		return nil, fmt.Errorf("GetPoolNftUnlockOffLine outputsdata: %w", err)
 	}
 
-	optionHex := fmt.Sprintf("%02x", option+50) // TS: option + 50
+	// TS: `${option + 50}` — JS template literal produces the DECIMAL
+	// string of `option+50`, e.g. option=1 → "51". When concatenated into
+	// the unlock hex it decodes as byte 0x51 (= OP_1, push-only). Using
+	// %02x here would emit the HEX of 51 (= "33"), decoding to byte 0x33
+	// = OP_DATA_51, which silently turns the rest of the script into
+	// non-push-only garbage and triggers `64: scriptsig-not-pushonly` at
+	// broadcast time.
+	optionHex := fmt.Sprintf("%d", option+50)
 
 	// Determine pool code type from output[0]
 	poolCodeScript := currentTX.Outputs[0].LockingScript
