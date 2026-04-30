@@ -340,7 +340,7 @@ func (f *FT) BatchTransfer(
 		totalBatchAmount := new(big.Int)
 		for i, r := range batch {
 			// Mirror TS: only negative amounts are rejected; 0 is allowed.
-			if r.Amount == nil || r.Amount.Sign() <= 0 {
+			if r.Amount == nil || r.Amount.Sign() < 0 {
 				return nil, fmt.Errorf("invalid amount for address %s", r.Address)
 			}
 			receiverAmounts[i] = r.Amount
