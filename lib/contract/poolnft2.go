@@ -3851,6 +3851,13 @@ func (p *PoolNFT2) MergeFTinPool(
 	for i := 0; i < times; i++ {
 		start := i * 4
 		end := start + 4
+		// Clamp both bounds: TS Array.slice tolerates start >= length (returns
+		// []), Go's slice expression panics with `slice bounds out of range`
+		// when start > end. Without this, `times=10` against a list of 3 panics
+		// at iteration 2 with `[4:3]`.
+		if start > len(ftutxoList) {
+			start = len(ftutxoList)
+		}
 		if end > len(ftutxoList) {
 			end = len(ftutxoList)
 		}
