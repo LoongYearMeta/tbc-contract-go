@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"strings"
 
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
@@ -44,7 +45,9 @@ type poolNftInfoRaw struct {
 		FtLpPartialHash string          `json:"ft_lp_partial_hash"`
 		FtAPartialHash  string          `json:"ft_a_partial_hash"`
 		FtContractID    string          `json:"ft_contract_id"`
-		ServiceFeeRate  string          `json:"service_fee_rate"`
+		// Indexer may return service_fee_rate either as a number ("35") or
+		// as a JSON int (35). Decode raw and stringify in FetchPoolNFTInfo.
+		ServiceFeeRate  json.RawMessage `json:"service_fee_rate"`
 		ServiceProvider string          `json:"service_provider"`
 		PoolCodeScript  string          `json:"pool_code_script"`
 		Version         int             `json:"version"`
@@ -89,6 +92,10 @@ func FetchPoolNFTInfo(contractTxID, network string) (*PoolNFTInfo, error) {
 	tokenBal, _ := parseBigIntOrUint64(r.Data.TokenBalance)
 	tbcBal, _ := parseBigIntOrUint64(r.Data.TBCBalance)
 
+	// service_fee_rate may arrive as either a JSON string ("35") or a JSON
+	// number (35); normalize to the decimal-string form callers expect.
+	feeRateStr := strings.Trim(string(r.Data.ServiceFeeRate), `"`)
+
 	lpStr := "0"
 	if lpBal != nil {
 		lpStr = lpBal.String()
@@ -109,7 +116,7 @@ func FetchPoolNFTInfo(contractTxID, network string) (*PoolNFTInfo, error) {
 		FtLpPartialHash:        r.Data.FtLpPartialHash,
 		FtAPartialHash:         r.Data.FtAPartialHash,
 		FtAContractTxID:        r.Data.FtContractID,
-		ServiceFeeRate:         r.Data.ServiceFeeRate,
+		ServiceFeeRate:         feeRateStr,
 		ServiceProvider:        r.Data.ServiceProvider,
 		PoolNftCode:            r.Data.PoolCodeScript,
 		PoolVersion:            r.Data.Version,

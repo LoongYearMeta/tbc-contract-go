@@ -825,7 +825,7 @@ func (p *PoolNFT2) getPoolNftCode(txid string, vout uint32, lpPlan, ftVersion in
 	// syntax that tbc-lib-js's `Script.fromString` accepts; the same
 	// strip pass already used by ft.go / nft.go / stablecoin.go is
 	// required for the pool templates too.
-	return bscript.NewFromASM(strip0xHexPushesInASM(asm))
+	return bscript.NewFromASM(strip0xHexPushesInASM(collapseTbcMintASM(asm)))
 }
 
 // --------------------------------------------------------------------------
@@ -959,7 +959,7 @@ func (p *PoolNFT2) getPoolNftCodeWithLock(
 	}
 
 	fullASM := preASM + " " + firstASM + " " + multiKeyASM + " " + lastASM
-	out, err := bscript.NewFromASM(strip0xHexPushesInASM(fullASM))
+	out, err := bscript.NewFromASM(strip0xHexPushesInASM(collapseTbcMintASM(fullASM)))
 	if err != nil {
 		return nil, fmt.Errorf("getPoolNftCodeWithLock NewFromASM: %w", err)
 	}
@@ -986,7 +986,7 @@ func (p *PoolNFT2) getFtlpCode(poolNftCodeHash, address string, tapeSize int, is
 		"${codeHash}", poolNftCodeHash,
 		"${tapeSizeHex}", tapeSizeHex,
 	).Replace(poolNFT2FtlpCodeTemplate)
-	preScript, err := bscript.NewFromASM(strip0xHexPushesInASM(pre))
+	preScript, err := bscript.NewFromASM(strip0xHexPushesInASM(collapseTbcMintASM(pre)))
 	if err != nil {
 		return nil, fmt.Errorf("getFtlpCode pre: %w", err)
 	}
@@ -1042,7 +1042,7 @@ func (p *PoolNFT2) getFtlpCodeWithLockTime(poolNftCodeHash, address string, tape
 		"${hash}", hashField,
 		"${tapeSizeHex}", tapeSizeHex,
 	).Replace(poolNFT2FtlpLockTimeCodeTemplate)
-	preScript, err := bscript.NewFromASM(strip0xHexPushesInASM(pre))
+	preScript, err := bscript.NewFromASM(strip0xHexPushesInASM(collapseTbcMintASM(pre)))
 	if err != nil {
 		return nil, fmt.Errorf("getFtlpCodeWithLockTime pre: %w", err)
 	}
