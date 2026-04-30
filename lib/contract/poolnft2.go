@@ -999,18 +999,30 @@ func (p *PoolNFT2) getFtlpCode(poolNftCodeHash, address string, tapeSize int, is
 	}
 
 	// last part: padding + OP_DROP OP_RETURN 0x15 hash 0x05 0x02436f6465
+	//
+	// PUSHDATA2's length field is a LITTLE-ENDIAN uint16 (Bitcoin script wire
+	// format). When TS writes `OP_PUSHDATA2 0x01c1 0xff..ff`, Script.fromString
+	// parses 0x01c1 as decimal int 449 and Script.fromChunks emits the length
+	// as LE bytes 0xc1 0x01. So the on-wire pushOpcode is `4dc101`, not
+	// `4d01c1`. Encoding it as big-endian here causes tbc-lib-go's chunks
+	// parser to read length=0xc101=49409, fail to consume the 449 padding
+	// bytes, and instead decode each 0xff as an individual opcode — which
+	// makes BuildFTtransferCode's chunks-walk + FromChunks roundtrip drop the
+	// PUSHDATA2 length bytes (the chunk has nil Buf). The resulting FT-LP
+	// transfer code is 2 bytes shorter than expected and the pool contract's
+	// outputs-data verification fails with OP_EQUALVERIFY at broadcast.
 	var paddingHex string
 	var pushOpcode string
 	if isCoin {
-		// 577 bytes of 0xff → PUSHDATA2 0x0241
+		// 577 bytes of 0xff → PUSHDATA2 length 577 = 0x0241 LE → bytes 41 02
 		paddingHex = strings.Repeat("ff", 577)
-		pushOpcode = "4d0241"
+		pushOpcode = "4d4102"
 	} else if ftVersion == 2 {
-		// 449 bytes of 0xff → PUSHDATA2 0x01c1
+		// 449 bytes of 0xff → PUSHDATA2 length 449 = 0x01c1 LE → bytes c1 01
 		paddingHex = strings.Repeat("ff", 449)
-		pushOpcode = "4d01c1"
+		pushOpcode = "4dc101"
 	} else {
-		// 130 bytes of 0xff → PUSHDATA1 0x82
+		// 130 bytes of 0xff → PUSHDATA1 0x82 (PUSHDATA1 length is a single byte)
 		paddingHex = strings.Repeat("ff", 130)
 		pushOpcode = "4c82"
 	}
@@ -1054,19 +1066,21 @@ func (p *PoolNFT2) getFtlpCodeWithLockTime(poolNftCodeHash, address string, tape
 		return nil, fmt.Errorf("getFtlpCodeWithLockTime pre: %w", err)
 	}
 
-	// Padding sizes differ from getFtlpCode (with lock time variant)
+	// Padding sizes differ from getFtlpCode (with lock time variant). The
+	// same LE uint16 PUSHDATA2 byte order applies — see getFtlpCode for the
+	// detailed explanation.
 	var paddingHex string
 	var pushOpcode string
 	if isCoin {
-		// 577 bytes → PUSHDATA2 0x0241
-		paddingHex = strings.Repeat("ff", 577)
-		pushOpcode = "4d0241"
+		// 553 bytes of 0xff → PUSHDATA2 length 553 = 0x0229 LE → bytes 29 02
+		paddingHex = strings.Repeat("ff", 553)
+		pushOpcode = "4d2902"
 	} else if ftVersion == 2 {
-		// 425 bytes → PUSHDATA2 0x01a9
+		// 425 bytes of 0xff → PUSHDATA2 length 425 = 0x01a9 LE → bytes a9 01
 		paddingHex = strings.Repeat("ff", 425)
-		pushOpcode = "4d01a9"
+		pushOpcode = "4da901"
 	} else {
-		// 106 bytes → PUSHDATA1 0x6a
+		// 106 bytes of 0xff → PUSHDATA1 0x6a (PUSHDATA1 length is a single byte)
 		paddingHex = strings.Repeat("ff", 106)
 		pushOpcode = "4c6a"
 	}
@@ -2676,52 +2690,54 @@ func (p *PoolNFT2) ConsumeLP(
 
 	changeScript, _ := bscript.NewP2PKHFromAddress(addr.AddressString)
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: changeScript})
+	// First pass — provisional change so unlock sighashes commit to non-zero.
 	adjustFeeAndChange(tx, 80)
 
 	withLockInt := isLockByCodeLen(p.PoolNftCode)
-	poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), withLockInt, 2, 0)
-	if err != nil {
-		return nil, err
-	}
-	tx.Inputs[0].UnlockingScript = poolUnlock
 
 	// TS poolNFT2.0.ts:1265-1266 sets sequence=0xFFFFFFFE on the LP input
-	// (input 1) for with_lock_time pools so tx.LockTime is honored. Without
-	// this, the consumed LP UTXO's lock-time gate isn't released even if the
-	// caller has separately broadcast the unlockFTLP precursor.
-	//
-	// NOTE: TS also calls `unlockFTLP` BEFORE this method runs, broadcasts
-	// it, and uses unlockTX.outputs[2] as the fee input. The Go port does
-	// not (yet) implement that precursor flow — for with-lock-time pools
-	// the caller must broadcast their own unlock tx and pass its
-	// outputs[2] as `utxo` for ConsumeLP to work end-to-end.
+	// (input 1) for with_lock_time pools so tx.LockTime is honored.
 	if p.WithLockTime {
 		tx.Inputs[1].SequenceNumber = 4294967294
 	}
-
-	// LP input unlock
-	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
-	lpUnlock, err := ft.GetFTunlock(privKey, tx, lpPreTX, lpPrePreTxData, 1, int(fttxoLP.Vout), false)
-	if err != nil {
-		return nil, err
-	}
-	tx.Inputs[1].UnlockingScript = lpUnlock
-
-	// FT-A from pool: swap unlock
-	for i, ftu := range fttxosC {
-		if isCoin {
+	if isCoin {
+		for i := range fttxosC {
 			tx.Inputs[i+2].SequenceNumber = 4294967294
 		}
-		swapUnlock, err2 := ft.GetFTunlockSwap(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], contractTX, i+2, int(ftu.Vout), ftVersion, isCoin)
-		if err2 != nil {
-			return nil, err2
+	}
+	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
+	feeIdx := len(fttxosC) + 2
+
+	signAll := func() error {
+		poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), withLockInt, 2, 0)
+		if err != nil {
+			return err
 		}
-		tx.Inputs[i+2].UnlockingScript = swapUnlock
+		tx.Inputs[0].UnlockingScript = poolUnlock
+		lpUnlock, err := ft.GetFTunlock(privKey, tx, lpPreTX, lpPrePreTxData, 1, int(fttxoLP.Vout), false)
+		if err != nil {
+			return err
+		}
+		tx.Inputs[1].UnlockingScript = lpUnlock
+		for i, ftu := range fttxosC {
+			swapUnlock, err2 := ft.GetFTunlockSwap(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], contractTX, i+2, int(ftu.Vout), ftVersion, isCoin)
+			if err2 != nil {
+				return err2
+			}
+			tx.Inputs[i+2].UnlockingScript = swapUnlock
+		}
+		return signP2PKHAtIdx(tx, privKey, uint32(feeIdx))
+	}
+	if err := signAll(); err != nil {
+		return nil, err
 	}
 
-	// Fee input is always P2PKH; sign unconditionally.
-	feeIdx := len(fttxosC) + 2
-	if err := signP2PKHAtIdx(tx, privKey, uint32(feeIdx)); err != nil {
+	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
+	// byte length is deterministic across re-signs so this converges.
+	if err := adjustFeeFromActualSize(tx, 80); err != nil {
+		return nil, err
+	}
+	if err := signAll(); err != nil {
 		return nil, err
 	}
 
