@@ -12,13 +12,13 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bec"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
 	"github.com/LoongYearMeta/tbc-lib-go/crypto"
 	"github.com/LoongYearMeta/tbc-lib-go/sighash"
 	"github.com/LoongYearMeta/tbc-lib-go/unlocker"
-	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 )
 
 //go:embed ft_mint_template.asm
@@ -340,7 +340,7 @@ func (f *FT) BatchTransfer(
 		totalBatchAmount := new(big.Int)
 		for i, r := range batch {
 			// Mirror TS: only negative amounts are rejected; 0 is allowed.
-			if r.Amount == nil || r.Amount.Sign() < 0 {
+			if r.Amount == nil || r.Amount.Sign() <= 0 {
 				return nil, fmt.Errorf("invalid amount for address %s", r.Address)
 			}
 			receiverAmounts[i] = r.Amount
@@ -578,7 +578,20 @@ func (f *FT) MergeFT(
 		prepreLookup = preTXsCopy
 	}
 
-	newPrepreTxDatas := make([]string, 0)
+	// TS keeps mutating `prepreTxDatas` in-place — at this point it still
+	// holds the leftover entries from the last loop iteration's
+	// `prepreTxData.slice(index, index+5)` (i.e. the prepreTxData entries
+	// for the leftover ftutxos that didn't fit this round). The push below
+	// then appends entries for the new merge-result txs. Go's loop above
+	// reassigns `currentPrepreTxDatas` to that same leftover slice, so seed
+	// `newPrepreTxDatas` with `currentPrepreTxDatas[:nonEmpty]` to mirror
+	// the TS state before pushing merge-result entries — otherwise the
+	// recursive call sees fewer prepreTxDatas than ftutxos and the
+	// leftover ftutxo gets paired with the wrong (or out-of-bounds) entry.
+	newPrepreTxDatas := make([]string, 0, nonEmpty+(len(newPreTXs)-nonEmpty))
+	if nonEmpty > 0 && nonEmpty <= len(currentPrepreTxDatas) {
+		newPrepreTxDatas = append(newPrepreTxDatas, currentPrepreTxDatas[:nonEmpty]...)
+	}
 	for i := nonEmpty; i < len(newPreTXs); i++ {
 		ppd, err := util.BuildFtPrePreTxData(newPreTXs[i], 0, prepreLookup)
 		if err != nil {
@@ -1278,4 +1291,3 @@ func hexDecode(s string) []byte {
 	b, _ := hex.DecodeString(s)
 	return b
 }
-
