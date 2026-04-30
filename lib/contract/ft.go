@@ -355,7 +355,7 @@ func (f *FT) BatchTransfer(
 			tapeAmountSetIn = append(tapeAmountSetIn, new(big.Int).Set(balance))
 		}
 
-		tapeHexes, err := buildMultiTapeAmountsRaw(receiverAmounts, tapeAmountSetIn)
+		tapeHexes, err := BuildMultiTapeAmounts(receiverAmounts, tapeAmountSetIn)
 		if err != nil {
 			return nil, err
 		}
@@ -761,71 +761,6 @@ func StaticGetFTunlockSwap(sigs, pubKey string, currentTX *bt.Tx, preTX *bt.Tx, 
 	return bscript.NewFromHexString(unlockHex)
 }
 
-// P2PKHOutputTBC describes a single TBC P2PKH output for multi-send.
-type P2PKHOutputTBC struct {
-	Address string
-	TBC     float64
-}
-
-// P2PKHToP2PKHSendTBC sends TBC from one P2PKH address to another.
-// Mirrors TS P2PKHToP2PKHSendTBC (defined in ft.ts).
-func P2PKHToP2PKHSendTBC(addressFrom, addressTo string, tbcAmount float64, utxos []*bt.UTXO, privKey *bec.PrivateKey) (string, error) {
-	addrTo, err := bscript.NewAddressFromString(addressTo)
-	if err != nil {
-		return "", fmt.Errorf("invalid addressTo: %w", err)
-	}
-	ls, err := bscript.NewP2PKHFromPubKeyHash(hexDecode(addrTo.PublicKeyHash))
-	if err != nil {
-		return "", err
-	}
-	amtSat := uint64(math.Round(tbcAmount * 1e6))
-	tx := newFTTx()
-	if err := tx.FromUTXOs(utxos...); err != nil {
-		return "", err
-	}
-	tx.AddOutput(&bt.Output{LockingScript: ls, Satoshis: amtSat})
-	if err := tx.ChangeToAddress(addressFrom, newFeeQuote80()); err != nil {
-		return "", fmt.Errorf("ChangeToAddress: %w", err)
-	}
-	ctx := context.Background()
-	if err := tx.FillAllInputs(ctx, &unlocker.Getter{PrivateKey: privKey}); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(tx.Bytes()), nil
-}
-
-// P2PKHToManyP2PKHSendTBC sends TBC from one address to multiple recipients in a single tx.
-// Mirrors TS P2PKHToManyP2PKHSendTBC (defined in ft.ts).
-func P2PKHToManyP2PKHSendTBC(addressFrom string, outputs []P2PKHOutputTBC, utxos []*bt.UTXO, privKey *bec.PrivateKey) (string, error) {
-	if len(outputs) == 0 {
-		return "", fmt.Errorf("no outputs specified")
-	}
-	tx := newFTTx()
-	if err := tx.FromUTXOs(utxos...); err != nil {
-		return "", err
-	}
-	for _, o := range outputs {
-		addrTo, err := bscript.NewAddressFromString(o.Address)
-		if err != nil {
-			return "", fmt.Errorf("invalid address %s: %w", o.Address, err)
-		}
-		ls, err := bscript.NewP2PKHFromPubKeyHash(hexDecode(addrTo.PublicKeyHash))
-		if err != nil {
-			return "", err
-		}
-		amtSat := uint64(math.Round(o.TBC * 1e6))
-		tx.AddOutput(&bt.Output{LockingScript: ls, Satoshis: amtSat})
-	}
-	if err := tx.ChangeToAddress(addressFrom, newFeeQuote80()); err != nil {
-		return "", fmt.Errorf("ChangeToAddress: %w", err)
-	}
-	ctx := context.Background()
-	if err := tx.FillAllInputs(ctx, &unlocker.Getter{PrivateKey: privKey}); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(tx.Bytes()), nil
-}
-
 // BuildTapeAmount mirrors TS FT.buildTapeAmount(amountBN, tapeAmountSet).
 func BuildTapeAmount(amountBN *big.Int, tapeAmountSet []*big.Int) (amountHex, changeHex string) {
 	return BuildTapeAmountWithFtInputIndex(amountBN, tapeAmountSet, 0)
@@ -893,11 +828,6 @@ func BuildTapeAmountWithFtInputIndex(amountBN *big.Int, tapeAmountSet []*big.Int
 // Returns len(outputAmounts)+1 strings: one per recipient followed by the change hex.
 // Mirrors TS FT.buildMultiTapeAmounts(outputAmounts, tapeAmountSetIn).
 func BuildMultiTapeAmounts(outputAmounts []*big.Int, tapeAmountSetIn []*big.Int) ([]string, error) {
-	return buildMultiTapeAmountsRaw(outputAmounts, tapeAmountSetIn)
-}
-
-// buildMultiTapeAmountsRaw is the internal implementation of BuildMultiTapeAmounts.
-func buildMultiTapeAmountsRaw(outputAmounts []*big.Int, tapeAmountSetIn []*big.Int) ([]string, error) {
 	remaining := make([]*big.Int, 6)
 	for i := 0; i < 6; i++ {
 		if i < len(tapeAmountSetIn) && tapeAmountSetIn[i] != nil {
@@ -1348,27 +1278,3 @@ func hexDecode(s string) []byte {
 	return b
 }
 
-// ftTransferUnlockerGetter satisfies bt.UnlockerGetter for FT transfers.
-// Returns either an FT custom unlocker or a P2PKH unlocker depending on input index.
-type ftTransferUnlockerGetter struct {
-	ftScripts []*bscript.Script
-	privKey   *bec.PrivateKey
-	callIdx   int
-}
-
-func (g *ftTransferUnlockerGetter) Unlocker(_ context.Context, _ *bscript.Script) (bt.Unlocker, error) {
-	idx := g.callIdx
-	g.callIdx++
-	if idx < len(g.ftScripts) {
-		return &fixedScriptUnlocker{script: g.ftScripts[idx]}, nil
-	}
-	return &unlocker.Simple{PrivateKey: g.privKey}, nil
-}
-
-type fixedScriptUnlocker struct {
-	script *bscript.Script
-}
-
-func (u *fixedScriptUnlocker) UnlockingScript(_ context.Context, _ *bt.Tx, _ bt.UnlockerParams) (*bscript.Script, error) {
-	return u.script, nil
-}
