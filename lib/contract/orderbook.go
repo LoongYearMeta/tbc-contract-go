@@ -711,7 +711,12 @@ func (o *OrderBook) BuildCancelBuyOrderTX(
 
 	tapeAmountSetIn := []*big.Int{new(big.Int).Set(ftUTXO.FtBalance)}
 	tapeSum := new(big.Int).Set(ftUTXO.FtBalance)
-	amountHex, changeHex := BuildTapeAmount(tapeSum, tapeAmountSetIn)
+	// FT input is at index 1 of the cancel tx (input 0 is the buy order),
+	// so tape slot[1] holds the amount. TS calls buildTapeAmount(sum, set, 1)
+	// for this reason — using the 0-default produced a tape mismatching
+	// what the FT-v2 swap contract expects, failing OP_EQUALVERIFY at
+	// broadcast.
+	amountHex, changeHex := BuildTapeAmountWithFtInputIndex(tapeSum, tapeAmountSetIn, 1)
 	zeroChange := make([]byte, 48)
 	if changeHex != hex.EncodeToString(zeroChange) {
 		return "", fmt.Errorf("BuildCancelBuyOrderTX: change amount is not zero")
@@ -749,6 +754,139 @@ func (o *OrderBook) BuildCancelBuyOrderTX(
 	est := tx.JSEstimateSize() + 2000
 	if adjustErr := tx.AdjustImplicitFeeToTarget(obTargetFee(est)); adjustErr != nil {
 		return "", adjustErr
+	}
+	return hex.EncodeToString(tx.Bytes()), nil
+}
+
+// ---------------------------------------------------------------------------
+// CancelBuyOrderWithSign — convenience: builds + signs cancel-buy in-place.
+// ---------------------------------------------------------------------------
+
+// CancelBuyOrderWithSign mirrors TS cancelBuyOrder_privateKeyOnline: builds
+// the cancel-buy tx and signs all three input categories (buy-order custom
+// unlock, FT swap unlock, P2PKH fee inputs) in-place, returning the final
+// raw hex ready to broadcast.
+//
+// In-place signing avoids the BuildCancelBuyOrderTX → hex → re-parse round
+// trip that drops PreviousTxScript/PreviousTxSatoshis (needed for BIP143
+// sighash + unlocker dispatch). Uses the two-pass actual-bytes fee pattern:
+// provisional change → sign → adjust against `len(tx.Bytes())` → re-sign.
+func (o *OrderBook) CancelBuyOrderWithSign(
+	privKey *bec.PrivateKey,
+	buyUTXO *bt.UTXO,
+	ftUTXO *util.FtUTXO,
+	buyPreTX *bt.Tx,
+	ftPrePreTxData string,
+	utxos []*bt.UTXO,
+	mainnet bool,
+) (string, error) {
+	buyData, err := GetOrderData(buyUTXO.LockingScript.String(), mainnet)
+	if err != nil {
+		return "", err
+	}
+
+	tapeAmountSetIn := []*big.Int{new(big.Int).Set(ftUTXO.FtBalance)}
+	tapeSum := new(big.Int).Set(ftUTXO.FtBalance)
+	amountHex, changeHex := BuildTapeAmountWithFtInputIndex(tapeSum, tapeAmountSetIn, 1)
+	zeroChange := make([]byte, 48)
+	if changeHex != hex.EncodeToString(zeroChange) {
+		return "", fmt.Errorf("CancelBuyOrderWithSign: change amount is not zero")
+	}
+
+	ftPreTX := buyPreTX
+	if len(ftPreTX.Outputs) <= int(ftUTXO.Vout)+1 {
+		return "", fmt.Errorf("CancelBuyOrderWithSign: ftPreTX insufficient outputs")
+	}
+	ftTapeHex := hex.EncodeToString(ftPreTX.Outputs[int(ftUTXO.Vout)+1].LockingScript.Bytes())
+	ftCodeScriptHex := hex.EncodeToString(ftUTXO.LockingScript.Bytes())
+	isCoin := IsCoinScript(ftCodeScriptHex)
+
+	ftCodeOut, err := BuildFTtransferCode(ftCodeScriptHex, buyData.HoldAddress)
+	if err != nil {
+		return "", err
+	}
+	ftTapeOut, err := BuildFTtransferTape(ftTapeHex, amountHex)
+	if err != nil {
+		return "", err
+	}
+
+	tx := newFTTx()
+	if err := tx.FromUTXOs(buyUTXO); err != nil {
+		return "", err
+	}
+	if err := tx.FromUTXOs(util.FtUTXOsToUTXOs([]*util.FtUTXO{ftUTXO})...); err != nil {
+		return "", err
+	}
+	if err := tx.FromUTXOs(utxos...); err != nil {
+		return "", err
+	}
+	tx.AddOutput(&bt.Output{LockingScript: ftCodeOut, Satoshis: ftUTXO.Satoshis})
+	tx.AddOutput(&bt.Output{LockingScript: ftTapeOut, Satoshis: 0})
+
+	// Provisional change so unlock sighashes commit to a non-zero output.
+	if err := tx.ChangeToAddress(buyData.HoldAddress, newFeeQuote80()); err != nil {
+		return "", err
+	}
+
+	if isCoin {
+		tx.Inputs[1].SequenceNumber = 4294967294
+	}
+	pubKeyHex := hex.EncodeToString(privKey.PubKey().SerialiseCompressed())
+	ft := &FT{ContractTxid: buyData.FtID, CodeScript: ftCodeScriptHex, TapeScript: ftTapeHex}
+
+	signAll := func() error {
+		// Input 0: buy-order custom unlock (sig + pubKey + OP_2).
+		sh, err := tx.CalcInputSignatureHash(0, sighash.AllForkID)
+		if err != nil {
+			return err
+		}
+		sig0, err := privKey.Sign(sh)
+		if err != nil {
+			return err
+		}
+		sig0Hex := hex.EncodeToString(append(sig0.Serialise(), byte(sighash.AllForkID)))
+		cancelASM := fmt.Sprintf("%s %s OP_2", sig0Hex, pubKeyHex)
+		cancelScript, err := bscript.NewFromASM(cancelASM)
+		if err != nil {
+			return err
+		}
+		if err := tx.InsertInputUnlockingScript(0, cancelScript); err != nil {
+			return err
+		}
+		// Input 1: FT swap unlock (BUY ORDER as contractTX, FT v2).
+		swapUnlock, err := ft.GetFTunlockSwap(privKey, tx, ftPreTX, ftPrePreTxData, buyPreTX, 1, int(ftUTXO.Vout), 2, isCoin)
+		if err != nil {
+			return err
+		}
+		if err := tx.InsertInputUnlockingScript(1, swapUnlock); err != nil {
+			return err
+		}
+		// Inputs 2..: P2PKH fee inputs.
+		ctx := context.Background()
+		for i := 2; i < len(tx.Inputs); i++ {
+			su := &unlocker.Simple{PrivateKey: privKey}
+			us, err := su.UnlockingScript(ctx, tx, bt.UnlockerParams{
+				InputIdx:     uint32(i),
+				SigHashFlags: sighash.AllForkID,
+			})
+			if err != nil {
+				return err
+			}
+			if err := tx.InsertInputUnlockingScript(uint32(i), us); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if err := signAll(); err != nil {
+		return "", err
+	}
+	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input.
+	if err := adjustFeeFromActualSize(tx, 80); err != nil {
+		return "", err
+	}
+	if err := signAll(); err != nil {
+		return "", err
 	}
 	return hex.EncodeToString(tx.Bytes()), nil
 }
