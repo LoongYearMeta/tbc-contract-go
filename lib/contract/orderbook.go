@@ -518,44 +518,62 @@ func (o *OrderBook) CancelSellOrderWithSign(
 	if err := tx.PayToAddress(sellData.HoldAddress, sellUTXO.Satoshis); err != nil {
 		return "", err
 	}
+	// First pass — provisional change so the unlock sighash commits to a
+	// non-zero change output. The JS-aligned fee estimator counts the
+	// sell-order custom-unlock input as 41 B, vastly under-counting the real
+	// ~3-4 KB unlock; we adjust against actual signed bytes below.
 	if err := tx.ChangeToAddress(sellData.HoldAddress, newFeeQuote80()); err != nil {
 		return "", err
 	}
 
-	// Input 0: sell order unlock with OP_2 suffix
-	sh, err := tx.CalcInputSignatureHash(0, sighash.AllForkID)
-	if err != nil {
-		return "", err
-	}
-	sig, err := privKey.Sign(sh)
-	if err != nil {
-		return "", err
-	}
 	pubKeyHex := hex.EncodeToString(privKey.PubKey().SerialiseCompressed())
-	sigHex := hex.EncodeToString(append(sig.Serialise(), byte(sighash.AllForkID)))
-	cancelASM := fmt.Sprintf("%s %s OP_2", sigHex, pubKeyHex)
-	cancelScript, err := bscript.NewFromASM(cancelASM)
-	if err != nil {
-		return "", err
+	signAll := func() error {
+		// Input 0: sell order unlock with OP_2 suffix
+		sh, err := tx.CalcInputSignatureHash(0, sighash.AllForkID)
+		if err != nil {
+			return err
+		}
+		sig, err := privKey.Sign(sh)
+		if err != nil {
+			return err
+		}
+		sigHex := hex.EncodeToString(append(sig.Serialise(), byte(sighash.AllForkID)))
+		cancelASM := fmt.Sprintf("%s %s OP_2", sigHex, pubKeyHex)
+		cancelScript, err := bscript.NewFromASM(cancelASM)
+		if err != nil {
+			return err
+		}
+		if err := tx.InsertInputUnlockingScript(0, cancelScript); err != nil {
+			return err
+		}
+		// Sign remaining P2PKH inputs
+		ctx := context.Background()
+		for i := 1; i < len(tx.Inputs); i++ {
+			su := &unlocker.Simple{PrivateKey: privKey}
+			us, err := su.UnlockingScript(ctx, tx, bt.UnlockerParams{
+				InputIdx:     uint32(i),
+				SigHashFlags: sighash.AllForkID,
+			})
+			if err != nil {
+				return err
+			}
+			if err := tx.InsertInputUnlockingScript(uint32(i), us); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
-	if err := tx.InsertInputUnlockingScript(0, cancelScript); err != nil {
+	if err := signAll(); err != nil {
 		return "", err
 	}
 
-	// Sign remaining P2PKH inputs
-	ctx := context.Background()
-	for i := 1; i < len(tx.Inputs); i++ {
-		su := &unlocker.Simple{PrivateKey: privKey}
-		us, err := su.UnlockingScript(ctx, tx, bt.UnlockerParams{
-			InputIdx:     uint32(i),
-			SigHashFlags: sighash.AllForkID,
-		})
-		if err != nil {
-			return "", err
-		}
-		if err := tx.InsertInputUnlockingScript(uint32(i), us); err != nil {
-			return "", err
-		}
+	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
+	// byte length is deterministic across re-signs so this converges.
+	if err := adjustFeeFromActualSize(tx, 80); err != nil {
+		return "", err
+	}
+	if err := signAll(); err != nil {
+		return "", err
 	}
 	return hex.EncodeToString(tx.Bytes()), nil
 }
