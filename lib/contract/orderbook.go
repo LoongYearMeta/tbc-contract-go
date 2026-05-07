@@ -472,6 +472,19 @@ func (o *OrderBook) MakeSellOrderWithSign(
 	if err != nil {
 		return "", err
 	}
+	// `tx.Bytes()` doesn't serialise PreviousTxScript / PreviousTxSatoshis
+	// (they're not part of the wire format), so the round-tripped tx has
+	// empty input metadata. unlocker.Simple dispatches on
+	// PreviousTxScript.ScriptType() and bails with "currently only p2pkh
+	// supported" when it's empty. Repopulate from the supplied UTXOs (caller
+	// guarantees order matches) before signing.
+	if len(tx.Inputs) != len(utxos) {
+		return "", fmt.Errorf("MakeSellOrderWithSign: input count %d != utxos %d", len(tx.Inputs), len(utxos))
+	}
+	for i, u := range utxos {
+		tx.Inputs[i].PreviousTxScript = u.LockingScript
+		tx.Inputs[i].PreviousTxSatoshis = u.Satoshis
+	}
 	ctx := context.Background()
 	if err := tx.FillAllInputs(ctx, &unlocker.Getter{PrivateKey: privKey}); err != nil {
 		return "", err
