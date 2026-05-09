@@ -21,7 +21,7 @@ import (
 	"github.com/LoongYearMeta/tbc-lib-go/unlocker"
 )
 
-//go:embed ft_mint_template.asm
+//go:embed asm/ft_mint.asm
 var ftMintTemplateASM string
 
 const ftSatPerKB = 80

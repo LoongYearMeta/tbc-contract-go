@@ -34,10 +34,10 @@ import (
 	"github.com/LoongYearMeta/tbc-lib-go/sighash"
 )
 
-//go:embed stablecoin_mint.tmpl
+//go:embed asm/stablecoin_mint.asm
 var stablecoinMintTemplateASM string
 
-//go:embed stablecoin_coinnft_code.tmpl
+//go:embed asm/stablecoin_coinnft_code.asm
 var stablecoinCoinNftCodeTemplateASM string
 
 // stablecoinSequenceNoLockTime is the sequence number that allows nLockTime to

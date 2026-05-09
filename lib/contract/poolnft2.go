@@ -32,19 +32,19 @@ import (
 	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 )
 
-//go:embed poolnft2_code.tmpl
+//go:embed asm/poolnft2_code.asm
 var poolNFT2CodeTemplate string
 
-//go:embed poolnft2_ftlp_code.tmpl
+//go:embed asm/poolnft2_ftlp_code.asm
 var poolNFT2FtlpCodeTemplate string
 
-//go:embed poolnft2_ftlp_locktime_code.tmpl
+//go:embed asm/poolnft2_ftlp_locktime_code.asm
 var poolNFT2FtlpLockTimeCodeTemplate string
 
-//go:embed poolnft2_lock_code_pre.tmpl
+//go:embed asm/poolnft2_lock_code_pre.asm
 var poolNFT2LockCodePreTemplate string
 
-//go:embed poolnft2_lock_code_last.tmpl
+//go:embed asm/poolnft2_lock_code_last.asm
 var poolNFT2LockCodeLastTemplate string
 
 const (

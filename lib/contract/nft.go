@@ -23,10 +23,10 @@ import (
 	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 )
 
-//go:embed nft_code.asm
+//go:embed asm/nft_code.asm
 var nftCodeTemplateASM string
 
-//go:embed nft_code_v0.asm
+//go:embed asm/nft_code_v0.asm
 var nftCodeV0TemplateASM string
 
 const nftSatPerKB = 80
