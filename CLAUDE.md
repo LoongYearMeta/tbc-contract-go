@@ -17,7 +17,7 @@ go vet ./...
 
 Note: `go build ./...` (without `-o`) compiles each `package main` under `test/<contract>/` and drops a binary by that name into the **current working directory** (i.e. the repo root). The .gitignore lists those eight names (`/ft`, `/nft`, …, `/stablecoin`) so they don't get tracked, but for a clean check prefer `go build -o /dev/null ./test/...` or just `go vet ./test/...`.
 
-**Sibling dependency:** `go.mod` has `replace github.com/LoongYearMeta/tbc-lib-go => ../tbc-lib-go`. The build will fail without that sibling. `tbc-lib-go` itself is a single self-contained module — `libsv/go-bk` and `sCrypt-Inc/go-bt/v2` are NOT dependencies and must not be re-added.
+**Module dependency:** `go.mod` requires `github.com/LoongYearMeta/tbc-lib-go v1.0.0` (no `replace` directive — pulled from the public GitHub tag). `tbc-lib-go` itself is a single self-contained module — `libsv/go-bk` and `sCrypt-Inc/go-bt/v2` are NOT dependencies and must not be re-added. If proxy.golang.org / sum.golang.org return 404 right after a fresh tag is pushed (their caches lag a few hours), bypass with `GOPROXY=direct GOSUMDB=off go mod download` once and the populated `go.sum` keeps subsequent builds green.
 
 Go toolchain: **`go 1.17`** (see `go.mod`). Don't bump without coordinating with callers.
 
