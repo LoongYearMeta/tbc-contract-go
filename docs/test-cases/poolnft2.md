@@ -2,7 +2,7 @@
 
 参照 TS：[`../tbc-contract/docs/poolNFT2.0.md`](../../tbc-contract/docs/poolNFT2.0.md)。覆盖建池（普通 / multisig 锁定）、初始资金注入、增减 LP、双向 swap、合并/销毁 LP、合并池中 FT 等路径。
 
-> 仅实现 **Pool NFT 2.0（线性池）**；旧版 `poolNFT` v1 与 TS 中已弃用的 `*WithLockTime` 三件套（`initPoolNFTWithLockTime` / `increaseLpWithLockTime` / `consumeLpWithLockTime`）不在本仓范围内。
+> 仅实现 **Pool NFT 2.0**；旧版 `poolNFT` v1 与 TS 中已弃用的 `*WithLockTime` 三件套（`initPoolNFTWithLockTime` / `increaseLpWithLockTime` / `consumeLpWithLockTime`）不在本仓范围内。
 > with-lock-time 模式下的 `ConsumeLP` 返回 `[]string`：长度 1 时为 `[consumeRaw]`；长度 2 时为 `[unlockRaw, consumeRaw]`，需按顺序广播（先 unlock 上链，再 consume）。
 > Pool 端所有数量参数（`tbcAmount` / `ftAmount` / `amountLP`）都是十进制 **字符串**，由库内部用 `util.ParseDecimalToBigInt` 转 `*big.Int`，避免 float 精度损失。
 

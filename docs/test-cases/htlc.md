@@ -2,7 +2,7 @@
 
 参照 TS：[`../tbc-contract/docs/htlc.md`](../../tbc-contract/docs/htlc.md)。覆盖 Deploy / Withdraw / Refund 三条主路径，分别给出 **带私钥签名** 与 **不带私钥签名（前端构建 + 钱包签名）** 两种用法。
 
-> Go 端 HTLC 数量参数是 `uint64` satoshi（不是 TBC float64）。`amount + fee` 的 UTXO 仍以 TBC 调用 `api.FetchUTXO`。
+> Go 端 HTLC 数量参数是 `uint64` satoshi。`amount + fee` 的 UTXO 仍以 TBC 调用 `api.FetchUTXO`。
 > `ASM` 中分支选择使用 `OP_TRUE` / `OP_FALSE`（不是 TS 的 `"1"` / `"0"` 字面量）—— `bscript.NewFromASM` 不接受奇数长度十六进制字符串。
 
 ## 参数定义

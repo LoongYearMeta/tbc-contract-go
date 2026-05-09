@@ -17,11 +17,11 @@ import (
 // === 配置区（直接改这里） ===
 const (
 	network              = "testnet"
-	wifA                 = "" // 操作者 WIF（必填）
-	ftContractTxid       = "" // 标的 FT 合约 txid
-	poolContractTxidInit = "" // 已有池子 txid；CreatePoolNFT 之后会被覆盖
+	wifA                 = "L1u2TmR7hMMMSV9Bx2Lyt3sujbboqEFqnKygnPRnQERhKB4qptuK"             // 操作者 WIF（必填）
+	ftContractTxid       = "62ac8fb58fc18d7c0bbcc7e4fa11c704ef62faa17be078e3c530d5dec9cc231f" // 标的 FT 合约 txid
+	poolContractTxidInit = "a18f147d27beddafc4a92e05e40286295b839979446c57fd3ba205d4baf2cc32" // 已有池子 txid；CreatePoolNFT 之后会被覆盖
 
-	tag          = "tbc"
+	tag          = "tbcgo"
 	serviceRate  = 35 // 千分之三点五
 	lpPlan       = 2
 	withLockTime = false
@@ -29,22 +29,22 @@ const (
 	feeTBC = 0.01
 
 	// 各阶段开关
-	doCreate     = false
-	doInit       = false
-	doIncrease   = false
-	doConsume    = false
-	doSwapToFT   = false
-	doSwapToTBC  = false
-	doMergeLP    = false
-	doBurnLP     = false
-	doMergeFT    = false
-	doUnlockLP   = false
+	doCreate    = false
+	doInit      = false
+	doIncrease  = false
+	doConsume   = false
+	doSwapToFT  = false
+	doSwapToTBC = false
+	doMergeLP   = false
+	doBurnLP    = true
+	doMergeFT   = false
+	doUnlockLP  = false
 
 	// 数量参数
-	initTBCAmount = "30"
+	initTBCAmount = "10"
 	initFTAmount  = "1000"
-	increaseTBC   = "0.1"
-	consumeLP     = "13"
+	increaseTBC   = "1"
+	consumeLP     = "11"
 	swapTBC       = "0.1"
 	swapFT        = "100"
 )

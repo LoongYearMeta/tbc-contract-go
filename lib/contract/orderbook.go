@@ -11,6 +11,7 @@ import (
 	"math/big"
 	"regexp"
 
+	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bec"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
@@ -18,7 +19,6 @@ import (
 	"github.com/LoongYearMeta/tbc-lib-go/sighash"
 	"github.com/LoongYearMeta/tbc-lib-go/unlocker"
 	"github.com/LoongYearMeta/tbc-lib-go/util/partialsha256"
-	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 )
 
 // ---------------------------------------------------------------------------
@@ -29,9 +29,9 @@ const (
 	obOrderDataEncodedLen = 114
 
 	// FT code script lengths (from TS orderBook.ts)
-	obCoinLength   = 2012
-	obFTv2Partial  = 1856
-	obCoinPartial  = 1984
+	obCoinLength  = 2012
+	obFTv2Partial = 1856
+	obCoinPartial = 1984
 
 	// Order code base hex templates (without taxAddress or orderData appended).
 	// These match the hex literals in TS orderBook.ts getSellOrderCode / getBuyOrderCode.

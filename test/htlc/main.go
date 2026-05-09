@@ -19,14 +19,17 @@ import (
 )
 
 // === 配置区（直接改这里） ===
+//
+//   wifSender = A 锁币（用 A 的 TBC 锁进 HTLC）
+//   wifRecv   = B 取币（用 secret 解锁拿走）
 const (
 	network    = "testnet"
-	wifSender  = "" // 发送方 WIF（必填）
-	wifRecv    = "" // 接收方 WIF（必填）
+	wifSender  = "L1u2TmR7hMMMSV9Bx2Lyt3sujbboqEFqnKygnPRnQERhKB4qptuK" // 发送方 = orderbook 的 A
+	wifRecv    = "L5HRwv9CUz2yQKXGueeBqfpGGH7jtZxSxYKhgwA93sjcAsMqRNXQ" // 接收方 = orderbook 的 B
 	amountTBC  = 0.001
 	timelock   = uint32(1_774_427_165) // 退款解锁时间（unix 秒）
-	secretInit = ""                    // 32 字节 hex；为空时 doDeploy 会随机生成
-	htlcTXID   = ""                    // 已部署的合约 txid（Withdraw / Refund 必填）
+	secretInit = "2033b33005b1072dc9af3f3a8d83f2551b95c8b8487951746a69cd01789e7924"
+	htlcTXID   = "616b62642e180532e82a39f388fc04c8fe83972b11edef578722db844c4f7b17"
 
 	doDeploy   = false
 	doWithdraw = false

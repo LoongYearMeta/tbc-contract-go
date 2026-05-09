@@ -23,19 +23,19 @@ import (
 // === 配置区（直接改这里） ===
 const (
 	network        = "testnet"
-	wifA           = "" // 操作者 WIF（必填）
-	addressB       = "" // Transfer / BatchTransfer 接收方
-	ftContractTxid = "" // Mint 之外阶段必填
+	wifA           = "L1u2TmR7hMMMSV9Bx2Lyt3sujbboqEFqnKygnPRnQERhKB4qptuK"             // 操作者 WIF（必填）
+	addressB       = "143KgKGcse57nXBnXyJwtQrf2KP4KWto59"                               // Transfer / BatchTransfer 接收方
+	ftContractTxid = "62ac8fb58fc18d7c0bbcc7e4fa11c704ef62faa17be078e3c530d5dec9cc231f" // Mint 之外阶段必填
 
-	ftName    = "test"
-	ftSymbol  = "test"
+	ftName    = "test0430"
+	ftSymbol  = "test0430"
 	ftAmount  = 100_000_000 // 精度 6，上限 1 万亿
 	ftDecimal = 6
 
 	doMint     = false
 	doTransfer = false
 	doBatch    = false
-	doMerge    = false
+	doMerge    = true
 )
 
 func mustExit(err error, msg string) {

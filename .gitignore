@@ -4,6 +4,7 @@ contract.test
 *.test
 .idea/
 .vscode/
+.claude/
 *.exe
 *.dll
 *.so
