@@ -17,8 +17,6 @@ go vet ./...
 
 Note: `go build ./...` (without `-o`) compiles each `package main` under `test/<contract>/` and drops a binary by that name into the **current working directory** (i.e. the repo root). The .gitignore lists those eight names (`/ft`, `/nft`, …, `/stablecoin`) so they don't get tracked, but for a clean check prefer `go build -o /dev/null ./test/...` or just `go vet ./test/...`.
 
-`go mod tidy` will fail because the build-tagged `stablecoin.go` / `api_stablecoin.go` reference symbols that no longer exist (see "stablecoin" below). Don't run tidy unless you've also re-enabled stablecoin; the current `go.mod` is hand-tuned and correct.
-
 **Sibling dependency:** `go.mod` has `replace github.com/LoongYearMeta/tbc-lib-go => ../tbc-lib-go`. The build will fail without that sibling. `tbc-lib-go` itself is a single self-contained module — `libsv/go-bk` and `sCrypt-Inc/go-bt/v2` are NOT dependencies and must not be re-added.
 
 Go toolchain: **`go 1.17`** (see `go.mod`). Don't bump without coordinating with callers.
@@ -27,7 +25,7 @@ Go toolchain: **`go 1.17`** (see `go.mod`). Don't bump without coordinating with
 
 Three flat packages under `lib/`, each a single Go package; structure mirrors `tbc-contract/lib/` 1:1:
 
-- **`lib/contract`** — one file per contract family: `ft.go`, `nft.go`, `orderbook.go`, `multisig.go`, `htlc.go`, `piggybank.go`, `poolnft2.go`, `stablecoin.go`. Script templates live next to them as `.asm` / `.txt` / `.tmpl` files and are pulled in via `//go:embed` — edit those raw files to change scripts, don't inline the bytes. `poolnft2.go` has five embedded ASM templates (`poolnft2_code.tmpl`, `poolnft2_ftlp_code.tmpl`, `poolnft2_ftlp_locktime_code.tmpl`, `poolnft2_lock_code_pre.tmpl`, `poolnft2_lock_code_last.tmpl`) — the inline ASM strings these replaced were severely truncated relative to TS and should not be reintroduced.
+- **`lib/contract`** — one file per contract family: `ft.go`, `nft.go`, `orderbook.go`, `multisig.go`, `htlc.go`, `piggybank.go`, `poolnft2.go`, `stablecoin.go`. Script templates live next to them as `.asm` / `.tmpl` files and are pulled in via `//go:embed` — edit those raw files to change scripts, don't inline the bytes. `poolnft2.go` has five embedded ASM templates (`poolnft2_code.tmpl`, `poolnft2_ftlp_code.tmpl`, `poolnft2_ftlp_locktime_code.tmpl`, `poolnft2_lock_code_pre.tmpl`, `poolnft2_lock_code_last.tmpl`) — the inline ASM strings these replaced were severely truncated relative to TS and should not be reintroduced. `stablecoin.go` has two: `stablecoin_mint.tmpl` (FT mint code with `${adminPubHash} / ${codeHash} / ${tapeSizeHex} / ${hash}` placeholders) and `stablecoin_coinnft_code.tmpl` (coin-NFT code with `${txIDVout}`).
 
 - **`lib/api`** — HTTP client for the TBC indexer, split by topic: `api.go` (general), `api_ft.go`, `api_nft.go`, `api_pool.go`, `api_frozen.go`, `api_umtxo.go`, `api_stablecoin.go`. Base URLs are selected by a `network` string:
   - `"mainnet"` / `""` → `https://api.turingbitchain.io/api/tbc/`
@@ -80,11 +78,19 @@ These rules collectively prevent regressions of bugs that were already found and
 - Errors return as `(value, error)`. No `panic` in library code. `BuildFTtransferCode` and `NftEncodeMinimalPushData` (and the eight pool-side `bigIntToSats` callers) all surface errors rather than panicking on bad input.
 - `signP2PKHInput` returns an error when the previous-tx P2PKH points at a different pubkey hash. A silent no-op there produces an unsigned input the mempool rejects with no caller-visible cause.
 
-## Stablecoin (frozen)
+## Stablecoin: admin MuSig2 split
 
-`lib/contract/stablecoin.go` and `lib/api/api_stablecoin.go` carry `//go:build legacy_stablecoin` and are excluded from the default build. They reference the pre-refactor shape (e.g. `bt.FtUTXO`, `adjustFTTransferChangeFee`, deleted ft.go internals) and won't compile even with the build tag — they're parked as reference material for a future stablecoin rewrite.
+`StableCoin` extends `*FT` (composition). Two execution flavors:
 
-When the rewrite happens: don't lift code 1:1, port from TS `tbc-contract/lib/contract/stableCoin.ts` and the matching api file, the same way the rest of the repo was done.
+- **Owner-signed** (ECDSA, isCoin=true variant of `getFTunlock`): `Transfer`, `BatchTransfer`, `MergeCoin`. Identical surface to FT but with per-input `SequenceNumber = 0xfffffffe` and `tx.LockTime = max(per-input tape lockTime)` so frozen UTXOs only spend after their lockTime expires. Two-pass fee adjust kicks in for ≥2 FT inputs (same rule as FT mergeFTSingle / orderbook cancel-buy).
+- **Admin MuSig2** (BIP340 Schnorr): `PrepareCreateCoin`, `PrepareMintCoin`, `PrepareFreezeCoinUTXO`, `PrepareUnfreezeCoinUTXO`. tbc-lib-go does NOT include Schnorr/MuSig2 primitives, so these methods return `*AdminPrepared{ Tx, Sighashes, Finalize }`: pre-seed admin inputs with 64-byte zero placeholders, lock the byte layout via a two-pass ECDSA fee-input sign, expose 32-byte SHA256d sighashes for an external MuSig ceremony, and `Finalize(sigs)` swaps the placeholders for real 64-byte BIP340 sigs (same byte length → no re-fee). Caller is responsible for the BIP327 `keyAgg` / `nonceGen` / `partialSign` ceremony — typically run on `tbc-lib-js` cross-language or whatever Schnorr stack ships with their wallet.
+
+Admin-input unlock layout:
+- coin-NFT-code (input 0 of mint / createCoin): `<sigPush 0x41 sig64 SIGHASH_ALL_FORKID> <pubPush 0x20 xonly32> <currTxData> <prepre> <pre>`. Built via `BuildCoinNftUnlockScriptSchnorr`.
+- coin-NFT-hold (input 1): `<sigPush 0x41 sig64 SIGHASH_ALL_FORKID> <pubPush 0x20 xonly32>`. Built via `buildSchnorrP2PKHLikeUnlock`. The locking script is `OP_DUP OP_HASH160 <admin pkh20> OP_EQUALVERIFY OP_CHECKSIG OP_RETURN ...`; on-chain `OP_CHECKSIG` dispatches Schnorr by sig-length 64 and pubkey-length 32, so HASH160(xonly32) must match the embedded admin pkh.
+- coin FT inputs (freeze / unfreeze): `StaticGetFTunlock(sigPushHex, xonlyHex, …, isCoin=true)`.
+
+`PrepareCreateCoin.Finalize(sigs)` returns `[coinNftRaw, mintRaw]`; the other three return one-element slices. `coinNftRaw` is the upstream coin-NFT-creation tx (broadcast first); `mintRaw` is the mint that consumes its outputs 0/1/3.
 
 ## Pool: with-lock-time and the unlock precursor
 
@@ -103,6 +109,6 @@ When the rewrite happens: don't lift code 1:1, port from TS `tbc-contract/lib/co
 
 - `README.md`, `docs/合约库说明.md`, `docs/quick-start-go.md` — user-facing overview, library surface, and a minimal `go run` example.
 - `docs/test-cases/*.md` — one per contract family. Each starts with a parameter table and ends with a single-file `package main` runnable from a downstream module after configuring `replace`. These are the canonical integration-test templates; mirror the structure when adding a new scenario.
-- `test/<contract>/main.go` — in-repo runnable counterpart of each `docs/test-cases/*.md`. Configuration is via constants at the top (`wifA`, `ftContractTxid`, `do*` switches, etc.); no env vars. Build with `go build -o /dev/null ./test/...` to avoid littering the repo root with binaries. `test/stablecoin` is a placeholder (just prints a frozen notice) — see "Stablecoin (frozen)" below.
+- `test/<contract>/main.go` — in-repo runnable counterpart of each `docs/test-cases/*.md`. Configuration is via constants at the top (`wifA`, `ftContractTxid`, `do*` switches, etc.); no env vars. Build with `go build -o /dev/null ./test/...` to avoid littering the repo root with binaries. `test/stablecoin/main.go` exercises only the owner-signed paths (`Transfer` / `MergeCoin`), since the admin paths require an external Schnorr/MuSig2 ceremony — see `docs/test-cases/stablecoin.md`.
 - Spec source-of-truth stays at `../tbc-contract/docs/` (TS repo). `docs/README.md` has the TS↔Go mapping table — update it when adding or renaming a Go counterpart.
 - `docs/superpowers/specs/` and `docs/superpowers/plans/` hold design / planning artifacts (gitignored, do not commit).

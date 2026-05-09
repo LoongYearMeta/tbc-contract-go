@@ -1,12 +1,23 @@
-//go:build legacy_stablecoin
-// +build legacy_stablecoin
-
-// Package contract — stableCoin 扩展 FT（对齐 tbc-contract/lib/contract/stableCoin.ts）。
+// Package contract — StableCoin port of tbc-contract/lib/contract/stableCoin.ts.
+//
+// stableCoin is an FT subclass with two execution paths:
+//
+//   1. Owner-signed FT moves (Transfer / BatchTransfer / MergeCoin) which
+//      reuse FT.getFTunlock with isCoin=true. These produce raw txs ready to
+//      broadcast.
+//
+//   2. Admin-MuSig2 paths (CreateCoin / MintCoin / FreezeCoinUTXO /
+//      UnfreezeCoinUTXO) which return *AdminPrepared. The Go side cannot do
+//      MuSig2 (tbc-lib-go has no Schnorr/BIP340), so the prepare* methods
+//      pre-seed admin-input unlocks with 64-byte zero placeholders, freeze
+//      the fee, and return the SHA256d sighashes for those inputs. The
+//      caller runs the external MuSig ceremony, gets back 64-byte BIP340
+//      sigs, and passes them to (*AdminPrepared).Finalize, which swaps the
+//      placeholders for real sigs (same byte length → no fee shift) and
+//      serializes the tx.
 package contract
 
 import (
-	"context"
-	"crypto/sha256"
 	_ "embed"
 	"encoding/binary"
 	"encoding/hex"
@@ -15,113 +26,665 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/libsv/go-bk/bec"
-	bt "github.com/sCrypt-Inc/go-bt/v2"
-	"github.com/sCrypt-Inc/go-bt/v2/bscript"
-	"github.com/sCrypt-Inc/go-bt/v2/sighash"
-	"github.com/sCrypt-Inc/go-bt/v2/unlocker"
-	"github.com/sCrypt-Inc/tbc-contract-go/lib/util"
+	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
+	bt "github.com/LoongYearMeta/tbc-lib-go"
+	"github.com/LoongYearMeta/tbc-lib-go/bec"
+	"github.com/LoongYearMeta/tbc-lib-go/bscript"
+	"github.com/LoongYearMeta/tbc-lib-go/crypto"
+	"github.com/LoongYearMeta/tbc-lib-go/sighash"
 )
 
-//go:embed stablecoin_mint_template.txt
+//go:embed stablecoin_mint.tmpl
 var stablecoinMintTemplateASM string
 
-// StableCoin 稳定币合约句柄（嵌入 *FT，复用 Mint/Transfer 等）。
+//go:embed stablecoin_coinnft_code.tmpl
+var stablecoinCoinNftCodeTemplateASM string
+
+// stablecoinSequenceNoLockTime is the sequence number that allows nLockTime to
+// take effect (0xfffffffe). Mirrors TS tx.setInputSequence(i, 4294967294).
+const stablecoinSequenceNoLockTime uint32 = 0xfffffffe
+
+// dummySchnorrSig64 is a fixed-length 64-byte all-zero placeholder used while
+// pre-seeding admin unlock scripts. Its byte length matches a real BIP340
+// signature so every size-dependent computation (fee estimate, hashOutputs)
+// produces the same result before and after we swap in real signatures.
+var dummySchnorrSig64 = make([]byte, 64)
+
+// CoinNftData mirrors TS coinNftData. Carried as the JSON-encoded tape data
+// chunk on the coin-NFT issuance certificate output.
+type CoinNftData struct {
+	NftName         string `json:"nftName"`
+	NftSymbol       string `json:"nftSymbol"`
+	Description     string `json:"description"`
+	CoinDecimal     int    `json:"coinDecimal"`
+	CoinTotalSupply string `json:"coinTotalSupply"`
+}
+
+// StableCoin mirrors TS class stableCoin extends FT.
 type StableCoin struct {
 	*FT
 }
 
-// CoinNftData 对应 TS coinNftData 接口
-type CoinNftData struct {
-	NftName          string `json:"nftName"`
-	NftSymbol        string `json:"nftSymbol"`
-	Description      string `json:"description"`
-	CoinDecimal      int    `json:"coinDecimal"`
-	CoinTotalSupply  string `json:"coinTotalSupply"`
-}
-
-// NewStableCoin 使用与 NewFT 相同参数形式：txid 字符串或 *FtParams。
+// NewStableCoin uses the same constructor surface as NewFT.
 func NewStableCoin(txidOrParams interface{}) (*StableCoin, error) {
-	ft, err := NewFT(txidOrParams)
+	f, err := NewFT(txidOrParams)
 	if err != nil {
 		return nil, err
 	}
-	return &StableCoin{FT: ft}, nil
+	return &StableCoin{FT: f}, nil
 }
 
-// CreateCoin 对齐 TS stableCoin.createCoin。
-// 创建 coin NFT 交易 + mint 交易，返回 [coinNftTXRaw, coinMintTXRaw]。
-func (sc *StableCoin) CreateCoin(
-	privKeyAdmin *bec.PrivateKey,
+// AdminSighash describes one admin-signed input. Sighash is the 32-byte
+// SHA256d digest expected by an external BIP340 / MuSig2 signer.
+type AdminSighash struct {
+	InputIndex uint32
+	Sighash    []byte
+}
+
+// AdminPrepared bundles a prepared transaction whose admin inputs are seeded
+// with 64-byte placeholders. The MuSig ceremony signs each Sighashes[i]
+// externally; pass the resulting 64-byte BIP340 sigs to Finalize in matching
+// order. Finalize returns one or more raw tx hex strings ready to broadcast.
+type AdminPrepared struct {
+	Tx        *bt.Tx
+	Sighashes []AdminSighash
+	finalize  func(sigs64 [][]byte) ([]string, error)
+}
+
+// Finalize swaps in the real Schnorr sigs and produces the broadcast raw(s).
+func (a *AdminPrepared) Finalize(sigs64 [][]byte) ([]string, error) {
+	return a.finalize(sigs64)
+}
+
+// =============================================================================
+// Owner-signed FT-style paths
+// =============================================================================
+
+// Transfer transfers stableCoin to address_to, with optional bundled TBC.
+// Mirrors TS stableCoin.transfer(privateKey_from, address_to, ft_amount,
+// ftutxo_a, utxo, preTX, prepreTxData, tbc_amount?).
+func (sc *StableCoin) Transfer(
+	privKey *bec.PrivateKey,
+	addressTo string,
+	amount *big.Int,
+	ftutxos []*util.FtUTXO,
+	feeUTXO *bt.UTXO,
+	preTXs []*bt.Tx,
+	prepreTxDatas []string,
+	tbcAmountSat uint64,
+) (string, error) {
+	if amount == nil || amount.Sign() < 0 {
+		return "", fmt.Errorf("invalid amount input")
+	}
+	addr, err := bscript.NewAddressFromPublicKey(privKey.PubKey(), true)
+	if err != nil {
+		return "", err
+	}
+	addressFrom := addr.AddressString
+
+	tapeAmountSet := make([]*big.Int, len(ftutxos))
+	tapeAmountSum := new(big.Int)
+	var lockTimeMax uint32
+	for i, fu := range ftutxos {
+		tapeAmountSet[i] = new(big.Int).Set(fu.FtBalance)
+		tapeAmountSum.Add(tapeAmountSum, fu.FtBalance)
+		lt, err := GetLockTimeFromTape(preTXs[i].Outputs[fu.Vout+1].LockingScript)
+		if err != nil {
+			return "", fmt.Errorf("read locktime from input %d tape: %w", i, err)
+		}
+		if lt > lockTimeMax {
+			lockTimeMax = lt
+		}
+	}
+	if amount.Cmp(tapeAmountSum) > 0 {
+		return "", fmt.Errorf("insufficient balance, please add more FT UTXOs")
+	}
+	if sc.Decimal > 18 {
+		return "", fmt.Errorf("decimal cannot exceed 18")
+	}
+
+	amountHex, changeHex := BuildTapeAmount(amount, tapeAmountSet)
+
+	tx := newFTTx()
+	if err := tx.FromUTXOs(util.FtUTXOsToUTXOs(ftutxos)...); err != nil {
+		return "", err
+	}
+	if err := tx.FromUTXOs(feeUTXO); err != nil {
+		return "", err
+	}
+
+	// LockTime + sequence MUST be set BEFORE building unlock scripts: BIP143
+	// preimage commits to both, so any later change invalidates every signed
+	// input. Same rule as the rest of the repo (CLAUDE.md "Set tx.LockTime
+	// and per-input SequenceNumber BEFORE calling ft.GetFTunlock /
+	// signP2PKHAtIdx").
+	for i := range ftutxos {
+		tx.Inputs[i].SequenceNumber = stablecoinSequenceNoLockTime
+	}
+	tx.LockTime = lockTimeMax
+
+	codeScript, err := BuildFTtransferCode(sc.CodeScript, addressTo)
+	if err != nil {
+		return "", err
+	}
+	tx.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 500})
+	tapeScript, err := BuildFTtransferTape(sc.TapeScript, amountHex)
+	if err != nil {
+		return "", err
+	}
+	tx.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
+
+	if tbcAmountSat > 0 {
+		tx.To(addressTo, tbcAmountSat)
+	}
+	if amount.Cmp(tapeAmountSum) < 0 {
+		changeCode, err := BuildFTtransferCode(sc.CodeScript, addressFrom)
+		if err != nil {
+			return "", err
+		}
+		tx.AddOutput(&bt.Output{LockingScript: changeCode, Satoshis: 500})
+		changeTape, err := BuildFTtransferTape(sc.TapeScript, changeHex)
+		if err != nil {
+			return "", err
+		}
+		tx.AddOutput(&bt.Output{LockingScript: changeTape, Satoshis: 0})
+	}
+
+	if err := tx.ChangeToAddress(addressFrom, newFeeQuote80()); err != nil {
+		return "", fmt.Errorf("ChangeToAddress: %w", err)
+	}
+
+	if err := scSignAllOwner(tx, privKey, ftutxos, preTXs, prepreTxDatas); err != nil {
+		return "", err
+	}
+	// Two-pass adjust when ≥2 FT inputs (JSEstimateSize underpays at 41 B
+	// per non-P2PKH input — see CLAUDE.md "two-pass fee adjust" rule).
+	if len(ftutxos) >= 2 {
+		if err := scAdjustFeeAndResign(tx, privKey, ftutxos, preTXs, prepreTxDatas); err != nil {
+			return "", err
+		}
+	}
+	return hex.EncodeToString(tx.Bytes()), nil
+}
+
+// BatchTransfer batch-transfers stableCoin to multiple recipients (≤5/tx),
+// chaining FT change between txs. Mirrors TS stableCoin.batchTransfer.
+func (sc *StableCoin) BatchTransfer(
+	privKey *bec.PrivateKey,
+	receivers []AddressAmount,
+	ftutxos []*util.FtUTXO,
+	feeUTXO *bt.UTXO,
+	preTXs []*bt.Tx,
+	prepreTxDatas []string,
+) ([]string, error) {
+	if len(receivers) == 0 {
+		return nil, fmt.Errorf("no receivers specified")
+	}
+
+	addr, err := bscript.NewAddressFromPublicKey(privKey.PubKey(), true)
+	if err != nil {
+		return nil, err
+	}
+	addressFrom := addr.AddressString
+
+	totalBalance := new(big.Int)
+	for _, fu := range ftutxos {
+		totalBalance.Add(totalBalance, fu.FtBalance)
+	}
+
+	var batches [][]AddressAmount
+	for i := 0; i < len(receivers); i += 5 {
+		end := i + 5
+		if end > len(receivers) {
+			end = len(receivers)
+		}
+		batches = append(batches, receivers[i:end])
+	}
+
+	var txsraw []string
+	currentPreTXs := preTXs
+	currentPrepreTxDatas := prepreTxDatas
+	currentFtutxos := ftutxos
+	currentFeeUTXO := feeUTXO
+	balance := new(big.Int).Set(totalBalance)
+	var prevBatchSize int
+
+	for b, batch := range batches {
+		receiverAmounts := make([]*big.Int, len(batch))
+		totalBatchAmount := new(big.Int)
+		for i, r := range batch {
+			if r.Amount == nil || r.Amount.Sign() < 0 {
+				return nil, fmt.Errorf("invalid amount for address %s", r.Address)
+			}
+			receiverAmounts[i] = r.Amount
+			totalBatchAmount.Add(totalBatchAmount, r.Amount)
+		}
+
+		tapeAmountSetIn := make([]*big.Int, 0)
+		var lockTimeMax uint32
+
+		ftChangeIndex := prevBatchSize * 2
+		tbcChangeIndex := prevBatchSize*2 + 2
+
+		if b == 0 {
+			for i, fu := range currentFtutxos {
+				tapeAmountSetIn = append(tapeAmountSetIn, new(big.Int).Set(fu.FtBalance))
+				lt, err := GetLockTimeFromTape(currentPreTXs[i].Outputs[fu.Vout+1].LockingScript)
+				if err != nil {
+					return nil, fmt.Errorf("read locktime from input %d tape: %w", i, err)
+				}
+				if lt > lockTimeMax {
+					lockTimeMax = lt
+				}
+			}
+		} else {
+			tapeAmountSetIn = append(tapeAmountSetIn, new(big.Int).Set(balance))
+			lt, err := GetLockTimeFromTape(currentPreTXs[0].Outputs[ftChangeIndex+1].LockingScript)
+			if err != nil {
+				return nil, fmt.Errorf("read chained locktime: %w", err)
+			}
+			lockTimeMax = lt
+		}
+
+		tapeHexes, err := BuildMultiTapeAmounts(receiverAmounts, tapeAmountSetIn)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := newFTTx()
+		var ftutxosForTx []*util.FtUTXO
+		var preTXsForTx []*bt.Tx
+		var prepreForTx []string
+		if b == 0 {
+			if err := tx.FromUTXOs(util.FtUTXOsToUTXOs(currentFtutxos)...); err != nil {
+				return nil, err
+			}
+			if err := tx.FromUTXOs(currentFeeUTXO); err != nil {
+				return nil, err
+			}
+			ftutxosForTx = currentFtutxos
+			preTXsForTx = currentPreTXs
+			prepreForTx = currentPrepreTxDatas
+		} else {
+			prevTx := currentPreTXs[0]
+			if err := addInputFromPrevTxOutput(tx, prevTx, ftChangeIndex); err != nil {
+				return nil, fmt.Errorf("add chained FT input vout %d: %w", ftChangeIndex, err)
+			}
+			if err := addInputFromPrevTxOutput(tx, prevTx, tbcChangeIndex); err != nil {
+				return nil, fmt.Errorf("add chained fee input vout %d: %w", tbcChangeIndex, err)
+			}
+			// Synthesise a single FT input descriptor for the chained tx.
+			prevTxIDBytes, err := hex.DecodeString(prevTx.TxID())
+			if err != nil {
+				return nil, fmt.Errorf("decode chained txid: %w", err)
+			}
+			ftutxosForTx = []*util.FtUTXO{{
+				TxID:          prevTxIDBytes,
+				Vout:          uint32(ftChangeIndex),
+				LockingScript: prevTx.Outputs[ftChangeIndex].LockingScript,
+				Satoshis:      prevTx.Outputs[ftChangeIndex].Satoshis,
+				FtBalance:     new(big.Int).Set(balance),
+			}}
+			preTXsForTx = []*bt.Tx{prevTx}
+			prepreForTx = currentPrepreTxDatas
+		}
+
+		nFt := len(ftutxosForTx)
+		for i := 0; i < nFt; i++ {
+			tx.Inputs[i].SequenceNumber = stablecoinSequenceNoLockTime
+		}
+		tx.LockTime = lockTimeMax
+
+		for i, r := range batch {
+			cs, err := BuildFTtransferCode(sc.CodeScript, r.Address)
+			if err != nil {
+				return nil, err
+			}
+			tx.AddOutput(&bt.Output{LockingScript: cs, Satoshis: 500})
+			ts, err := BuildFTtransferTape(sc.TapeScript, tapeHexes[i])
+			if err != nil {
+				return nil, err
+			}
+			tx.AddOutput(&bt.Output{LockingScript: ts, Satoshis: 0})
+		}
+		if totalBatchAmount.Cmp(balance) < 0 {
+			changeCode, err := BuildFTtransferCode(sc.CodeScript, addressFrom)
+			if err != nil {
+				return nil, err
+			}
+			tx.AddOutput(&bt.Output{LockingScript: changeCode, Satoshis: 500})
+			changeTape, err := BuildFTtransferTape(sc.TapeScript, tapeHexes[len(batch)])
+			if err != nil {
+				return nil, err
+			}
+			tx.AddOutput(&bt.Output{LockingScript: changeTape, Satoshis: 0})
+		}
+
+		if err := tx.ChangeToAddress(addressFrom, newFeeQuote80()); err != nil {
+			return nil, fmt.Errorf("batch ChangeToAddress: %w", err)
+		}
+
+		if err := scSignAllOwner(tx, privKey, ftutxosForTx, preTXsForTx, prepreForTx); err != nil {
+			return nil, err
+		}
+		if nFt >= 2 {
+			if err := scAdjustFeeAndResign(tx, privKey, ftutxosForTx, preTXsForTx, prepreForTx); err != nil {
+				return nil, err
+			}
+		}
+
+		txsraw = append(txsraw, hex.EncodeToString(tx.Bytes()))
+
+		// Rebuild prepreTxData for the next chained batch (mirrors TS).
+		if b == 0 {
+			var prepretxdata string
+			for j := 0; j < len(currentPreTXs); j++ {
+				d, err := util.GetPrePreTxdata(currentPreTXs[j], int(tx.Inputs[j].PreviousTxOutIndex))
+				if err != nil {
+					return nil, err
+				}
+				prepretxdata = d + prepretxdata
+			}
+			currentPrepreTxDatas = []string{"57" + prepretxdata}
+		} else {
+			d, err := util.GetPrePreTxdata(currentPreTXs[0], int(tx.Inputs[0].PreviousTxOutIndex))
+			if err != nil {
+				return nil, err
+			}
+			currentPrepreTxDatas = []string{"57" + d}
+		}
+		currentPreTXs = []*bt.Tx{tx}
+		prevBatchSize = len(batch)
+		balance.Sub(balance, totalBatchAmount)
+	}
+	return txsraw, nil
+}
+
+// MergeCoin merges stableCoin UTXOs in batches of ≤5 until ≤1 remains, then
+// recursively merges the resulting outputs. Mirrors TS stableCoin.mergeCoin.
+func (sc *StableCoin) MergeCoin(
+	privKey *bec.PrivateKey,
+	ftutxos []*util.FtUTXO,
+	feeUTXO *bt.UTXO,
+	preTXs []*bt.Tx,
+	prepreTxDatas []string,
+	localTXs []*bt.Tx,
+) ([]string, error) {
+	if len(ftutxos) <= 1 {
+		return nil, nil
+	}
+	preTXsCopy := make([]*bt.Tx, len(preTXs))
+	copy(preTXsCopy, preTXs)
+
+	const maxBatch = 5
+	endIdx := maxBatch
+	if endIdx > len(ftutxos) {
+		endIdx = len(ftutxos)
+	}
+	currentFtutxos := ftutxos[:endIdx]
+	currentPreTXs := preTXs[:endIdx]
+	currentPrepreTxDatas := prepreTxDatas[:endIdx]
+
+	var txsraw []string
+	for iteration := 0; len(currentFtutxos) > 1; iteration++ {
+		var tx *bt.Tx
+		var err error
+		if iteration == 0 {
+			tx, err = sc.mergeCoinSingle(privKey, currentFtutxos, currentPreTXs, currentPrepreTxDatas, feeUTXO)
+		} else {
+			tx, err = sc.mergeCoinSingle(privKey, currentFtutxos, currentPreTXs, currentPrepreTxDatas, nil)
+		}
+		if err != nil {
+			return nil, err
+		}
+		txsraw = append(txsraw, hex.EncodeToString(tx.Bytes()))
+
+		idx := (iteration + 1) * maxBatch
+		endIdx = idx + maxBatch
+		if endIdx > len(ftutxos) {
+			endIdx = len(ftutxos)
+		}
+
+		currentPreTXs = nil
+		if idx < len(preTXs) {
+			end := endIdx
+			if end > len(preTXs) {
+				end = len(preTXs)
+			}
+			currentPreTXs = append(currentPreTXs, preTXs[idx:end]...)
+		}
+		currentPreTXs = append(currentPreTXs, tx)
+
+		if idx < len(prepreTxDatas) {
+			end := endIdx
+			if end > len(prepreTxDatas) {
+				end = len(prepreTxDatas)
+			}
+			currentPrepreTxDatas = prepreTxDatas[idx:end]
+		} else {
+			currentPrepreTxDatas = nil
+		}
+
+		if idx < len(ftutxos) {
+			currentFtutxos = ftutxos[idx:endIdx]
+		} else {
+			currentFtutxos = nil
+		}
+	}
+
+	if len(txsraw) <= 1 && len(currentFtutxos) < 1 {
+		return txsraw, nil
+	}
+
+	utxoTX := currentPreTXs[len(currentPreTXs)-1]
+	nonEmpty := len(currentPreTXs) - 1
+	newFeeUTXO, err := buildUTXOFromTx(utxoTX, 2)
+	if err != nil {
+		return nil, err
+	}
+
+	var newFtutxos []*util.FtUTXO
+	if currentFtutxos != nil {
+		newFtutxos = append(newFtutxos, currentFtutxos...)
+	}
+	newPreTXs := append([]*bt.Tx(nil), currentPreTXs[:nonEmpty]...)
+	for _, rawHex := range txsraw {
+		txBytes, _ := hex.DecodeString(rawHex)
+		t, err := bt.NewTxFromBytes(txBytes)
+		if err != nil {
+			return nil, err
+		}
+		newPreTXs = append(newPreTXs, t)
+		ftBal, err := util.GetFtBalanceFromTape(hex.EncodeToString(t.Outputs[1].LockingScript.Bytes()))
+		if err != nil {
+			return nil, err
+		}
+		mergedTxIDBytes, err := hex.DecodeString(t.TxID())
+		if err != nil {
+			return nil, fmt.Errorf("decode merged txid: %w", err)
+		}
+		newFtutxos = append(newFtutxos, &util.FtUTXO{
+			TxID:          mergedTxIDBytes,
+			Vout:          0,
+			LockingScript: t.Outputs[0].LockingScript,
+			Satoshis:      t.Outputs[0].Satoshis,
+			FtBalance:     ftBal,
+		})
+	}
+
+	prepreLookup := localTXs
+	if len(prepreLookup) == 0 {
+		prepreLookup = preTXsCopy
+	}
+	newPrepreTxDatas := make([]string, 0, nonEmpty+(len(newPreTXs)-nonEmpty))
+	if nonEmpty > 0 && nonEmpty <= len(currentPrepreTxDatas) {
+		newPrepreTxDatas = append(newPrepreTxDatas, currentPrepreTxDatas[:nonEmpty]...)
+	}
+	for i := nonEmpty; i < len(newPreTXs); i++ {
+		ppd, err := util.BuildFtPrePreTxData(newPreTXs[i], 0, prepreLookup)
+		if err != nil {
+			return nil, fmt.Errorf("BuildFtPrePreTxData merge: %w", err)
+		}
+		newPrepreTxDatas = append(newPrepreTxDatas, ppd)
+	}
+
+	rec, err := sc.MergeCoin(privKey, newFtutxos, newFeeUTXO, newPreTXs, newPrepreTxDatas, newPreTXs)
+	if err != nil {
+		return nil, err
+	}
+	return append(txsraw, rec...), nil
+}
+
+// mergeCoinSingle merges up to 5 coin UTXOs into one. Mirrors TS _mergeCoin.
+func (sc *StableCoin) mergeCoinSingle(
+	privKey *bec.PrivateKey,
+	ftutxos []*util.FtUTXO,
+	preTXs []*bt.Tx,
+	prepreTxDatas []string,
+	feeUTXO *bt.UTXO,
+) (*bt.Tx, error) {
+	if len(ftutxos) == 0 {
+		return nil, fmt.Errorf("no FT UTXO available")
+	}
+	if len(ftutxos) == 1 {
+		return nil, fmt.Errorf("single UTXO does not need merge")
+	}
+
+	addr, err := bscript.NewAddressFromPublicKey(privKey.PubKey(), true)
+	if err != nil {
+		return nil, err
+	}
+	addressFrom := addr.AddressString
+
+	tapeAmountSet := make([]*big.Int, len(ftutxos))
+	tapeAmountSum := new(big.Int)
+	var lockTimeMax uint32
+	for i, fu := range ftutxos {
+		tapeAmountSet[i] = new(big.Int).Set(fu.FtBalance)
+		tapeAmountSum.Add(tapeAmountSum, fu.FtBalance)
+		lt, err := GetLockTimeFromTape(preTXs[i].Outputs[fu.Vout+1].LockingScript)
+		if err != nil {
+			return nil, fmt.Errorf("read locktime from input %d tape: %w", i, err)
+		}
+		if lt > lockTimeMax {
+			lockTimeMax = lt
+		}
+	}
+	amountHex, changeHex := BuildTapeAmount(tapeAmountSum, tapeAmountSet)
+	if changeHex != strings.Repeat("0", 96) {
+		return nil, fmt.Errorf("change amount is not zero during merge")
+	}
+
+	tx := newFTTx()
+	if err := tx.FromUTXOs(util.FtUTXOsToUTXOs(ftutxos)...); err != nil {
+		return nil, err
+	}
+	if feeUTXO != nil {
+		if err := tx.FromUTXOs(feeUTXO); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := addInputFromPrevTxOutput(tx, preTXs[len(preTXs)-1], 2); err != nil {
+			return nil, err
+		}
+	}
+	for i := range ftutxos {
+		tx.Inputs[i].SequenceNumber = stablecoinSequenceNoLockTime
+	}
+	tx.LockTime = lockTimeMax
+
+	codeScript, err := BuildFTtransferCode(sc.CodeScript, addressFrom)
+	if err != nil {
+		return nil, err
+	}
+	tx.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 500})
+	tapeScript, err := BuildFTtransferTape(sc.TapeScript, amountHex)
+	if err != nil {
+		return nil, err
+	}
+	tx.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
+
+	if err := tx.ChangeToAddress(addressFrom, newFeeQuote80()); err != nil {
+		return nil, fmt.Errorf("merge ChangeToAddress: %w", err)
+	}
+
+	if err := scSignAllOwner(tx, privKey, ftutxos, preTXs, prepreTxDatas); err != nil {
+		return nil, err
+	}
+	if err := scAdjustFeeAndResign(tx, privKey, ftutxos, preTXs, prepreTxDatas); err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
+// =============================================================================
+// Admin-MuSig prepare/finalize paths
+// =============================================================================
+
+// PrepareCreateCoin issues a brand-new stableCoin: builds the coin-NFT-creation
+// tx (ECDSA-signed by feePrivateKey upfront) and the mint tx, whose inputs 0/1
+// (coin-NFT code + hold) require external Schnorr MuSig admin signatures.
+//
+// Returns *AdminPrepared whose Sighashes covers inputs 0 and 1 of the mint tx.
+// Finalize(sigs) returns [coinNftRaw, mintRaw].
+//
+// Mirrors TS stableCoin.createCoin.
+func (sc *StableCoin) PrepareCreateCoin(
+	aggPubkey32 []byte,
+	feePrivateKey *bec.PrivateKey,
 	addressTo string,
 	utxo *bt.UTXO,
 	utxoTX *bt.Tx,
 	mintMessage string,
-) ([]string, error) {
-	pubKey := privKeyAdmin.PubKey()
-	adminAddress, err := bscript.NewAddressFromPublicKey(pubKey, true)
+) (*AdminPrepared, error) {
+	if len(aggPubkey32) != 32 {
+		return nil, fmt.Errorf("aggPubkey32 must be 32 bytes (x-only)")
+	}
+	adminPubHash := hex.EncodeToString(crypto.Hash160(aggPubkey32))
+
+	totalSupply := new(big.Int).Mul(
+		sc.TotalSupply,
+		new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(sc.Decimal)), nil),
+	)
+
+	tapeScript, err := buildStableCoinTapeScript(sc.Name, sc.Symbol, sc.Decimal, totalSupply, 0)
 	if err != nil {
 		return nil, err
 	}
-	name := sc.Name
-	symbol := sc.Symbol
-	decimal := sc.Decimal
-	totalSupply := ParseDecimalToBigInt(fmt.Sprintf("%d", sc.TotalSupply), decimal)
+	tapeSize := len(tapeScript.Bytes())
 
-	// Build tape amount
-	amountHex := bigIntToUint64LEHex(totalSupply)
-	for i := 1; i < 6; i++ {
-		amountHex += "0000000000000000"
-	}
-
-	nameHex := hex.EncodeToString([]byte(name))
-	symbolHex := hex.EncodeToString([]byte(symbol))
-	// 与 tbc-lib-js decodeASM+writePushData 不同：链上 SCRIPT_VERIFY_MINIMALDATA 拒绝 decimal 的 0x01 0x06 形式，须用 OP_1..OP_16（decimal 常见为 6 → OP_6）。
-	decTok := stableCoinTapeDecimalASM(decimal)
-	lockTimeHex := "00000000"
-
-	tapeASM := fmt.Sprintf("OP_FALSE OP_RETURN %s %s %s %s %s 4654617065",
-		amountHex, decTok, nameHex, symbolHex, lockTimeHex)
-	tapeScript, err := bscript.NewFromASM(tapeASM)
-	if err != nil {
-		return nil, fmt.Errorf("build tape script: %w", err)
-	}
-	tapeSize := tapeScript.Len()
-
-	// Build coin NFT
 	data := &CoinNftData{
-		NftName:         name + " NFT",
-		NftSymbol:       symbol + " NFT",
+		NftName:         sc.Name + " NFT",
+		NftSymbol:       sc.Symbol + " NFT",
 		Description:     "The sole issuance certificate for the stablecoin, dynamically recording cumulative supply and issuance history. Non-transferable, real-time updated, ensuring full transparency and auditability.",
-		CoinDecimal:     decimal,
+		CoinDecimal:     sc.Decimal,
 		CoinTotalSupply: "0",
 	}
-	coinNftTX, err := BuildCoinNftTX(privKeyAdmin, utxo, data)
+	coinNftTX, err := BuildCoinNftTX(feePrivateKey, adminPubHash, utxo, data)
 	if err != nil {
-		return nil, fmt.Errorf("build coin nft tx: %w", err)
+		return nil, fmt.Errorf("build coin NFT tx: %w", err)
 	}
-	coinNftTXRaw := hex.EncodeToString(coinNftTX.Bytes())
+	coinNftRaw := hex.EncodeToString(coinNftTX.Bytes())
 
 	data.CoinTotalSupply = totalSupply.String()
-	coinNftOutputs, err := BuildCoinNftOutput(
+	updatedTape, err := GetCoinNftTapeScript(data)
+	if err != nil {
+		return nil, err
+	}
+	coinNftOutputs := BuildCoinNftOutput(
 		coinNftTX.Outputs[0].LockingScript,
 		coinNftTX.Outputs[1].LockingScript,
-		GetCoinNftTapeScript(data),
+		updatedTape,
 	)
-	if err != nil {
-		return nil, fmt.Errorf("build coin nft output: %w", err)
-	}
 
-	// Build code script for mint
-	originCodeHash := sha256Hex(coinNftTX.Outputs[0].LockingScript.Bytes())
-	codeScript, err := GetCoinMintCode(adminAddress.AddressString, addressTo, originCodeHash, tapeSize)
+	originCodeHash := hex.EncodeToString(crypto.Sha256(coinNftTX.Outputs[0].LockingScript.Bytes()))
+	codeScript, err := GetCoinMintCode(adminPubHash, addressTo, originCodeHash, tapeSize)
 	if err != nil {
-		return nil, fmt.Errorf("build code script: %w", err)
+		return nil, err
 	}
 	sc.CodeScript = hex.EncodeToString(codeScript.Bytes())
 	sc.TapeScript = hex.EncodeToString(tapeScript.Bytes())
 
-	// Build the mint transaction
 	tx := newFTTx()
 	if err := addInputFromPrevTxOutput(tx, coinNftTX, 0); err != nil {
 		return nil, err
@@ -132,775 +695,431 @@ func (sc *StableCoin) CreateCoin(
 	if err := addInputFromPrevTxOutput(tx, coinNftTX, 3); err != nil {
 		return nil, err
 	}
-
 	for _, out := range coinNftOutputs {
 		tx.AddOutput(out)
 	}
 	tx.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 500})
 	tx.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
-
 	if mintMessage != "" {
-		msgHex := hex.EncodeToString([]byte(mintMessage))
-		msgASM := fmt.Sprintf("OP_FALSE OP_RETURN %s", msgHex)
-		msgScript, _ := bscript.NewFromASM(msgASM)
-		tx.AddOutput(&bt.Output{LockingScript: msgScript, Satoshis: 0})
+		msg, err := buildOpReturnMessage(mintMessage)
+		if err != nil {
+			return nil, err
+		}
+		tx.AddOutput(&bt.Output{LockingScript: msg, Satoshis: 0})
 	}
 
-	// 与 stableCoin.ts createCoin：tx.feePerKb(80).change(admin) 后再 setInputScript；否则 getCurrentTxdata 不含找零，与链上合约 OP_SPLIT 不一致。
-	fq := newFeeQuoteWithSatPerKB(nftFeeSatPerKBFromEnv())
-	if err := tx.ChangeToAddress(adminAddress.AddressString, fq); err != nil {
+	feeAddr, err := bscript.NewAddressFromPublicKey(feePrivateKey.PubKey(), true)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.ChangeToAddress(feeAddr.AddressString, newFeeQuote80()); err != nil {
 		return nil, fmt.Errorf("mint ChangeToAddress: %w", err)
 	}
 
-	// Sign: input 0 = NFT unlock, input 1 = P2PKH sig, input 2 = P2PKH (change from coinNftTX)
-	nftUnlocker := &nftIn0Unlocker{
-		priv:    privKeyAdmin,
-		preTx:   coinNftTX,
-		prePre:  utxoTX,
+	// Pre-seed admin inputs with dummy 64-byte zero sigs and freeze fee via
+	// two-pass adjust. Input 0 is the coin-NFT-code unlock (Schnorr sig +
+	// xonly-pub + currTxData + prepre + pre); input 1 is the coin-NFT-hold
+	// P2PKH-on-Schnorr unlock (Schnorr sig + xonly-pub).
+	rebuildIn0 := func(sig64 []byte) (*bscript.Script, error) {
+		return BuildCoinNftUnlockScriptSchnorr(sig64, aggPubkey32, tx, coinNftTX, utxoTX, 0)
 	}
-	tx.Inputs[0].UnlockingScript, err = nftUnlocker.UnlockingScript(context.Background(), tx, bt.UnlockerParams{InputIdx: 0})
-	if err != nil {
-		return nil, fmt.Errorf("nft unlock input 0: %w", err)
+	rebuildIn1 := func(sig64 []byte) (*bscript.Script, error) {
+		return buildSchnorrP2PKHLikeUnlock(sig64, aggPubkey32)
 	}
-
-	holdUnlock := &p2pkhOrMintPrefixUnlocker{priv: privKeyAdmin}
-	tx.Inputs[1].UnlockingScript, err = holdUnlock.UnlockingScript(context.Background(), tx, bt.UnlockerParams{InputIdx: 1})
-	if err != nil {
-		return nil, fmt.Errorf("sign input 1 (coin NFT hold): %w", err)
-	}
-
-	sigP2PKH := &unlocker.Simple{PrivateKey: privKeyAdmin}
-	tx.Inputs[2].UnlockingScript, err = sigP2PKH.UnlockingScript(context.Background(), tx, bt.UnlockerParams{InputIdx: 2})
-	if err != nil {
-		return nil, fmt.Errorf("sign input 2: %w", err)
+	if err := scPreseedAndFreezeFee(tx, feePrivateKey, []scAdminBuilder{
+		{InputIndex: 0, Build: rebuildIn0},
+		{InputIndex: 1, Build: rebuildIn1},
+	}, []int{2}); err != nil {
+		return nil, err
 	}
 
-	coinMintRaw := hex.EncodeToString(tx.Bytes())
-	sc.ContractTxid = tx.TxID()
-	return []string{coinNftTXRaw, coinMintRaw}, nil
+	sighashes, err := scComputeSighashes(tx, []uint32{0, 1})
+	if err != nil {
+		return nil, err
+	}
+
+	finalize := func(sigs64 [][]byte) ([]string, error) {
+		if len(sigs64) != 2 {
+			return nil, fmt.Errorf("createCoin.Finalize: expected 2 Schnorr sigs, got %d", len(sigs64))
+		}
+		us0, err := rebuildIn0(sigs64[0])
+		if err != nil {
+			return nil, err
+		}
+		if err := tx.InsertInputUnlockingScript(0, us0); err != nil {
+			return nil, err
+		}
+		us1, err := rebuildIn1(sigs64[1])
+		if err != nil {
+			return nil, err
+		}
+		if err := tx.InsertInputUnlockingScript(1, us1); err != nil {
+			return nil, err
+		}
+		// Fee input was signed by preseed; re-sign now in case the unlock
+		// length is RFC-6979-stable (it is — same key, same digest).
+		if err := signP2PKHAtIdx(tx, feePrivateKey, 2); err != nil {
+			return nil, err
+		}
+		sc.ContractTxid = tx.TxID()
+		return []string{coinNftRaw, hex.EncodeToString(tx.Bytes())}, nil
+	}
+
+	return &AdminPrepared{Tx: tx, Sighashes: sighashes, finalize: finalize}, nil
 }
 
-// MintCoin 对齐 TS stableCoin.mintCoin，追加铸造稳定币。
-func (sc *StableCoin) MintCoin(
-	privKeyAdmin *bec.PrivateKey,
+// PrepareMintCoin mints additional supply on an existing stableCoin. Inputs:
+// 0 = coin-NFT-code (admin MuSig), 1 = coin-NFT-hold (admin MuSig), 2 = fee
+// utxo (ECDSA). Mirrors TS stableCoin.mintCoin.
+func (sc *StableCoin) PrepareMintCoin(
+	aggPubkey32 []byte,
+	feePrivateKey *bec.PrivateKey,
 	addressTo string,
-	mintAmount string,
+	mintAmount *big.Int,
 	utxo *bt.UTXO,
 	nftPreTX *bt.Tx,
 	nftPrePreTX *bt.Tx,
 	mintMessage string,
-) (string, error) {
-	pubKey := privKeyAdmin.PubKey()
-	adminAddress, err := bscript.NewAddressFromPublicKey(pubKey, true)
+) (*AdminPrepared, error) {
+	if len(aggPubkey32) != 32 {
+		return nil, fmt.Errorf("aggPubkey32 must be 32 bytes (x-only)")
+	}
+	if mintAmount == nil || mintAmount.Sign() <= 0 {
+		return nil, fmt.Errorf("mintAmount must be positive")
+	}
+	adminPubHash := hex.EncodeToString(crypto.Hash160(aggPubkey32))
+
+	newTotalSupply := new(big.Int).Add(sc.TotalSupply, mintAmount)
+	tapeScript, err := buildStableCoinTapeScript(sc.Name, sc.Symbol, sc.Decimal, mintAmount, 0)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	decimal := sc.Decimal
-	totalSupply := big.NewInt(sc.TotalSupply)
-	newMintAmount := ParseDecimalToBigInt(mintAmount, decimal)
-	newTotalSupply := new(big.Int).Add(totalSupply, newMintAmount)
+	tapeSize := len(tapeScript.Bytes())
 
-	coinNftTX := nftPreTX
-
-	amountHex := bigIntToUint64LEHex(newMintAmount)
-	for i := 1; i < 6; i++ {
-		amountHex += "0000000000000000"
-	}
-
-	nameHex := hex.EncodeToString([]byte(sc.Name))
-	symbolHex := hex.EncodeToString([]byte(sc.Symbol))
-	decTok := stableCoinTapeDecimalASM(decimal)
-	lockTimeHex := "00000000"
-
-	tapeASM := fmt.Sprintf("OP_FALSE OP_RETURN %s %s %s %s %s 4654617065",
-		amountHex, decTok, nameHex, symbolHex, lockTimeHex)
-	tapeScript, err := bscript.NewFromASM(tapeASM)
+	updatedTape, err := UpdateCoinNftTapeScript(nftPreTX.Outputs[2].LockingScript, newTotalSupply.String())
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	tapeSize := tapeScript.Len()
-
-	updatedTape := UpdateCoinNftTapeScript(coinNftTX.Outputs[2].LockingScript, newTotalSupply.String())
-	coinNftOutputs, err := BuildCoinNftOutput(
-		coinNftTX.Outputs[0].LockingScript,
-		coinNftTX.Outputs[1].LockingScript,
+	coinNftOutputs := BuildCoinNftOutput(
+		nftPreTX.Outputs[0].LockingScript,
+		nftPreTX.Outputs[1].LockingScript,
 		updatedTape,
 	)
-	if err != nil {
-		return "", err
-	}
 
-	originCodeHash := sha256Hex(coinNftTX.Outputs[0].LockingScript.Bytes())
-	codeScript, err := GetCoinMintCode(adminAddress.AddressString, addressTo, originCodeHash, tapeSize)
+	originCodeHash := hex.EncodeToString(crypto.Sha256(nftPreTX.Outputs[0].LockingScript.Bytes()))
+	codeScript, err := GetCoinMintCode(adminPubHash, addressTo, originCodeHash, tapeSize)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	sc.CodeScript = hex.EncodeToString(codeScript.Bytes())
 	sc.TapeScript = hex.EncodeToString(tapeScript.Bytes())
 
 	tx := newFTTx()
-	if err := addInputFromPrevTxOutput(tx, coinNftTX, 0); err != nil {
-		return "", err
+	if err := addInputFromPrevTxOutput(tx, nftPreTX, 0); err != nil {
+		return nil, err
 	}
-	if err := addInputFromPrevTxOutput(tx, coinNftTX, 1); err != nil {
-		return "", err
+	if err := addInputFromPrevTxOutput(tx, nftPreTX, 1); err != nil {
+		return nil, err
 	}
-	utxoTxIDHex := hex.EncodeToString(utxo.TxID)
-	if err := tx.From(utxoTxIDHex, utxo.Vout, utxo.LockingScript.String(), utxo.Satoshis); err != nil {
-		return "", err
+	if err := tx.FromUTXOs(utxo); err != nil {
+		return nil, err
 	}
-
 	for _, out := range coinNftOutputs {
 		tx.AddOutput(out)
 	}
 	tx.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 500})
 	tx.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
-
 	if mintMessage != "" {
-		msgHex := hex.EncodeToString([]byte(mintMessage))
-		msgASM := fmt.Sprintf("OP_FALSE OP_RETURN %s", msgHex)
-		msgScript, _ := bscript.NewFromASM(msgASM)
-		tx.AddOutput(&bt.Output{LockingScript: msgScript, Satoshis: 0})
-	}
-
-	fq := newFeeQuoteWithSatPerKB(nftFeeSatPerKBFromEnv())
-	if err := tx.ChangeToAddress(adminAddress.AddressString, fq); err != nil {
-		return "", fmt.Errorf("mint ChangeToAddress: %w", err)
-	}
-
-	nftUnlocker := &nftIn0Unlocker{
-		priv:    privKeyAdmin,
-		preTx:   nftPreTX,
-		prePre:  nftPrePreTX,
-	}
-	tx.Inputs[0].UnlockingScript, err = nftUnlocker.UnlockingScript(context.Background(), tx, bt.UnlockerParams{InputIdx: 0})
-	if err != nil {
-		return "", fmt.Errorf("nft unlock input 0: %w", err)
-	}
-
-	holdUnlock := &p2pkhOrMintPrefixUnlocker{priv: privKeyAdmin}
-	tx.Inputs[1].UnlockingScript, err = holdUnlock.UnlockingScript(context.Background(), tx, bt.UnlockerParams{InputIdx: 1})
-	if err != nil {
-		return "", fmt.Errorf("sign input 1 (coin NFT hold): %w", err)
-	}
-
-	sigP2PKH := &unlocker.Simple{PrivateKey: privKeyAdmin}
-	tx.Inputs[2].UnlockingScript, err = sigP2PKH.UnlockingScript(context.Background(), tx, bt.UnlockerParams{InputIdx: 2})
-	if err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(tx.Bytes()), nil
-}
-
-// TransferCoin 对齐 TS stableCoin.transfer，转移稳定币（带 lockTime）。
-func (sc *StableCoin) TransferCoin(
-	privKey *bec.PrivateKey,
-	addressTo string,
-	ftAmount string,
-	ftutxos []*bt.FtUTXO,
-	feeUTXO *bt.UTXO,
-	preTXs []*bt.Tx,
-	prepreTxData []string,
-	tbcAmount uint64,
-) (string, error) {
-	pubKey := privKey.PubKey()
-	addr, err := bscript.NewAddressFromPublicKey(pubKey, true)
-	if err != nil {
-		return "", err
-	}
-	addressFrom := addr.AddressString
-	decimal := sc.Decimal
-	isCoin := 1
-
-	amountBN := ParseDecimalToBigInt(ftAmount, decimal)
-	if amountBN.Sign() < 0 {
-		return "", fmt.Errorf("invalid amount input")
-	}
-
-	tapeAmountSet := make([]*big.Int, 0, len(ftutxos))
-	tapeAmountSum := new(big.Int)
-	lockTimeMax := uint32(0)
-
-	for i, fu := range ftutxos {
-		bal := new(big.Int)
-		bal.SetString(fu.FtBalance, 10)
-		tapeAmountSet = append(tapeAmountSet, bal)
-		tapeAmountSum.Add(tapeAmountSum, bal)
-		lt := GetLockTimeFromTape(preTXs[i].Outputs[fu.Vout+1].LockingScript)
-		if lt > lockTimeMax {
-			lockTimeMax = lt
-		}
-	}
-
-	if amountBN.Cmp(tapeAmountSum) > 0 {
-		return "", fmt.Errorf("insufficient balance, please add more FT UTXOs")
-	}
-	if decimal > 18 {
-		return "", fmt.Errorf("the maximum value for decimal cannot exceed 18")
-	}
-	if err := checkFTAmountHumanJSMax(decimal, strings.TrimSpace(ftAmount)); err != nil {
-		return "", err
-	}
-
-	amountHex, changeHex := BuildTapeAmount(amountBN, tapeAmountSet)
-
-	ftUTXOs, err := util.FtUTXOsToUTXOs(ftutxos)
-	if err != nil {
-		return "", fmt.Errorf("ft utxos: %w", err)
-	}
-	tx := newFTTx()
-	if err := tx.FromUTXOs(ftUTXOs...); err != nil {
-		return "", err
-	}
-	if err := tx.FromUTXOs(feeUTXO); err != nil {
-		return "", err
-	}
-
-	for i := range ftutxos {
-		tx.Inputs[i].SequenceNumber = 4294967294
-	}
-	tx.LockTime = lockTimeMax
-
-	codeScript := BuildFTtransferCode(sc.CodeScript, addressTo)
-	tx.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 500})
-
-	tapeScript := BuildFTtransferTape(sc.TapeScript, amountHex)
-	tx.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
-
-	if tbcAmount > 0 {
-		tx.To(addressTo, tbcAmount)
-	}
-
-	if amountBN.Cmp(tapeAmountSum) < 0 {
-		changeCode := BuildFTtransferCode(sc.CodeScript, addressFrom)
-		tx.AddOutput(&bt.Output{LockingScript: changeCode, Satoshis: 500})
-		changeTape := BuildFTtransferTape(sc.TapeScript, changeHex)
-		tx.AddOutput(&bt.Output{LockingScript: changeTape, Satoshis: 0})
-	}
-
-	changeScript, err := bscript.NewP2PKHFromAddress(addressFrom)
-	if err != nil {
-		return "", fmt.Errorf("NewP2PKHFromAddress for change: %w", err)
-	}
-	inputTotal := tx.TotalInputSatoshis()
-	outputTotal := tx.TotalOutputSatoshis()
-	if inputTotal <= outputTotal {
-		return "", fmt.Errorf("insufficient input satoshis: in=%d out=%d", inputTotal, outputTotal)
-	}
-	tx.AddOutput(&bt.Output{LockingScript: changeScript, Satoshis: inputTotal - outputTotal})
-
-	satPerKB := feeSatPerKBFromEnv()
-	nFt := len(ftutxos)
-	ftUnlockLens := make([]int, nFt)
-	for i := 0; i < nFt; i++ {
-		us, err := sc.getFTunlockCoin(privKey, tx, preTXs[i], prepreTxData[i], i, int(ftutxos[i].Vout), isCoin)
+		msg, err := buildOpReturnMessage(mintMessage)
 		if err != nil {
-			return "", fmt.Errorf("probe FT unlock length input %d: %w", i, err)
+			return nil, err
 		}
-		ftUnlockLens[i] = us.Len()
-	}
-	if err := adjustFTTransferChangeFee(tx, satPerKB, nFt, ftUnlockLens); err != nil {
-		return "", fmt.Errorf("adjust transfer fee: %w", err)
+		tx.AddOutput(&bt.Output{LockingScript: msg, Satoshis: 0})
 	}
 
-	ctx := context.Background()
-	for ii := nFt; ii < len(tx.Inputs); ii++ {
-		su := &unlocker.Simple{PrivateKey: privKey}
-		us, err := su.UnlockingScript(ctx, tx, bt.UnlockerParams{
-			InputIdx:     uint32(ii),
-			SigHashFlags: sighash.AllForkID,
-		})
-		if err != nil {
-			return "", fmt.Errorf("sign fee input %d: %w", ii, err)
-		}
-		if err := tx.InsertInputUnlockingScript(uint32(ii), us); err != nil {
-			return "", err
-		}
-	}
-	for i := range ftutxos {
-		us, err := sc.getFTunlockCoin(privKey, tx, preTXs[i], prepreTxData[i], i, int(ftutxos[i].Vout), isCoin)
-		if err != nil {
-			return "", fmt.Errorf("ft unlock input %d: %w", i, err)
-		}
-		if err := tx.InsertInputUnlockingScript(uint32(i), us); err != nil {
-			return "", err
-		}
-	}
-
-	return hex.EncodeToString(tx.Bytes()), nil
-}
-
-// FreezeCoinUTXO 对齐 TS stableCoin.freezeCoinUTXO，管理员冻结 coin UTXO。
-func (sc *StableCoin) FreezeCoinUTXO(
-	privKeyAdmin *bec.PrivateKey,
-	lockTime uint32,
-	ftutxos []*bt.FtUTXO,
-	feeUTXO *bt.UTXO,
-	preTXs []*bt.Tx,
-	prepreTxData []string,
-) (string, error) {
-	if len(ftutxos) == 0 {
-		return "", fmt.Errorf("no FT UTXO available")
-	}
-
-	address := GetAddressFromCode(ftutxos[0].Script)
-	isCoin := 1
-	tapeAmountSet := make([]*big.Int, 0, len(ftutxos))
-	tapeAmountSum := new(big.Int)
-	lockTimeMax := uint32(0)
-
-	for i, fu := range ftutxos {
-		bal := new(big.Int)
-		bal.SetString(fu.FtBalance, 10)
-		tapeAmountSet = append(tapeAmountSet, bal)
-		tapeAmountSum.Add(tapeAmountSum, bal)
-		lt := GetLockTimeFromTape(preTXs[i].Outputs[fu.Vout+1].LockingScript)
-		if lt > lockTimeMax {
-			lockTimeMax = lt
-		}
-	}
-
-	amountHex, changeHex := BuildTapeAmount(tapeAmountSum, tapeAmountSet)
-	if changeHex != strings.Repeat("0", 96) {
-		return "", fmt.Errorf("change amount is not zero")
-	}
-
-	tx := newFTTx()
-	for _, fu := range ftutxos {
-		if err := tx.From(fu.TxID, fu.Vout, fu.Script, fu.Satoshis); err != nil {
-			return "", err
-		}
-	}
-	if err := tx.From(hex.EncodeToString(feeUTXO.TxID), feeUTXO.Vout, feeUTXO.LockingScript.String(), feeUTXO.Satoshis); err != nil {
-		return "", err
-	}
-
-	codeScript := BuildFTtransferCode(sc.CodeScript, address)
-	tx.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 500})
-
-	tapeScript := BuildFTtransferTape(sc.TapeScript, amountHex)
-	tapeScript = SetLockTimeInTape(tapeScript, lockTime)
-	tx.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
-
-	for i := range ftutxos {
-		tx.Inputs[i].SequenceNumber = 4294967294
-		unlock, err := sc.getFTunlockCoin(privKeyAdmin, tx, preTXs[i], prepreTxData[i], i, int(ftutxos[i].Vout), isCoin)
-		if err != nil {
-			return "", fmt.Errorf("ft unlock input %d: %w", i, err)
-		}
-		tx.Inputs[i].UnlockingScript = unlock
-	}
-
-	sigP2PKH := &unlocker.Simple{PrivateKey: privKeyAdmin}
-	feeIdx := len(ftutxos)
-	feeUnlock, feeErr := sigP2PKH.UnlockingScript(context.Background(), tx, bt.UnlockerParams{InputIdx: uint32(feeIdx)})
-	if feeErr != nil {
-		return "", feeErr
-	}
-	tx.Inputs[feeIdx].UnlockingScript = feeUnlock
-
-	tx.LockTime = lockTimeMax
-	return hex.EncodeToString(tx.Bytes()), nil
-}
-
-// UnfreezeCoinUTXO 对齐 TS stableCoin.unfreezeCoinUTXO，管理员解冻 coin UTXO。
-func (sc *StableCoin) UnfreezeCoinUTXO(
-	privKeyAdmin *bec.PrivateKey,
-	ftutxos []*bt.FtUTXO,
-	feeUTXO *bt.UTXO,
-	preTXs []*bt.Tx,
-	prepreTxData []string,
-) (string, error) {
-	if len(ftutxos) == 0 {
-		return "", fmt.Errorf("no FT UTXO available")
-	}
-
-	address := GetAddressFromCode(ftutxos[0].Script)
-	isCoin := 1
-	tapeAmountSet := make([]*big.Int, 0, len(ftutxos))
-	tapeAmountSum := new(big.Int)
-
-	for _, fu := range ftutxos {
-		bal := new(big.Int)
-		bal.SetString(fu.FtBalance, 10)
-		tapeAmountSet = append(tapeAmountSet, bal)
-		tapeAmountSum.Add(tapeAmountSum, bal)
-	}
-
-	amountHex, changeHex := BuildTapeAmount(tapeAmountSum, tapeAmountSet)
-	if changeHex != strings.Repeat("0", 96) {
-		return "", fmt.Errorf("change amount is not zero")
-	}
-
-	tx := newFTTx()
-	for _, fu := range ftutxos {
-		if err := tx.From(fu.TxID, fu.Vout, fu.Script, fu.Satoshis); err != nil {
-			return "", err
-		}
-	}
-	if err := tx.From(hex.EncodeToString(feeUTXO.TxID), feeUTXO.Vout, feeUTXO.LockingScript.String(), feeUTXO.Satoshis); err != nil {
-		return "", err
-	}
-
-	codeScript := BuildFTtransferCode(sc.CodeScript, address)
-	tx.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 500})
-
-	tapeScript := BuildFTtransferTape(sc.TapeScript, amountHex)
-	tapeScript = SetLockTimeInTape(tapeScript, 0)
-	tx.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
-
-	for i := range ftutxos {
-		tx.Inputs[i].SequenceNumber = 4294967294
-		unlock, err := sc.getFTunlockCoin(privKeyAdmin, tx, preTXs[i], prepreTxData[i], i, int(ftutxos[i].Vout), isCoin)
-		if err != nil {
-			return "", fmt.Errorf("ft unlock input %d: %w", i, err)
-		}
-		tx.Inputs[i].UnlockingScript = unlock
-	}
-
-	sigP2PKH := &unlocker.Simple{PrivateKey: privKeyAdmin}
-	feeIdx := len(ftutxos)
-	feeUnlock, feeErr := sigP2PKH.UnlockingScript(context.Background(), tx, bt.UnlockerParams{InputIdx: uint32(feeIdx)})
-	if feeErr != nil {
-		return "", feeErr
-	}
-	tx.Inputs[feeIdx].UnlockingScript = feeUnlock
-
-	tx.LockTime = 0
-	return hex.EncodeToString(tx.Bytes()), nil
-}
-
-// MergeCoin 对齐 TS stableCoin.mergeCoin，合并多个 coin UTXO。
-func (sc *StableCoin) MergeCoin(
-	privKey *bec.PrivateKey,
-	ftutxos []*bt.FtUTXO,
-	feeUTXO *bt.UTXO,
-	preTXs []*bt.Tx,
-	prepreTxData []string,
-) ([]string, error) {
-	if len(ftutxos) <= 1 {
-		return nil, nil
-	}
-
-	pubKey := privKey.PubKey()
-	addr, err := bscript.NewAddressFromPublicKey(pubKey, true)
+	feeAddr, err := bscript.NewAddressFromPublicKey(feePrivateKey.PubKey(), true)
 	if err != nil {
 		return nil, err
 	}
-	addressFrom := addr.AddressString
-	isCoin := 1
-	var txRaws []string
+	if err := tx.ChangeToAddress(feeAddr.AddressString, newFeeQuote80()); err != nil {
+		return nil, fmt.Errorf("mint ChangeToAddress: %w", err)
+	}
 
-	for len(ftutxos) > 1 {
-		batchSize := len(ftutxos)
-		if batchSize > 5 {
-			batchSize = 5
+	rebuildIn0 := func(sig64 []byte) (*bscript.Script, error) {
+		return BuildCoinNftUnlockScriptSchnorr(sig64, aggPubkey32, tx, nftPreTX, nftPrePreTX, 0)
+	}
+	rebuildIn1 := func(sig64 []byte) (*bscript.Script, error) {
+		return buildSchnorrP2PKHLikeUnlock(sig64, aggPubkey32)
+	}
+	if err := scPreseedAndFreezeFee(tx, feePrivateKey, []scAdminBuilder{
+		{InputIndex: 0, Build: rebuildIn0},
+		{InputIndex: 1, Build: rebuildIn1},
+	}, []int{2}); err != nil {
+		return nil, err
+	}
+
+	sighashes, err := scComputeSighashes(tx, []uint32{0, 1})
+	if err != nil {
+		return nil, err
+	}
+
+	finalize := func(sigs64 [][]byte) ([]string, error) {
+		if len(sigs64) != 2 {
+			return nil, fmt.Errorf("mintCoin.Finalize: expected 2 Schnorr sigs, got %d", len(sigs64))
 		}
-		batch := ftutxos[:batchSize]
-		batchPreTXs := preTXs[:batchSize]
-		batchPrePreData := prepreTxData[:batchSize]
+		us0, err := rebuildIn0(sigs64[0])
+		if err != nil {
+			return nil, err
+		}
+		if err := tx.InsertInputUnlockingScript(0, us0); err != nil {
+			return nil, err
+		}
+		us1, err := rebuildIn1(sigs64[1])
+		if err != nil {
+			return nil, err
+		}
+		if err := tx.InsertInputUnlockingScript(1, us1); err != nil {
+			return nil, err
+		}
+		if err := signP2PKHAtIdx(tx, feePrivateKey, 2); err != nil {
+			return nil, err
+		}
+		return []string{hex.EncodeToString(tx.Bytes())}, nil
+	}
 
-		tapeAmountSet := make([]*big.Int, 0, batchSize)
-		tapeAmountSum := new(big.Int)
-		lockTimeMax := uint32(0)
+	return &AdminPrepared{Tx: tx, Sighashes: sighashes, finalize: finalize}, nil
+}
 
-		for i, fu := range batch {
-			bal := new(big.Int)
-			bal.SetString(fu.FtBalance, 10)
-			tapeAmountSet = append(tapeAmountSet, bal)
-			tapeAmountSum.Add(tapeAmountSum, bal)
-			lt := GetLockTimeFromTape(batchPreTXs[i].Outputs[fu.Vout+1].LockingScript)
+// PrepareFreezeCoinUTXO freezes a set of coin UTXOs under lockTime. Each FT
+// input is admin-MuSig-signed; the trailing fee input is ECDSA. Mirrors TS
+// stableCoin.freezeCoinUTXO.
+func (sc *StableCoin) PrepareFreezeCoinUTXO(
+	aggPubkey32 []byte,
+	feePrivateKey *bec.PrivateKey,
+	lockTime uint32,
+	ftutxos []*util.FtUTXO,
+	feeUTXO *bt.UTXO,
+	preTXs []*bt.Tx,
+	prepreTxDatas []string,
+) (*AdminPrepared, error) {
+	return sc.prepareFreezeUnfreeze(aggPubkey32, feePrivateKey, lockTime, true, ftutxos, feeUTXO, preTXs, prepreTxDatas)
+}
+
+// PrepareUnfreezeCoinUTXO releases coin UTXOs from a lockTime. Mirrors TS
+// stableCoin.unfreezeCoinUTXO.
+func (sc *StableCoin) PrepareUnfreezeCoinUTXO(
+	aggPubkey32 []byte,
+	feePrivateKey *bec.PrivateKey,
+	ftutxos []*util.FtUTXO,
+	feeUTXO *bt.UTXO,
+	preTXs []*bt.Tx,
+	prepreTxDatas []string,
+) (*AdminPrepared, error) {
+	return sc.prepareFreezeUnfreeze(aggPubkey32, feePrivateKey, 0, false, ftutxos, feeUTXO, preTXs, prepreTxDatas)
+}
+
+func (sc *StableCoin) prepareFreezeUnfreeze(
+	aggPubkey32 []byte,
+	feePrivateKey *bec.PrivateKey,
+	newLockTime uint32,
+	isFreeze bool,
+	ftutxos []*util.FtUTXO,
+	feeUTXO *bt.UTXO,
+	preTXs []*bt.Tx,
+	prepreTxDatas []string,
+) (*AdminPrepared, error) {
+	if len(aggPubkey32) != 32 {
+		return nil, fmt.Errorf("aggPubkey32 must be 32 bytes (x-only)")
+	}
+	if len(ftutxos) == 0 {
+		return nil, fmt.Errorf("no FT UTXO available")
+	}
+	if len(ftutxos) > 5 {
+		return nil, fmt.Errorf("too many FT UTXOs (max 5)")
+	}
+	address, _, err := GetAddressFromCode(hex.EncodeToString(ftutxos[0].LockingScript.Bytes()))
+	if err != nil {
+		return nil, fmt.Errorf("read holder from coin code: %w", err)
+	}
+
+	tapeAmountSet := make([]*big.Int, len(ftutxos))
+	tapeAmountSum := new(big.Int)
+	var lockTimeMax uint32
+	for i, fu := range ftutxos {
+		tapeAmountSet[i] = new(big.Int).Set(fu.FtBalance)
+		tapeAmountSum.Add(tapeAmountSum, fu.FtBalance)
+		if isFreeze {
+			lt, err := GetLockTimeFromTape(preTXs[i].Outputs[fu.Vout+1].LockingScript)
+			if err != nil {
+				return nil, fmt.Errorf("read locktime from input %d tape: %w", i, err)
+			}
 			if lt > lockTimeMax {
 				lockTimeMax = lt
 			}
 		}
+	}
+	amountHex, changeHex := BuildTapeAmount(tapeAmountSum, tapeAmountSet)
+	if changeHex != strings.Repeat("0", 96) {
+		return nil, fmt.Errorf("change amount is not zero")
+	}
 
-		amtHex, _ := BuildTapeAmount(tapeAmountSum, tapeAmountSet)
+	tx := newFTTx()
+	if err := tx.FromUTXOs(util.FtUTXOsToUTXOs(ftutxos)...); err != nil {
+		return nil, err
+	}
+	if err := tx.FromUTXOs(feeUTXO); err != nil {
+		return nil, err
+	}
+	codeScript, err := BuildFTtransferCode(sc.CodeScript, address)
+	if err != nil {
+		return nil, err
+	}
+	tx.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 500})
+	tapeScriptBase, err := BuildFTtransferTape(sc.TapeScript, amountHex)
+	if err != nil {
+		return nil, err
+	}
+	tapeScript, err := SetLockTimeInTape(tapeScriptBase, newLockTime)
+	if err != nil {
+		return nil, err
+	}
+	tx.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
 
-		tx := newFTTx()
-		for _, fu := range batch {
-			if err := tx.From(fu.TxID, fu.Vout, fu.Script, fu.Satoshis); err != nil {
+	for i := range ftutxos {
+		tx.Inputs[i].SequenceNumber = stablecoinSequenceNoLockTime
+	}
+	tx.LockTime = lockTimeMax
+
+	feeAddr, err := bscript.NewAddressFromPublicKey(feePrivateKey.PubKey(), true)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.ChangeToAddress(feeAddr.AddressString, newFeeQuote80()); err != nil {
+		return nil, fmt.Errorf("freeze ChangeToAddress: %w", err)
+	}
+
+	xOnlyHex := hex.EncodeToString(aggPubkey32)
+	const isCoinFlag = true
+	rebuilders := make([]scAdminBuilder, len(ftutxos))
+	for i := range ftutxos {
+		idx := i
+		rebuilders[i] = scAdminBuilder{
+			InputIndex: uint32(idx),
+			Build: func(sig64 []byte) (*bscript.Script, error) {
+				sigHex := encodeSchnorrSig65PushHex(sig64)
+				return StaticGetFTunlock(
+					sigHex, xOnlyHex, tx, preTXs[idx], prepreTxDatas[idx],
+					idx, int(ftutxos[idx].Vout), isCoinFlag,
+				)
+			},
+		}
+	}
+	feeIdx := len(ftutxos)
+	if err := scPreseedAndFreezeFee(tx, feePrivateKey, rebuilders, []int{feeIdx}); err != nil {
+		return nil, err
+	}
+
+	adminIdx := make([]uint32, len(ftutxos))
+	for i := range ftutxos {
+		adminIdx[i] = uint32(i)
+	}
+	sighashes, err := scComputeSighashes(tx, adminIdx)
+	if err != nil {
+		return nil, err
+	}
+
+	finalize := func(sigs64 [][]byte) ([]string, error) {
+		if len(sigs64) != len(ftutxos) {
+			return nil, fmt.Errorf("freeze/unfreeze.Finalize: expected %d Schnorr sigs, got %d", len(ftutxos), len(sigs64))
+		}
+		for i := range ftutxos {
+			us, err := rebuilders[i].Build(sigs64[i])
+			if err != nil {
+				return nil, err
+			}
+			if err := tx.InsertInputUnlockingScript(uint32(i), us); err != nil {
 				return nil, err
 			}
 		}
-		if err := tx.From(hex.EncodeToString(feeUTXO.TxID), feeUTXO.Vout, feeUTXO.LockingScript.String(), feeUTXO.Satoshis); err != nil {
+		if err := signP2PKHAtIdx(tx, feePrivateKey, uint32(feeIdx)); err != nil {
 			return nil, err
 		}
-
-		codeScript := BuildFTtransferCode(sc.CodeScript, addressFrom)
-		tx.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 500})
-		tapeScript := BuildFTtransferTape(sc.TapeScript, amtHex)
-		tx.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
-
-		for i := range batch {
-			tx.Inputs[i].SequenceNumber = 4294967294
-			unlock, err := sc.getFTunlockCoin(privKey, tx, batchPreTXs[i], batchPrePreData[i], i, int(batch[i].Vout), isCoin)
-			if err != nil {
-				return nil, fmt.Errorf("ft unlock input %d: %w", i, err)
-			}
-			tx.Inputs[i].UnlockingScript = unlock
-		}
-
-		sigP2PKH := &unlocker.Simple{PrivateKey: privKey}
-		feeIdx := batchSize
-		tx.Inputs[feeIdx].UnlockingScript, err = sigP2PKH.UnlockingScript(context.Background(), tx, bt.UnlockerParams{InputIdx: uint32(feeIdx)})
-		if err != nil {
-			return nil, err
-		}
-
-		tx.LockTime = lockTimeMax
-		txRaw := hex.EncodeToString(tx.Bytes())
-		txRaws = append(txRaws, txRaw)
-
-		// Use output of this tx for the next round
-		mergedUTXO := &bt.FtUTXO{
-			TxID:      tx.TxID(),
-			Vout:      0,
-			Satoshis:  500,
-			Script:    codeScript.String(),
-			FtBalance: tapeAmountSum.String(),
-		}
-		ftutxos = append([]*bt.FtUTXO{mergedUTXO}, ftutxos[batchSize:]...)
-
-		// Use output 2 as new fee UTXO from the merge tx
-		if len(tx.Outputs) > 2 {
-			txIDBytes, _ := hex.DecodeString(tx.TxID())
-			feeUTXO = &bt.UTXO{
-				TxID:          txIDBytes,
-				Vout:          2,
-				Satoshis:      tx.Outputs[2].Satoshis,
-				LockingScript: tx.Outputs[2].LockingScript,
-			}
-		}
-
-		preTXs = append([]*bt.Tx{tx}, preTXs[batchSize:]...)
-		if len(prepreTxData) > batchSize {
-			prepreTxData = prepreTxData[batchSize:]
-		} else {
-			prepreTxData = nil
-		}
+		return []string{hex.EncodeToString(tx.Bytes())}, nil
 	}
 
-	return txRaws, nil
+	return &AdminPrepared{Tx: tx, Sighashes: sighashes, finalize: finalize}, nil
 }
 
-// getFTunlockCoin 对齐 JS FT.getFTunlock(..., isCoin)：isCoin 非 0 时在解锁脚本中追加 0x00。
-func (sc *StableCoin) getFTunlockCoin(privKey *bec.PrivateKey, tx *bt.Tx, preTX *bt.Tx, prepreTxData string, inputIdx, preTxVout, isCoin int) (*bscript.Script, error) {
-	return sc.FT.getFTunlock(privKey, tx, preTX, prepreTxData, inputIdx, preTxVout, isCoin != 0)
+// =============================================================================
+// Static helpers — coin NFT / mint code
+// =============================================================================
+
+// BuildCoinNftOutput builds the 3 outputs of a coin-NFT issuance certificate.
+// Mirrors TS stableCoin.buildCoinNftOutput.
+func BuildCoinNftOutput(nftCode, nftHold, nftTape *bscript.Script) []*bt.Output {
+	return []*bt.Output{
+		{LockingScript: nftCode, Satoshis: 200},
+		{LockingScript: nftHold, Satoshis: 100},
+		{LockingScript: nftTape, Satoshis: 0},
+	}
 }
 
-// --- Static helper functions ---
-
-// GetLockTimeFromTape 从 tape script 中读取 lockTime（对齐 TS stableCoin.getLockTimeFromTape）。
-func GetLockTimeFromTape(tapeScript *bscript.Script) uint32 {
-	chunks, err := bscript.DecodeParts(tapeScript.Bytes())
-	if err != nil || len(chunks) < 2 {
-		return 0
-	}
-	lockTimeChunk := chunks[len(chunks)-2]
-	if len(lockTimeChunk) < 4 {
-		return 0
-	}
-	return binary.LittleEndian.Uint32(lockTimeChunk[:4])
-}
-
-// SetLockTimeInTape 设置 tape script 中的 lockTime（对齐 TS stableCoin.setLockTimeInTape）。
-func SetLockTimeInTape(tapeScript *bscript.Script, lockTime uint32) *bscript.Script {
-	if lockTime != 0 && lockTime < 500000000 {
-		return tapeScript
-	}
-	chunks, err := bscript.DecodeParts(tapeScript.Bytes())
-	if err != nil || len(chunks) < 2 {
-		return tapeScript
-	}
-	ltBuf := make([]byte, 4)
-	binary.LittleEndian.PutUint32(ltBuf, lockTime)
-	chunks[len(chunks)-2] = ltBuf
-	newBytes, err := bscript.EncodeParts(chunks)
-	if err != nil {
-		return tapeScript
-	}
-	result := bscript.NewFromBytes(newBytes)
-	return result
-}
-
-// GetAddressFromCode 从 code script hex 中解析持有者地址（对齐 TS stableCoin.getAddressFromCode）。
-func GetAddressFromCode(codeScriptHex string) string {
-	raw, err := hex.DecodeString(codeScriptHex)
-	if err != nil || len(raw) < 23 {
-		return ""
-	}
-	chunks, err := bscript.DecodeParts(raw)
-	if err != nil || len(chunks) < 2 {
-		return ""
-	}
-	addrChunk := chunks[len(chunks)-2]
-	if len(addrChunk) < 21 {
-		return ""
-	}
-	pkhBytes := addrChunk[:20]
-	mode := addrChunk[20]
-	if mode == 0x00 {
-		addr, err := bscript.NewAddressFromPublicKeyHash(pkhBytes, true)
-		if err != nil {
-			return hex.EncodeToString(pkhBytes)
-		}
-		return addr.AddressString
-	}
-	return hex.EncodeToString(pkhBytes)
-}
-
-// BuildCoinNftTX 构建 coin NFT 交易（对齐 TS stableCoin.buildCoinNftTX）。
-func BuildCoinNftTX(privKey *bec.PrivateKey, utxo *bt.UTXO, data *CoinNftData) (*bt.Tx, error) {
-	pubKey := privKey.PubKey()
-	addr, err := bscript.NewAddressFromPublicKey(pubKey, true)
+// BuildCoinNftTX constructs the coin-NFT-creation tx. Funded and ECDSA-signed
+// by feePrivateKey; the hold-script output is sent to HASH160(adminPubHash20)
+// so the later mint tx is unlocked by the Schnorr MuSig aggregate key.
+//
+// Mirrors TS stableCoin.buildCoinNftTX.
+func BuildCoinNftTX(feePrivateKey *bec.PrivateKey, adminPubHash20Hex string, utxo *bt.UTXO, data *CoinNftData) (*bt.Tx, error) {
+	feeAddr, err := bscript.NewAddressFromPublicKey(feePrivateKey.PubKey(), true)
 	if err != nil {
 		return nil, err
 	}
-	address := addr.AddressString
-
-	utxoTxIDStr := hex.EncodeToString(utxo.TxID)
-	nftCodeScript, err := GetCoinNftCode(utxoTxIDStr, utxo.Vout)
+	nftCode, err := GetCoinNftCode(hex.EncodeToString(utxo.TxID), utxo.Vout)
 	if err != nil {
 		return nil, err
 	}
-	nftHoldScript := GetCoinNftHoldScript(address, data.NftName)
-	nftTapeScript := GetCoinNftTapeScript(data)
-
-	outputs, err := BuildCoinNftOutput(nftCodeScript, nftHoldScript, nftTapeScript)
+	nftHold, err := GetCoinNftHoldScriptFromHash(adminPubHash20Hex, data.NftName)
+	if err != nil {
+		return nil, err
+	}
+	nftTape, err := GetCoinNftTapeScript(data)
 	if err != nil {
 		return nil, err
 	}
 
 	tx := newFTTx()
-	if err := tx.From(utxoTxIDStr, utxo.Vout, utxo.LockingScript.String(), utxo.Satoshis); err != nil {
+	if err := tx.FromUTXOs(utxo); err != nil {
 		return nil, err
 	}
-	for _, out := range outputs {
+	for _, out := range BuildCoinNftOutput(nftCode, nftHold, nftTape) {
 		tx.AddOutput(out)
 	}
-
-	changeScript, _ := bscript.NewP2PKHFromAddress(address)
-	tx.AddOutput(&bt.Output{LockingScript: changeScript, Satoshis: 0})
-
-	// Estimate fee and set change（与 CreateCoin 首铸一致：用 NFT/FT 环境费率，避免 testnet 上硬编码 80 过低）
-	satPerKB := nftFeeSatPerKBFromEnv()
-	if satPerKB < 1 {
-		satPerKB = 80
+	if err := tx.ChangeToAddress(feeAddr.AddressString, newFeeQuote80()); err != nil {
+		return nil, fmt.Errorf("coin NFT ChangeToAddress: %w", err)
 	}
-	estimatedSize := tx.Size() + 107
-	fee := uint64(estimatedSize*satPerKB) / 1000
-	minFee := uint64(satPerKB)
-	if fee < minFee {
-		fee = minFee
-	}
-	totalOut := uint64(0)
-	for _, o := range tx.Outputs {
-		totalOut += o.Satoshis
-	}
-	if utxo.Satoshis > totalOut+fee {
-		tx.Outputs[len(tx.Outputs)-1].Satoshis = utxo.Satoshis - totalOut - fee + tx.Outputs[len(tx.Outputs)-1].Satoshis
-	}
-
-	sigP2PKH := &unlocker.Simple{PrivateKey: privKey}
-	tx.Inputs[0].UnlockingScript, err = sigP2PKH.UnlockingScript(context.Background(), tx, bt.UnlockerParams{InputIdx: 0})
-	if err != nil {
+	if err := signP2PKHAtIdx(tx, feePrivateKey, 0); err != nil {
 		return nil, err
 	}
-
 	return tx, nil
 }
 
-// BuildCoinNftOutput 构建 coin NFT 的三个输出（对齐 TS stableCoin.buildCoinNftOutput）。
-func BuildCoinNftOutput(
-	nftCodeScript, nftHoldScript, nftTapeScript *bscript.Script,
-) ([]*bt.Output, error) {
-	return []*bt.Output{
-		{LockingScript: nftCodeScript, Satoshis: 200},
-		{LockingScript: nftHoldScript, Satoshis: 100},
-		{LockingScript: nftTapeScript, Satoshis: 0},
-	}, nil
-}
-
-// GetCoinNftCode 构建 coin NFT 的 code script（对齐 TS coinNft.getCoinNftCode）。
-func GetCoinNftCode(txHash string, outputIndex uint32) (*bscript.Script, error) {
-	// Reverse txid to internal byte order
-	txIDBytes, err := hex.DecodeString(txHash)
-	if err != nil {
-		return nil, err
-	}
-	reversed := make([]byte, 32)
-	for i := 0; i < 32; i++ {
-		reversed[i] = txIDBytes[31-i]
-	}
-	voutBuf := make([]byte, 4)
-	binary.LittleEndian.PutUint32(voutBuf, outputIndex)
-	txIDVout := hex.EncodeToString(reversed) + hex.EncodeToString(voutBuf)
-
-	asmStr := "OP_1 OP_PICK OP_3 OP_SPLIT 0x01 0x14 OP_SPLIT OP_DROP OP_TOALTSTACK OP_DROP OP_TOALTSTACK OP_SHA256 OP_CAT OP_FROMALTSTACK OP_CAT OP_OVER OP_TOALTSTACK OP_TOALTSTACK OP_CAT OP_FROMALTSTACK OP_CAT OP_SHA256 OP_CAT OP_OVER 0x01 0x24 OP_SPLIT OP_DROP OP_TOALTSTACK OP_TOALTSTACK OP_SHA256 OP_CAT OP_FROMALTSTACK OP_CAT OP_HASH256 OP_6 OP_PUSH_META 0x01 0x20 OP_SPLIT OP_DROP OP_EQUALVERIFY OP_OVER OP_TOALTSTACK OP_TOALTSTACK OP_CAT OP_FROMALTSTACK OP_CAT OP_SHA256 OP_CAT OP_CAT OP_CAT OP_HASH256 OP_FROMALTSTACK OP_FROMALTSTACK OP_DUP 0x01 0x20 OP_SPLIT OP_DROP OP_3 OP_ROLL OP_EQUALVERIFY OP_SWAP OP_FROMALTSTACK OP_DUP OP_TOALTSTACK OP_EQUAL OP_IF OP_DROP OP_ELSE 0x24 0x" + txIDVout + " OP_EQUALVERIFY OP_ENDIF OP_OVER OP_FROMALTSTACK OP_EQUALVERIFY OP_CAT OP_CAT OP_SHA256 OP_7 OP_PUSH_META OP_EQUALVERIFY OP_DUP OP_HASH160 OP_FROMALTSTACK OP_EQUALVERIFY OP_CHECKSIG OP_RETURN 0x05 0x33436f6465"
-	// 与 NFT.parseNFTCodeASM / getFTmintCode 一致：先 collapse 0xNN 0x<data> 再 strip，否则 0x01 0x14 会变成独立 token「01」「14」，
-	// NewFromASM 按 hex 推成非最小 push，链上 mint 输入 0 会报 Data push larger than necessary。
-	asmStr = collapseTbcMintASM(asmStr)
-	asmStr = strip0xHexPushesInASM(asmStr)
-	return bscript.NewFromASM(asmStr)
-}
-
-// GetCoinNftHoldScript 构建 coin NFT 的 hold script（对齐 TS coinNft.getHoldScript）。
-func GetCoinNftHoldScript(address, flag string) *bscript.Script {
-	p2pkh, _ := bscript.NewP2PKHFromAddress(address)
-	flagHex := hex.EncodeToString([]byte(fmt.Sprintf("For Coin %s NHold", flag)))
-	p2pkhASM, _ := p2pkh.ToASM()
-	asmStr := fmt.Sprintf("%s OP_RETURN %s", p2pkhASM, flagHex)
-	script, _ := bscript.NewFromASM(asmStr)
-	return script
-}
-
-// GetCoinNftTapeScript 构建 coin NFT 的 tape script（对齐 TS coinNft.getTapeScript）。
-func GetCoinNftTapeScript(data *CoinNftData) *bscript.Script {
-	dataBytes, _ := json.Marshal(data)
-	dataHex := hex.EncodeToString(dataBytes)
-	asmStr := fmt.Sprintf("OP_FALSE OP_RETURN %s 4e54617065", dataHex)
-	script, _ := bscript.NewFromASM(asmStr)
-	return script
-}
-
-// UpdateCoinNftTapeScript 更新 coin NFT tape 中的 totalSupply（对齐 TS coinNft.updateTapeScript）。
-func UpdateCoinNftTapeScript(tapeScript *bscript.Script, newTotalSupply string) *bscript.Script {
-	chunks, err := bscript.DecodeParts(tapeScript.Bytes())
-	if err != nil || len(chunks) < 2 {
-		return tapeScript
-	}
-	dataChunk := chunks[len(chunks)-2]
-	var jsonData map[string]interface{}
-	if err := json.Unmarshal(dataChunk, &jsonData); err != nil {
-		return tapeScript
-	}
-	jsonData["coinTotalSupply"] = newTotalSupply
-	newData, _ := json.Marshal(jsonData)
-	dataHex := hex.EncodeToString(newData)
-	asmStr := fmt.Sprintf("OP_FALSE OP_RETURN %s 4e54617065", dataHex)
-	script, _ := bscript.NewFromASM(asmStr)
-	return script
-}
-
-// GetCoinMintCode 对齐 stableCoin.getCoinMintCode（admin / 接收方 / 原 code sha256 / tape 字节长）。
-func GetCoinMintCode(adminAddress, receiveAddress, codeHash string, tapeSize int) (*bscript.Script, error) {
+// GetCoinMintCode builds the FT mint code script for stableCoin. adminPubHash20Hex
+// is HASH160(xOnly aggregate pubkey). receiveAddress is the initial mint
+// recipient. codeHash is sha256 of the coin-NFT code script. tapeSize is the
+// tape script byte length. Mirrors TS stableCoin.getCoinMintCode.
+func GetCoinMintCode(adminPubHash20Hex, receiveAddress, codeHash string, tapeSize int) (*bscript.Script, error) {
 	if tapeSize <= 0 {
 		return nil, fmt.Errorf("invalid tapeSize")
-	}
-	admin, err := bscript.NewAddressFromString(adminAddress)
-	if err != nil {
-		return nil, err
 	}
 	recv, err := bscript.NewAddressFromString(receiveAddress)
 	if err != nil {
 		return nil, err
 	}
 	hash := recv.PublicKeyHash + "00"
-	tapeSizeHex := bt.GetSizeHex(tapeSize)
+	tapeSizeHex := hex.EncodeToString(util.GetSize(tapeSize))
+
 	asm := stablecoinMintTemplateASM
-	asm = strings.ReplaceAll(asm, "${adminPubHash}", admin.PublicKeyHash)
+	asm = strings.ReplaceAll(asm, "${adminPubHash}", adminPubHash20Hex)
 	asm = strings.ReplaceAll(asm, "${codeHash}", codeHash)
 	asm = strings.ReplaceAll(asm, "${tapeSizeHex}", tapeSizeHex)
 	asm = strings.ReplaceAll(asm, "${hash}", hash)
@@ -909,46 +1128,412 @@ func GetCoinMintCode(adminAddress, receiveAddress, codeHash string, tapeSize int
 	return bscript.NewFromASM(asm)
 }
 
-// --- Utility helpers ---
-
-// stableCoinTapeDecimalASM 与 tbc-contract stableCoin.js 一致：
-// const decimalHex = decimal.toString(16).padStart(2, "0");
-// 即 ASM 中为两位十六进制字面量（如 06），而非 OP_6，避免与 JS 构建的 tape 字节长/tapeSize 不一致导致 mint 合约 OP_SPLIT 等失败。
-func stableCoinTapeDecimalASM(decimal int) string {
-	if decimal < 0 {
-		return "00"
+// SetLockTimeInTape mutates the lockTime chunk in-place (chunks[len-2].buf,
+// 4 bytes LE). lockTime=0 means unlock; otherwise must be ≥ 500_000_000
+// (Unix epoch). Mirrors TS stableCoin.setLockTimeInTape.
+func SetLockTimeInTape(tapeScript *bscript.Script, lockTime uint32) (*bscript.Script, error) {
+	if lockTime != 0 && lockTime < 500000000 {
+		return nil, fmt.Errorf("lockTime must be a Unix timestamp (>= 500000000)")
 	}
-	return fmt.Sprintf("%02x", decimal)
+	chunks := tapeScript.Chunks()
+	if len(chunks) < 2 {
+		return nil, fmt.Errorf("tape script too short for setLockTimeInTape")
+	}
+	idx := len(chunks) - 2
+	c := &chunks[idx]
+	if len(c.Buf) < 4 {
+		return nil, fmt.Errorf("tape lockTime chunk has no usable buffer")
+	}
+	binary.LittleEndian.PutUint32(c.Buf[:4], lockTime)
+	out, err := bscript.FromChunks(chunks)
+	if err != nil {
+		return nil, fmt.Errorf("re-serialise tape chunks: %w", err)
+	}
+	return out, nil
 }
 
-func sha256Hex(data []byte) string {
-	h := sha256.Sum256(data)
-	return hex.EncodeToString(h[:])
+// GetLockTimeFromTape reads the 4-byte LE lockTime field from the tape.
+// Mirrors TS stableCoin.getLockTimeFromTape.
+func GetLockTimeFromTape(tapeScript *bscript.Script) (uint32, error) {
+	chunks := tapeScript.Chunks()
+	if len(chunks) < 2 {
+		return 0, fmt.Errorf("tape script too short")
+	}
+	c := chunks[len(chunks)-2]
+	if len(c.Buf) < 4 {
+		return 0, fmt.Errorf("tape lockTime chunk has no usable buffer")
+	}
+	return binary.LittleEndian.Uint32(c.Buf[:4]), nil
 }
 
-func bigIntToUint64LEHex(n *big.Int) string {
-	buf := make([]byte, 8)
-	val := n.Uint64()
-	binary.LittleEndian.PutUint64(buf, val)
-	return hex.EncodeToString(buf)
+// GetAddressFromCode parses the 21-byte holder hash chunk from a coin code
+// script: 20-byte pkh + 1-byte type tag (0x00 = address, else contract).
+// Returns the address (or hex contract hash) and an isContract flag.
+//
+// Mirrors TS stableCoin.getAddressFromCode.
+func GetAddressFromCode(codeScriptHex string) (string, bool, error) {
+	raw, err := hex.DecodeString(codeScriptHex)
+	if err != nil {
+		return "", false, fmt.Errorf("invalid code hex: %w", err)
+	}
+	s := bscript.NewFromBytes(raw)
+	chunks := s.Chunks()
+	if len(chunks) < 2 {
+		return "", false, fmt.Errorf("code script has < 2 chunks")
+	}
+	c := chunks[len(chunks)-2]
+	if len(c.Buf) < 21 {
+		return "", false, fmt.Errorf("holder chunk shorter than 21 bytes")
+	}
+	pkh := c.Buf[:20]
+	typeTag := c.Buf[20]
+	if typeTag == 0x00 {
+		addr, err := bscript.NewAddressFromPublicKeyHash(pkh, true)
+		if err != nil {
+			return "", false, err
+		}
+		return addr.AddressString, false, nil
+	}
+	return hex.EncodeToString(pkh), true, nil
 }
 
-// ParseDecimalToBigInt converts a decimal string like "1.5" with given decimal places into a big.Int.
-func ParseDecimalToBigInt(amount string, decimal int) *big.Int {
-	parts := strings.SplitN(amount, ".", 2)
-	intPart := parts[0]
-	fracPart := ""
-	if len(parts) > 1 {
-		fracPart = parts[1]
+// =============================================================================
+// Coin-NFT helpers (TS coinNft.*)
+// =============================================================================
+
+// GetCoinNftCode mirrors TS coinNft.getCoinNftCode.
+func GetCoinNftCode(txHash string, outputIndex uint32) (*bscript.Script, error) {
+	rev, err := hex.DecodeString(txHash)
+	if err != nil || len(rev) != 32 {
+		return nil, fmt.Errorf("invalid txHash for GetCoinNftCode")
 	}
-	if len(fracPart) > decimal {
-		fracPart = fracPart[:decimal]
+	internal := make([]byte, 32)
+	for i := 0; i < 32; i++ {
+		internal[i] = rev[31-i]
 	}
-	for len(fracPart) < decimal {
-		fracPart += "0"
-	}
-	combined := intPart + fracPart
-	result := new(big.Int)
-	result.SetString(combined, 10)
-	return result
+	voutBuf := make([]byte, 4)
+	binary.LittleEndian.PutUint32(voutBuf, outputIndex)
+	txIDVout := hex.EncodeToString(internal) + hex.EncodeToString(voutBuf)
+
+	asm := stablecoinCoinNftCodeTemplateASM
+	asm = strings.ReplaceAll(asm, "${txIDVout}", txIDVout)
+	asm = collapseTbcMintASM(asm)
+	asm = strip0xHexPushesInASM(asm)
+	return bscript.NewFromASM(asm)
 }
+
+// GetCoinNftHoldScript returns the hold script bound to a conventional
+// address. Mirrors TS coinNft.getHoldScript. Used by callers managing the
+// coin NFT with a regular ECDSA key (legacy path).
+func GetCoinNftHoldScript(address, flag string) (*bscript.Script, error) {
+	addr, err := bscript.NewAddressFromString(address)
+	if err != nil {
+		return nil, err
+	}
+	flagHex := hex.EncodeToString([]byte("For Coin " + flag + " NHold"))
+	asm := fmt.Sprintf("OP_DUP OP_HASH160 0x14 0x%s OP_EQUALVERIFY OP_CHECKSIG OP_RETURN %s",
+		addr.PublicKeyHash, flagHex)
+	asm = collapseTbcMintASM(asm)
+	asm = strip0xHexPushesInASM(asm)
+	return bscript.NewFromASM(asm)
+}
+
+// GetCoinNftHoldScriptFromHash is the Schnorr MuSig variant: the holder is
+// HASH160(xOnly aggregate pubkey 32B). Mirrors TS coinNft.getHoldScriptFromHash.
+func GetCoinNftHoldScriptFromHash(pubKeyHash20Hex, flag string) (*bscript.Script, error) {
+	if len(pubKeyHash20Hex) != 40 {
+		return nil, fmt.Errorf("pubKeyHash20Hex must be 40 hex chars")
+	}
+	if _, err := hex.DecodeString(pubKeyHash20Hex); err != nil {
+		return nil, fmt.Errorf("invalid pubKeyHash20Hex: %w", err)
+	}
+	flagHex := hex.EncodeToString([]byte("For Coin " + flag + " NHold"))
+	asm := fmt.Sprintf("OP_DUP OP_HASH160 0x14 0x%s OP_EQUALVERIFY OP_CHECKSIG OP_RETURN %s",
+		pubKeyHash20Hex, flagHex)
+	asm = collapseTbcMintASM(asm)
+	asm = strip0xHexPushesInASM(asm)
+	return bscript.NewFromASM(asm)
+}
+
+// GetCoinNftTapeScript builds the JSON-tape script for a coin-NFT issuance
+// certificate. Mirrors TS coinNft.getTapeScript.
+func GetCoinNftTapeScript(data *CoinNftData) (*bscript.Script, error) {
+	j, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+	asm := fmt.Sprintf("OP_FALSE OP_RETURN %s 4e54617065", hex.EncodeToString(j))
+	return bscript.NewFromASM(asm)
+}
+
+// UpdateCoinNftTapeScript rewrites the coinTotalSupply field in the existing
+// tape script. Mirrors TS coinNft.updateTapeScript.
+func UpdateCoinNftTapeScript(tape *bscript.Script, newTotalSupply string) (*bscript.Script, error) {
+	chunks := tape.Chunks()
+	if len(chunks) < 2 {
+		return nil, fmt.Errorf("tape script too short")
+	}
+	dataChunk := chunks[len(chunks)-2].Buf
+	if dataChunk == nil {
+		return nil, fmt.Errorf("tape data chunk empty")
+	}
+	var data map[string]interface{}
+	if err := json.Unmarshal(dataChunk, &data); err != nil {
+		return nil, fmt.Errorf("decode tape JSON: %w", err)
+	}
+	data["coinTotalSupply"] = newTotalSupply
+	newJSON, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+	asm := fmt.Sprintf("OP_FALSE OP_RETURN %s 4e54617065", hex.EncodeToString(newJSON))
+	return bscript.NewFromASM(asm)
+}
+
+// DecodeCoinNftTapeScript reads the JSON-tape data chunk back to a generic
+// map. Mirrors TS coinNft.decodeTapeScript.
+func DecodeCoinNftTapeScript(tape *bscript.Script) (map[string]interface{}, error) {
+	chunks := tape.Chunks()
+	if len(chunks) < 2 {
+		return nil, fmt.Errorf("tape script too short")
+	}
+	c := chunks[len(chunks)-2].Buf
+	if c == nil {
+		return nil, fmt.Errorf("tape data chunk empty")
+	}
+	var data map[string]interface{}
+	if err := json.Unmarshal(c, &data); err != nil {
+		return nil, fmt.Errorf("decode tape JSON: %w", err)
+	}
+	return data, nil
+}
+
+// BuildCoinNftUnlockScriptSchnorr produces the unlock script for an input
+// spending a coin-NFT code output, where the authorising signature is a
+// 64-byte BIP340 Schnorr signature over the SIGHASH_ALL_FORKID digest. The
+// on-chain OP_CHECKSIG dispatches on sig length (64 → Schnorr) and pubkey
+// length (32 → x-only), so HASH160(xOnlyPubkey32) must match the embedded
+// admin pubkey hash.
+//
+// Mirrors TS coinNft.buildUnlockScriptSchnorr.
+func BuildCoinNftUnlockScriptSchnorr(
+	schnorrSig64 []byte,
+	xOnlyPubkey32 []byte,
+	currentTX *bt.Tx,
+	preTX *bt.Tx,
+	prepreTX *bt.Tx,
+	currentUnlockIndex uint32,
+) (*bscript.Script, error) {
+	if len(xOnlyPubkey32) != 32 {
+		return nil, fmt.Errorf("xOnlyPubkey32 must be 32 bytes")
+	}
+	if len(schnorrSig64) != 64 {
+		return nil, fmt.Errorf("schnorrSig64 must be 64 bytes")
+	}
+	cur, err := util.GetNFTCurrentTxdata(currentTX)
+	if err != nil {
+		return nil, err
+	}
+	prepre, err := util.GetNFTPrePreTxdata(prepreTX)
+	if err != nil {
+		return nil, err
+	}
+	pre, err := util.GetNFTPreTxdata(preTX)
+	if err != nil {
+		return nil, err
+	}
+	// Push the 65-byte sig (sig64 || sighash flag) followed by the 32-byte
+	// x-only pubkey. Both lengths are < 76 so the push opcode IS the length.
+	sigHex := encodeSchnorrSig65PushHex(schnorrSig64)
+	pubHex := "20" + hex.EncodeToString(xOnlyPubkey32)
+	return bscript.NewFromHexString(sigHex + pubHex + cur + prepre + pre)
+}
+
+// =============================================================================
+// internal helpers
+// =============================================================================
+
+// scAdminBuilder describes one admin-signed input: where to install the unlock
+// script (InputIndex) and how to build it from a 64-byte Schnorr sig.
+type scAdminBuilder struct {
+	InputIndex uint32
+	Build      func(sig64 []byte) (*bscript.Script, error)
+}
+
+// scPreseedAndFreezeFee installs dummy-sig admin unlock scripts so the byte
+// layout is final, then runs a two-pass ECDSA fee adjust on the listed fee
+// inputs. The second pass converges because admin-input length is fixed
+// (64-byte placeholder) and ECDSA RFC-6979 makes fee-input sigs deterministic.
+//
+// After this returns the tx is fee-stable: subsequent changes to outputs must
+// be avoided, otherwise admin sighashes would shift.
+func scPreseedAndFreezeFee(
+	tx *bt.Tx,
+	feePrivKey *bec.PrivateKey,
+	admins []scAdminBuilder,
+	feeInputIdxs []int,
+) error {
+	for _, b := range admins {
+		us, err := b.Build(dummySchnorrSig64)
+		if err != nil {
+			return fmt.Errorf("preseed admin input %d: %w", b.InputIndex, err)
+		}
+		if err := tx.InsertInputUnlockingScript(b.InputIndex, us); err != nil {
+			return err
+		}
+	}
+	for _, fi := range feeInputIdxs {
+		if err := signP2PKHAtIdx(tx, feePrivKey, uint32(fi)); err != nil {
+			return err
+		}
+	}
+	// Recompute fee from actual signed bytes (TS schedule: <1000 → 80, else
+	// ceil(size*80/1000)) and adjust the change output (last output).
+	actualSize := len(tx.Bytes())
+	var targetFee uint64
+	if actualSize < 1000 {
+		targetFee = 80
+	} else {
+		targetFee = (uint64(actualSize)*80 + 999) / 1000
+	}
+	inputSum := uint64(0)
+	for _, in := range tx.Inputs {
+		inputSum += in.PreviousTxSatoshis
+	}
+	nonChangeSum := uint64(0)
+	for i, out := range tx.Outputs {
+		if i < len(tx.Outputs)-1 {
+			nonChangeSum += out.Satoshis
+		}
+	}
+	if inputSum < nonChangeSum+targetFee {
+		return fmt.Errorf("preseed: insufficient inputs to cover %d sat fee", targetFee)
+	}
+	tx.Outputs[len(tx.Outputs)-1].Satoshis = inputSum - nonChangeSum - targetFee
+
+	for _, fi := range feeInputIdxs {
+		if err := signP2PKHAtIdx(tx, feePrivKey, uint32(fi)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// scComputeSighashes returns the 32-byte SHA256d sighashes for the given
+// input indices using SIGHASH_ALL_FORKID. The values can be handed to an
+// external BIP340 / MuSig2 signer.
+func scComputeSighashes(tx *bt.Tx, inputs []uint32) ([]AdminSighash, error) {
+	out := make([]AdminSighash, len(inputs))
+	for i, idx := range inputs {
+		sh, err := tx.CalcInputSignatureHash(idx, sighash.AllForkID)
+		if err != nil {
+			return nil, fmt.Errorf("compute sighash for input %d: %w", idx, err)
+		}
+		out[i] = AdminSighash{InputIndex: idx, Sighash: sh}
+	}
+	return out, nil
+}
+
+// scSignAllOwner signs every FT input (isCoin=true) and every fee input on a
+// stableCoin owner-signed tx.
+func scSignAllOwner(
+	tx *bt.Tx,
+	privKey *bec.PrivateKey,
+	ftutxos []*util.FtUTXO,
+	preTXs []*bt.Tx,
+	prepreTxDatas []string,
+) error {
+	if err := ftSignFeeInputs(tx, privKey, len(ftutxos)); err != nil {
+		return err
+	}
+	for i, fu := range ftutxos {
+		us, err := ftBuildUnlock(privKey, tx, preTXs[i], prepreTxDatas[i], i, int(fu.Vout), true /* isCoin */)
+		if err != nil {
+			return fmt.Errorf("build coin unlock input %d: %w", i, err)
+		}
+		if err := tx.InsertInputUnlockingScript(uint32(i), us); err != nil {
+			return fmt.Errorf("insert coin unlock %d: %w", i, err)
+		}
+	}
+	return nil
+}
+
+// scAdjustFeeAndResign recomputes the fee from the actual signed-tx size,
+// adjusts the trailing change output, and re-signs every input. Mirrors the
+// `mergeFTSingle` two-pass pattern in ft.go.
+func scAdjustFeeAndResign(
+	tx *bt.Tx,
+	privKey *bec.PrivateKey,
+	ftutxos []*util.FtUTXO,
+	preTXs []*bt.Tx,
+	prepreTxDatas []string,
+) error {
+	actualSize := len(tx.Bytes())
+	var targetFee uint64
+	if actualSize < 1000 {
+		targetFee = 80
+	} else {
+		targetFee = (uint64(actualSize)*80 + 999) / 1000
+	}
+	inputSum := uint64(0)
+	for _, in := range tx.Inputs {
+		inputSum += in.PreviousTxSatoshis
+	}
+	nonChangeSum := uint64(0)
+	for i, out := range tx.Outputs {
+		if i < len(tx.Outputs)-1 {
+			nonChangeSum += out.Satoshis
+		}
+	}
+	if inputSum < nonChangeSum+targetFee {
+		return fmt.Errorf("two-pass: insufficient inputs to cover %d sat fee", targetFee)
+	}
+	tx.Outputs[len(tx.Outputs)-1].Satoshis = inputSum - nonChangeSum - targetFee
+	return scSignAllOwner(tx, privKey, ftutxos, preTXs, prepreTxDatas)
+}
+
+// encodeSchnorrSig65PushHex returns "41" + sig64hex + "<sighash flag byte>"
+// — i.e. a 65-byte length-prefixed push of the BIP340 sig with appended
+// SIGHASH_ALL_FORKID flag. Both 0x41 (push of 65 bytes) and 0x20 (push of 32)
+// are direct length-prefix opcodes (< 76).
+func encodeSchnorrSig65PushHex(sig64 []byte) string {
+	return fmt.Sprintf("41%s%02x", hex.EncodeToString(sig64), byte(sighash.AllForkID))
+}
+
+// buildSchnorrP2PKHLikeUnlock builds the unlock for a coin-NFT-hold input,
+// which is a P2PKH-style script over an x-only Schnorr pubkey:
+//   <65-byte sig+flag> <32-byte xonly pubkey>
+func buildSchnorrP2PKHLikeUnlock(sig64 []byte, xOnlyPubkey32 []byte) (*bscript.Script, error) {
+	if len(sig64) != 64 {
+		return nil, fmt.Errorf("sig64 must be 64 bytes")
+	}
+	if len(xOnlyPubkey32) != 32 {
+		return nil, fmt.Errorf("xOnlyPubkey32 must be 32 bytes")
+	}
+	hexStr := encodeSchnorrSig65PushHex(sig64) + "20" + hex.EncodeToString(xOnlyPubkey32)
+	return bscript.NewFromHexString(hexStr)
+}
+
+// buildOpReturnMessage assembles `OP_FALSE OP_RETURN <msgHex>` for a tx
+// memo output.
+func buildOpReturnMessage(msg string) (*bscript.Script, error) {
+	return bscript.NewFromASM(fmt.Sprintf("OP_FALSE OP_RETURN %s", hex.EncodeToString([]byte(msg))))
+}
+
+// buildStableCoinTapeScript constructs the stableCoin tape script. The amount
+// is the head field; lockTime is the per-tape lockTime (0 = unlocked).
+//
+// Layout: OP_FALSE OP_RETURN <48B amount tape> <decimal hex> <name> <symbol>
+//         <4B lockTime LE> 4654617065  // "FTape"
+func buildStableCoinTapeScript(name, symbol string, decimal int, headAmount *big.Int, lockTime uint32) (*bscript.Script, error) {
+	tape := writeTapeAmount(headAmount)
+	nameHex := hex.EncodeToString([]byte(name))
+	symbolHex := hex.EncodeToString([]byte(symbol))
+	decimalHex := fmt.Sprintf("%02x", decimal)
+	ltBuf := make([]byte, 4)
+	binary.LittleEndian.PutUint32(ltBuf, lockTime)
+	asm := fmt.Sprintf("OP_FALSE OP_RETURN %s %s %s %s %s 4654617065",
+		tape, decimalHex, nameHex, symbolHex, hex.EncodeToString(ltBuf))
+	return bscript.NewFromASM(asm)
+}
+

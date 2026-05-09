@@ -18,7 +18,7 @@
 |----------------------------------------|------------------------|
 | [快速开始.md](../tbc-contract/docs/快速开始.md)、[Quick Start.md](../tbc-contract/docs/Quick%20Start.md) | [quick-start-go.md](./quick-start-go.md) |
 | [ft.md](../tbc-contract/docs/ft.md) | `lib/contract/ft.go`，场景见 [test-cases/ft.md](./test-cases/ft.md) |
-| [stableCoin.md](../tbc-contract/docs/stableCoin.md) | **Go 侧已冻结**：`lib/contract/stablecoin.go` 与 `lib/api/api_stablecoin.go` 带 `//go:build legacy_stablecoin` 标签，默认不编译；后续重写后再启用，场景见 [test-cases/stablecoin.md](./test-cases/stablecoin.md) |
+| [stableCoin.md](../tbc-contract/docs/stableCoin.md) | `lib/contract/stablecoin.go`、`lib/api/api_stablecoin.go`，场景见 [test-cases/stablecoin.md](./test-cases/stablecoin.md)。管理员路径返回 `*AdminPrepared`，由调用方在外部跑 BIP327 / MuSig2 仪式产出 64 字节 Schnorr 签名后回填；tbc-lib-go 不内置 Schnorr |
 | [nft.md](../tbc-contract/docs/nft.md) | `lib/contract/nft.go`，场景见 [test-cases/nft.md](./test-cases/nft.md) |
 | [orderBook.md](../tbc-contract/docs/orderBook.md) | `lib/contract/orderbook.go`，场景见 [test-cases/orderbook.md](./test-cases/orderbook.md) |
 | [multiSIg.md](../tbc-contract/docs/multiSIg.md) | `lib/contract/multisig.go`，场景见 [test-cases/multisig.md](./test-cases/multisig.md) |
