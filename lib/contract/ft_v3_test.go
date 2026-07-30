@@ -3,6 +3,7 @@ package contract
 import (
 	"bytes"
 	"encoding/hex"
+	"math/big"
 	"strings"
 	"testing"
 
@@ -143,4 +144,37 @@ func TestStaticGetFTUnlockSwapV3RejectsUnsupportedContractInputIndex(t *testing.
 
 func versionString(version util.FTVersion) string {
 	return "v" + string(rune('0'+version))
+}
+
+func TestTransferWithAdditionalInfo(t *testing.T) {
+	fx := newHTLCTokenFixture(t, 1_000)
+	ft := &FT{
+		CodeScript: fx.code.ToHex(),
+		TapeScript: fx.tape.ToHex(),
+		Decimal:    6,
+	}
+	additionalInfo := []byte("order:js-1.6.5")
+	raw, err := ft.TransferWithAdditionalInfo(
+		fx.senderKey, fx.receiver, big.NewInt(600),
+		[]*util.FtUTXO{fx.ftUTXO}, fx.feeUTXO,
+		[]*bt.Tx{fx.preTX}, []string{""}, additionalInfo,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx := mustTx(t, raw)
+	if len(tx.Outputs) != 6 {
+		t.Fatalf("outputs = %d, want recipient pair + change pair + info + TBC change", len(tx.Outputs))
+	}
+	infoOutput := tx.Outputs[4]
+	if infoOutput.Satoshis != 0 || !infoOutput.LockingScript.IsSafeDataOut() {
+		t.Fatalf("output 4 is not a zero-satoshi safe-data output")
+	}
+	got, err := infoOutput.LockingScript.GetData()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got, additionalInfo) {
+		t.Fatalf("additional info = %x, want %x", got, additionalInfo)
+	}
 }

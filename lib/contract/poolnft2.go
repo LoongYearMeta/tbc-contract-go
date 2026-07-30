@@ -3114,9 +3114,67 @@ func (p *PoolNFT2) SwapToTBC(
 	amountToken string,
 	lpPlan int,
 ) (string, error) {
-	ftaInfo, err := api.FetchFtInfo(p.FtAContractTxID, p.Network)
+	return p.swapToTBC(
+		privKey, addressTo, utxo, amountToken, lpPlan,
+		nil, nil, nil, "", nil,
+	)
+}
+
+// SwapToTBCLocal performs the FT-input side of SwapToTBC from caller-supplied
+// UTXO and ancestry data. Pool-state discovery remains the same as SwapToTBC,
+// but no FT info/UTXO/parent lookup is performed.
+func (p *PoolNFT2) SwapToTBCLocal(
+	privKey *bec.PrivateKey,
+	addressTo string,
+	ftUTXO *util.FtUTXO,
+	ftPreTXs []*bt.Tx,
+	ftPrePre []string,
+	amount *big.Int,
+	lpPlan int,
+	feeUTXO *bt.UTXO,
+) (string, error) {
+	if ftUTXO == nil || len(ftPreTXs) != 1 || len(ftPrePre) != 1 || ftPreTXs[0] == nil {
+		return "", fmt.Errorf("SwapToTBCLocal: supplied FT ancestry must contain exactly one parent and pre-pre entry")
+	}
+	if amount == nil || amount.Sign() <= 0 {
+		return "", fmt.Errorf("SwapToTBCLocal: invalid FT amount input")
+	}
+	if ftUTXO.FtBalance == nil || ftUTXO.FtBalance.Cmp(amount) < 0 {
+		return "", fmt.Errorf("SwapToTBCLocal: insufficient supplied FT balance")
+	}
+	tape, err := htlcTokenTapeAt(ftPreTXs[0], int(ftUTXO.Vout))
 	if err != nil {
-		return "", fmt.Errorf("SwapToTBC FetchFtInfo: %w", err)
+		return "", fmt.Errorf("SwapToTBCLocal: %w", err)
+	}
+	localInfo := &api.FtInfoResponse{
+		CodeScript: ftUTXO.LockingScript.ToHex(),
+		TapeScript: tape.ToHex(),
+	}
+	return p.swapToTBC(
+		privKey, addressTo, feeUTXO, "", lpPlan,
+		localInfo, ftUTXO, ftPreTXs[0], ftPrePre[0], amount,
+	)
+}
+
+func (p *PoolNFT2) swapToTBC(
+	privKey *bec.PrivateKey,
+	addressTo string,
+	utxo *bt.UTXO,
+	amountToken string,
+	lpPlan int,
+	localInfo *api.FtInfoResponse,
+	localFT *util.FtUTXO,
+	localPreTX *bt.Tx,
+	localPrePre string,
+	localAmount *big.Int,
+) (string, error) {
+	ftaInfo := localInfo
+	var err error
+	if ftaInfo == nil {
+		ftaInfo, err = api.FetchFtInfo(p.FtAContractTxID, p.Network)
+		if err != nil {
+			return "", fmt.Errorf("SwapToTBC FetchFtInfo: %w", err)
+		}
 	}
 	ftVersion, isCoin, err := classifyPoolFTCode(ftaInfo.CodeScript)
 	if err != nil {
@@ -3131,9 +3189,14 @@ func (p *PoolNFT2) SwapToTBC(
 		lpPlan = 1
 	}
 
-	amountFTBN, err := util.ParseDecimalToBigInt(amountToken, ftaInfo.Decimal)
-	if err != nil || amountFTBN.Sign() <= 0 {
-		return "", fmt.Errorf("SwapToTBC: Invalid FT amount input")
+	amountFTBN := localAmount
+	if amountFTBN == nil {
+		amountFTBN, err = util.ParseDecimalToBigInt(amountToken, ftaInfo.Decimal)
+		if err != nil || amountFTBN.Sign() <= 0 {
+			return "", fmt.Errorf("SwapToTBC: Invalid FT amount input")
+		}
+	} else {
+		amountFTBN = new(big.Int).Set(amountFTBN)
 	}
 
 	poolCodeHash160, err := poolNFTSHA256thenHash160(p.PoolNftCode)
@@ -3181,21 +3244,26 @@ func (p *PoolNFT2) SwapToTBC(
 	if err != nil {
 		return "", err
 	}
-	ftaCodeScriptHex, err := buildFTTransferCodeHex(ftaInfo.CodeScript, addr.AddressString)
-	if err != nil {
-		return "", err
-	}
-	fttxoA, err := api.FetchFtUTXO(p.FtAContractTxID, addr.AddressString, ftaCodeScriptHex, p.Network, amountFTBN)
-	if err != nil {
-		return "", fmt.Errorf("SwapToTBC FetchFtUTXO: %w", err)
-	}
-	ftPreTX, err := api.FetchTXRaw(hex.EncodeToString(fttxoA.TxID), p.Network)
-	if err != nil {
-		return "", err
-	}
-	ftPrePreTxData, err := api.FetchFtPrePreTxData(ftPreTX, int(fttxoA.Vout), p.Network)
-	if err != nil {
-		return "", err
+	fttxoA := localFT
+	ftPreTX := localPreTX
+	ftPrePreTxData := localPrePre
+	if fttxoA == nil {
+		ftaCodeScriptHex, err := buildFTTransferCodeHex(ftaInfo.CodeScript, addr.AddressString)
+		if err != nil {
+			return "", err
+		}
+		fttxoA, err = api.FetchFtUTXO(p.FtAContractTxID, addr.AddressString, ftaCodeScriptHex, p.Network, amountFTBN)
+		if err != nil {
+			return "", fmt.Errorf("SwapToTBC FetchFtUTXO: %w", err)
+		}
+		ftPreTX, err = api.FetchTXRaw(hex.EncodeToString(fttxoA.TxID), p.Network)
+		if err != nil {
+			return "", err
+		}
+		ftPrePreTxData, err = api.FetchFtPrePreTxData(ftPreTX, int(fttxoA.Vout), p.Network)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	tapeAmountSetIn := []*big.Int{new(big.Int).Set(fttxoA.FtBalance)}

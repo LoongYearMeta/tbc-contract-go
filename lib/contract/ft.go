@@ -208,6 +208,45 @@ func (f *FT) Transfer(
 	prepreTxDatas []string,
 	tbcAmountSat uint64,
 ) (string, error) {
+	return f.transfer(
+		privKey, addressTo, amount, ftutxos, feeUTXO,
+		preTXs, prepreTxDatas, tbcAmountSat, nil,
+	)
+}
+
+// TransferWithAdditionalInfo mirrors transferWithAdditionalInfo() in
+// tbc-contract 1.6.5. The additional bytes are committed in a zero-satoshi
+// OP_FALSE OP_RETURN output immediately before the final TBC change.
+func (f *FT) TransferWithAdditionalInfo(
+	privKey *bec.PrivateKey,
+	addressTo string,
+	amount *big.Int,
+	ftutxos []*util.FtUTXO,
+	feeUTXO *bt.UTXO,
+	preTXs []*bt.Tx,
+	prepreTxDatas []string,
+	additionalInfo []byte,
+) (string, error) {
+	if additionalInfo == nil {
+		additionalInfo = []byte{}
+	}
+	return f.transfer(
+		privKey, addressTo, amount, ftutxos, feeUTXO,
+		preTXs, prepreTxDatas, 0, additionalInfo,
+	)
+}
+
+func (f *FT) transfer(
+	privKey *bec.PrivateKey,
+	addressTo string,
+	amount *big.Int,
+	ftutxos []*util.FtUTXO,
+	feeUTXO *bt.UTXO,
+	preTXs []*bt.Tx,
+	prepreTxDatas []string,
+	tbcAmountSat uint64,
+	additionalInfo []byte,
+) (string, error) {
 	if amount == nil || amount.Sign() < 0 {
 		return "", fmt.Errorf("invalid amount input")
 	}
@@ -265,6 +304,16 @@ func (f *FT) Transfer(
 			return "", err
 		}
 		tx.AddOutput(&bt.Output{LockingScript: changeTape, Satoshis: 0})
+	}
+	if additionalInfo != nil {
+		infoScript := bscript.NewScript()
+		if err := infoScript.AppendOpcodes(bscript.OpFALSE, bscript.OpRETURN); err != nil {
+			return "", err
+		}
+		if err := infoScript.AppendPushData(additionalInfo); err != nil {
+			return "", err
+		}
+		tx.AddOutput(&bt.Output{LockingScript: infoScript, Satoshis: 0})
 	}
 
 	if err := tx.ChangeToAddress(addressFrom, newFeeQuote80()); err != nil {
