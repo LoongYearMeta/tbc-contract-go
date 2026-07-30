@@ -972,6 +972,65 @@ func (p *PoolNFT2) getPoolNftCodeWithLock(
 // getFtlpCode — mirrors TS poolNFT2.getFtlpCode
 // --------------------------------------------------------------------------
 
+func replaceFtlpCodePreFragment(source, old, replacement string, expected int) (string, error) {
+	actual := strings.Count(source, old)
+	if actual != expected {
+		return "", fmt.Errorf(
+			"expected %d occurrences of FTLP fragment, got %d",
+			expected, actual,
+		)
+	}
+	return strings.ReplaceAll(source, old, replacement), nil
+}
+
+func toLegacyFtlpCodePre(source string) (string, error) {
+	var err error
+	source, err = replaceFtlpCodePreFragment(
+		source,
+		"OP_0 OP_TOALTSTACK OP_DUP OP_0 OP_EQUAL",
+		"OP_DUP OP_0 OP_EQUAL",
+		1,
+	)
+	if err != nil {
+		return "", err
+	}
+	for _, slot := range []string{"5", "4", "3", "2", "1", "0"} {
+		source, err = replaceFtlpCodePreFragment(
+			source,
+			"OP_FROMALTSTACK OP_1ADD OP_FROMALTSTACK OP_DUP OP_"+slot+" 0x01 0x28 OP_MUL OP_SPLIT 0x01 0x20 OP_SPLIT OP_DROP OP_TOALTSTACK OP_DROP OP_TOALTSTACK OP_TOALTSTACK OP_ENDIF",
+			"OP_FROMALTSTACK OP_DUP OP_"+slot+" 0x01 0x28 OP_MUL OP_SPLIT 0x01 0x20 OP_SPLIT OP_DROP OP_TOALTSTACK OP_DROP OP_TOALTSTACK OP_ENDIF",
+			1,
+		)
+		if err != nil {
+			return "", err
+		}
+	}
+	source, err = replaceFtlpCodePreFragment(
+		source,
+		"OP_ADD OP_FROMALTSTACK OP_FROMALTSTACK OP_DROP OP_TOALTSTACK OP_TOALTSTACK OP_DROP OP_TOALTSTACK",
+		"OP_ADD OP_FROMALTSTACK OP_DROP OP_TOALTSTACK OP_DROP OP_TOALTSTACK",
+		1,
+	)
+	if err != nil {
+		return "", err
+	}
+	source, err = replaceFtlpCodePreFragment(
+		source,
+		"OP_HASH256 OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_SWAP OP_1SUB OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_EQUALVERIFY",
+		"OP_HASH256 OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_EQUALVERIFY",
+		6,
+	)
+	if err != nil {
+		return "", err
+	}
+	return replaceFtlpCodePreFragment(
+		source,
+		"OP_7 OP_EQUALVERIFY OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_0 OP_EQUALVERIFY OP_SWAP OP_TOALTSTACK",
+		"OP_7 OP_EQUALVERIFY OP_FROMALTSTACK OP_FROMALTSTACK OP_SWAP OP_TOALTSTACK",
+		1,
+	)
+}
+
 func (p *PoolNFT2) getFtlpCode(poolNftCodeHash, address string, tapeSize int, isCoin bool, ftVersion int) (*bscript.Script, error) {
 	pkh, err := pubKeyHashFromAddress(address)
 	if err != nil {
@@ -988,6 +1047,12 @@ func (p *PoolNFT2) getFtlpCode(poolNftCodeHash, address string, tapeSize int, is
 		"${codeHash}", poolNftCodeHash,
 		"${tapeSizeHex}", tapeSizeHex,
 	).Replace(poolNFT2FtlpCodeTemplate)
+	if ftVersion != 3 {
+		pre, err = toLegacyFtlpCodePre(pre)
+		if err != nil {
+			return nil, fmt.Errorf("getFtlpCode legacy template: %w", err)
+		}
+	}
 	preScript, err := bscript.NewFromASM(strip0xHexPushesInASM(collapseTbcMintASM(pre)))
 	if err != nil {
 		return nil, fmt.Errorf("getFtlpCode pre: %w", err)
@@ -1009,9 +1074,19 @@ func (p *PoolNFT2) getFtlpCode(poolNftCodeHash, address string, tapeSize int, is
 	var paddingHex string
 	var pushOpcode string
 	if isCoin {
-		// 577 bytes of 0xff → PUSHDATA2 length 577 = 0x0241 LE → bytes 41 02
-		paddingHex = strings.Repeat("ff", 577)
-		pushOpcode = "4d4102"
+		if ftVersion == 3 {
+			// 528 bytes = 0x0210.
+			paddingHex = strings.Repeat("ff", 528)
+			pushOpcode = "4d1002"
+		} else {
+			// 577 bytes = 0x0241.
+			paddingHex = strings.Repeat("ff", 577)
+			pushOpcode = "4d4102"
+		}
+	} else if ftVersion == 3 {
+		// 400 bytes = 0x0190.
+		paddingHex = strings.Repeat("ff", 400)
+		pushOpcode = "4d9001"
 	} else if ftVersion == 2 {
 		// 449 bytes of 0xff → PUSHDATA2 length 449 = 0x01c1 LE → bytes c1 01
 		paddingHex = strings.Repeat("ff", 449)
@@ -1056,6 +1131,12 @@ func (p *PoolNFT2) getFtlpCodeWithLockTime(poolNftCodeHash, address string, tape
 		"${hash}", hashField,
 		"${tapeSizeHex}", tapeSizeHex,
 	).Replace(poolNFT2FtlpLockTimeCodeTemplate)
+	if ftVersion != 3 {
+		pre, err = toLegacyFtlpCodePre(pre)
+		if err != nil {
+			return nil, fmt.Errorf("getFtlpCodeWithLockTime legacy template: %w", err)
+		}
+	}
 	preScript, err := bscript.NewFromASM(strip0xHexPushesInASM(collapseTbcMintASM(pre)))
 	if err != nil {
 		return nil, fmt.Errorf("getFtlpCodeWithLockTime pre: %w", err)
@@ -1067,9 +1148,19 @@ func (p *PoolNFT2) getFtlpCodeWithLockTime(poolNftCodeHash, address string, tape
 	var paddingHex string
 	var pushOpcode string
 	if isCoin {
-		// 553 bytes of 0xff → PUSHDATA2 length 553 = 0x0229 LE → bytes 29 02
-		paddingHex = strings.Repeat("ff", 553)
-		pushOpcode = "4d2902"
+		if ftVersion == 3 {
+			// 504 bytes = 0x01f8.
+			paddingHex = strings.Repeat("ff", 504)
+			pushOpcode = "4df801"
+		} else {
+			// 553 bytes = 0x0229.
+			paddingHex = strings.Repeat("ff", 553)
+			pushOpcode = "4d2902"
+		}
+	} else if ftVersion == 3 {
+		// 376 bytes = 0x0178.
+		paddingHex = strings.Repeat("ff", 376)
+		pushOpcode = "4d7801"
 	} else if ftVersion == 2 {
 		// 425 bytes of 0xff → PUSHDATA2 length 425 = 0x01a9 LE → bytes a9 01
 		paddingHex = strings.Repeat("ff", 425)

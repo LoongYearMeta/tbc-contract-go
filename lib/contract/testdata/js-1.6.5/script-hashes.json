@@ -1,0 +1,30 @@
+{
+  "ftV3Mint": {
+    "length": 1884,
+    "sha256": "93a0613a9eb50f7c42059ebb517b8ad023fde2e3587cd86fe34ce3f5cb214f62"
+  },
+  "poolV3": {
+    "length": 3291,
+    "sha256": "60ca473ea266a930a569c83f304350315d853151c051c3be2c7794c819f0a9c0"
+  },
+  "poolV3Locked": {
+    "length": 3390,
+    "sha256": "18765d716e07b396e1c2a9a985d0dd84f52cefa72a99093206ed3911bec0c06f"
+  },
+  "ftlpV2": {
+    "length": 1884,
+    "sha256": "fe6e284d6f538264aea336162153325b6203834a19ff9653631a4c5707862ffb"
+  },
+  "ftlpV3": {
+    "length": 1884,
+    "sha256": "649570fa661c0f41ef5d918aaaa6aee673fdf4d897518d5e90be6af7191f70a4"
+  },
+  "ftlpV3LockTime": {
+    "length": 1884,
+    "sha256": "728fe59e6c8b0527baf623f906f8eb0cc98065eeb13a392e910b091beb8dec18"
+  },
+  "stableCoinMint": {
+    "length": 2012,
+    "sha256": "7aadc8932ed1914133a017e9a16ea123bbf50fade201264e68f3245d840ce635"
+  }
+}
