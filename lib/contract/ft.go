@@ -747,10 +747,29 @@ func (f *FT) GetFTunlock(privKey *bec.PrivateKey, tx *bt.Tx, preTX *bt.Tx, prepr
 	return ftBuildUnlock(privKey, tx, preTX, prepreTxData, inputIdx, preTxVout, isCoin)
 }
 
-// GetFTunlockSwap generates the FT unlock script for a swap input (pool contracts).
-// ftVersion: 1 or 2. isCoin: for stablecoin path.
+// GetFTunlockSwap is the compatibility form of GetFTUnlockSwap.
 func (f *FT) GetFTunlockSwap(privKey *bec.PrivateKey, currentTX *bt.Tx, preTX *bt.Tx, prepreTxData string, contractTX *bt.Tx, currentUnlockIndex, preTxVout, ftVersion int, isCoin bool) (*bscript.Script, error) {
-	return ftBuildUnlockSwap(privKey, currentTX, preTX, prepreTxData, contractTX, currentUnlockIndex, preTxVout, ftVersion, isCoin)
+	return f.GetFTUnlockSwap(
+		privKey, currentTX, preTX, prepreTxData, contractTX,
+		currentUnlockIndex, preTxVout, util.FTVersion(ftVersion), isCoin, false,
+	)
+}
+
+// GetFTUnlockSwap generates an FT contract unlock using an explicit FT
+// generation. FT v3 commits an additional contract-input index marker.
+func (f *FT) GetFTUnlockSwap(
+	privKey *bec.PrivateKey,
+	currentTX, preTX *bt.Tx,
+	prepreTxData string,
+	contractTX *bt.Tx,
+	currentUnlockIndex, preTxVout int,
+	ftVersion util.FTVersion,
+	isCoin, isContractTXs bool,
+) (*bscript.Script, error) {
+	return ftBuildUnlockSwap(
+		privKey, currentTX, preTX, prepreTxData, contractTX,
+		currentUnlockIndex, preTxVout, ftVersion, isCoin, isContractTXs,
+	)
 }
 
 // StaticGetFTunlock is the static variant of getFTunlock.
@@ -783,15 +802,31 @@ func StaticGetFTunlock(sigs, pubKey string, currentTX *bt.Tx, preTX *bt.Tx, prep
 	return bscript.NewFromHexString(unlockHex)
 }
 
-// StaticGetFTunlockSwap is the static variant for swap inputs.
-// Mirrors TS static FT.getFTunlockSwap(sigs, pubKey, ...).
+// StaticGetFTunlockSwap is the compatibility form of
+// StaticGetFTUnlockSwap.
 func StaticGetFTunlockSwap(sigs, pubKey string, currentTX *bt.Tx, preTX *bt.Tx, prepreTxData string, contractTX *bt.Tx, currentUnlockIndex, preTxVout, ftVersion int, isCoin bool) (*bscript.Script, error) {
+	return StaticGetFTUnlockSwap(
+		sigs, pubKey, currentTX, preTX, prepreTxData, contractTX,
+		currentUnlockIndex, preTxVout, util.FTVersion(ftVersion), isCoin, false,
+	)
+}
+
+// StaticGetFTUnlockSwap is the static-signature FT contract unlock builder.
+func StaticGetFTUnlockSwap(
+	sigs, pubKey string,
+	currentTX, preTX *bt.Tx,
+	prepreTxData string,
+	contractTX *bt.Tx,
+	currentUnlockIndex, preTxVout int,
+	ftVersion util.FTVersion,
+	isCoin, isContractTXs bool,
+) (*bscript.Script, error) {
 	pretxdata, err := util.GetPreTxdata(preTX, preTxVout)
 	if err != nil {
 		return nil, err
 	}
 	var contracttxdata string
-	if ftVersion == 2 {
+	if ftVersion > util.FTVersion1 {
 		contracttxdata, err = util.GetContractTxdata(contractTX, -1)
 	} else {
 		if len(currentTX.Inputs) == 0 {
@@ -820,11 +855,18 @@ func StaticGetFTunlockSwap(sigs, pubKey string, currentTX *bt.Tx, preTX *bt.Tx, 
 	}
 	sigHex := fmt.Sprintf("%02x%s", len(sigBytes), hex.EncodeToString(sigBytes))
 	pubKeyHex := fmt.Sprintf("%02x%s", len(pubKeyBytes), hex.EncodeToString(pubKeyBytes))
+	marker := ""
+	if ftVersion == util.FTVersion3 {
+		marker, err = ftV3InputIndexMarker(currentUnlockIndex, isContractTXs)
+		if err != nil {
+			return nil, err
+		}
+	}
 	coinFlag := ""
 	if isCoin {
 		coinFlag = "51"
 	}
-	unlockHex := currenttxdata + prepreTxData + sigHex + pubKeyHex + currentinputsdata + contracttxdata + coinFlag + pretxdata
+	unlockHex := currenttxdata + prepreTxData + sigHex + pubKeyHex + currentinputsdata + contracttxdata + marker + coinFlag + pretxdata
 	return bscript.NewFromHexString(unlockHex)
 }
 
@@ -1063,13 +1105,21 @@ func ftBuildUnlock(privKey *bec.PrivateKey, tx *bt.Tx, preTX *bt.Tx, prepreTxDat
 	return bscript.NewFromHexString(unlockHex)
 }
 
-func ftBuildUnlockSwap(privKey *bec.PrivateKey, currentTX *bt.Tx, preTX *bt.Tx, prepreTxData string, contractTX *bt.Tx, currentUnlockIndex, preTxVout, ftVersion int, isCoin bool) (*bscript.Script, error) {
+func ftBuildUnlockSwap(
+	privKey *bec.PrivateKey,
+	currentTX, preTX *bt.Tx,
+	prepreTxData string,
+	contractTX *bt.Tx,
+	currentUnlockIndex, preTxVout int,
+	ftVersion util.FTVersion,
+	isCoin, isContractTXs bool,
+) (*bscript.Script, error) {
 	pretxdata, err := util.GetPreTxdata(preTX, preTxVout)
 	if err != nil {
 		return nil, err
 	}
 	var contracttxdata string
-	if ftVersion == 2 {
+	if ftVersion > util.FTVersion1 {
 		contracttxdata, err = util.GetContractTxdata(contractTX, -1)
 	} else {
 		if len(currentTX.Inputs) == 0 {
@@ -1101,12 +1151,33 @@ func ftBuildUnlockSwap(privKey *bec.PrivateKey, currentTX *bt.Tx, preTX *bt.Tx, 
 	sigHex := fmt.Sprintf("%02x%s", len(sigBytes), hex.EncodeToString(sigBytes))
 	pubKey := privKey.PubKey().SerialiseCompressed()
 	pubKeyHex := fmt.Sprintf("%02x%s", len(pubKey), hex.EncodeToString(pubKey))
+	marker := ""
+	if ftVersion == util.FTVersion3 {
+		marker, err = ftV3InputIndexMarker(currentUnlockIndex, isContractTXs)
+		if err != nil {
+			return nil, err
+		}
+	}
 	coinFlag := ""
 	if isCoin {
 		coinFlag = "51"
 	}
-	unlockHex := currenttxdata + prepreTxData + sigHex + pubKeyHex + currentinputsdata + contracttxdata + coinFlag + pretxdata
+	unlockHex := currenttxdata + prepreTxData + sigHex + pubKeyHex + currentinputsdata + contracttxdata + marker + coinFlag + pretxdata
 	return bscript.NewFromHexString(unlockHex)
+}
+
+func ftV3InputIndexMarker(currentUnlockIndex int, isContractTXs bool) (string, error) {
+	inputIndex := 0
+	if isContractTXs {
+		inputIndex = currentUnlockIndex - 1
+	}
+	if inputIndex < 0 || inputIndex > 5 {
+		return "", fmt.Errorf("FT v3 contract input index %d outside 0..5", inputIndex)
+	}
+	if inputIndex == 0 {
+		return "00", nil
+	}
+	return fmt.Sprintf("%02x", 0x50+inputIndex), nil
 }
 
 func (f *FT) buildFTUnlocks(privKey *bec.PrivateKey, tx *bt.Tx, preTXs []*bt.Tx, prepreTxDatas []string, ftutxos []*util.FtUTXO) ([]*bscript.Script, error) {

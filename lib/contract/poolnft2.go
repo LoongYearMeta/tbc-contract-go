@@ -2739,7 +2739,7 @@ func (p *PoolNFT2) ConsumeLP(
 		}
 		tx.Inputs[1].UnlockingScript = lpUnlock
 		for i, ftu := range fttxosC {
-			swapUnlock, err2 := ft.GetFTunlockSwap(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], contractTX, i+2, int(ftu.Vout), ftVersion, isCoin)
+			swapUnlock, err2 := ft.GetFTUnlockSwap(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], contractTX, i+2, int(ftu.Vout), util.FTVersion(ftVersion), isCoin, false)
 			if err2 != nil {
 				return err2
 			}
@@ -2986,7 +2986,7 @@ func (p *PoolNFT2) SwapToToken(
 		}
 		tx.Inputs[0].UnlockingScript = poolUnlock
 		for i, ftu := range fttxosC {
-			swapUnlock, err2 := ft.GetFTunlockSwap(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], contractTX, i+2, int(ftu.Vout), ftVersion, isCoin)
+			swapUnlock, err2 := ft.GetFTUnlockSwap(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], contractTX, i+2, int(ftu.Vout), util.FTVersion(ftVersion), isCoin, false)
 			if err2 != nil {
 				return err2
 			}
@@ -4079,7 +4079,7 @@ func (p *PoolNFT2) mergeFTinPoolSingle(
 		}
 		tx.Inputs[0].UnlockingScript = poolUnlock
 		for i, ftu := range ftutxos {
-			swapUnlock, err2 := ft.GetFTunlockSwap(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], poolnftPreTX, i+1, int(ftu.Vout), ftVersion, isCoin)
+			swapUnlock, err2 := ft.GetFTUnlockSwap(privKey, tx, ftPreTXs[i], ftPrePreTxDatas[i], poolnftPreTX, i+1, int(ftu.Vout), util.FTVersion(ftVersion), isCoin, false)
 			if err2 != nil {
 				return err2
 			}

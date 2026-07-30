@@ -805,7 +805,7 @@ func BuildMultiSigTransactionTransferFT(
 	// Apply FT unlock scripts (inputs 1…)
 	for i := range ftutxos {
 		inputIdx := i + 1
-		us, err := ft.GetFTunlockSwap(privKey, tx, preTXs[i], prepreTxDatas[i], contractTX, inputIdx, int(ftutxos[i].Vout), ftVersion, false)
+		us, err := ft.GetFTUnlockSwap(privKey, tx, preTXs[i], prepreTxDatas[i], contractTX, inputIdx, int(ftutxos[i].Vout), util.FTVersion(ftVersion), false, false)
 		if err != nil {
 			return nil, fmt.Errorf("BuildMultiSigTransactionTransferFT: FT unlock input %d: %w", i, err)
 		}

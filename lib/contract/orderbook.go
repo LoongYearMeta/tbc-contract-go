@@ -875,7 +875,7 @@ func (o *OrderBook) CancelBuyOrderWithSign(
 			return err
 		}
 		// Input 1: FT swap unlock (BUY ORDER as contractTX).
-		swapUnlock, err := ft.GetFTunlockSwap(privKey, tx, ftPreTX, ftPrePreTxData, buyPreTX, 1, int(ftUTXO.Vout), int(ftInfo.Version), isCoin)
+		swapUnlock, err := ft.GetFTUnlockSwap(privKey, tx, ftPreTX, ftPrePreTxData, buyPreTX, 1, int(ftUTXO.Vout), ftInfo.Version, isCoin, false)
 		if err != nil {
 			return err
 		}
@@ -1003,7 +1003,7 @@ func (o *OrderBook) FillSigsCancelBuyOrder(
 	if err != nil {
 		return "", fmt.Errorf("FillSigsCancelBuyOrder: classify FT code: %w", err)
 	}
-	us1, err := StaticGetFTunlockSwap(sigs[1], publicKey, tx, ftPreTX, ftPrePreTxData, buyPreTX, 1, vout1, int(ftInfo.Version), isCoin || ftInfo.IsCoin)
+	us1, err := StaticGetFTUnlockSwap(sigs[1], publicKey, tx, ftPreTX, ftPrePreTxData, buyPreTX, 1, vout1, ftInfo.Version, isCoin || ftInfo.IsCoin, false)
 	if err != nil {
 		return "", err
 	}
@@ -1220,7 +1220,7 @@ func (o *OrderBook) MatchOrder(
 
 	// FT swap unlock (input 1): use buyData.FtID as the FT contract ID (mirrors TS: new FT(buyData.ftID))
 	ftInstance := &FT{ContractTxid: buyData.FtID}
-	ftSwapUnlock, err := ftInstance.GetFTunlockSwap(privKey, tx, ftPreTX, ftPrePreTxData, buyPreTX, 1, int(ftUTXO.Vout), int(ftInfo.Version), isCoin)
+	ftSwapUnlock, err := ftInstance.GetFTUnlockSwap(privKey, tx, ftPreTX, ftPrePreTxData, buyPreTX, 1, int(ftUTXO.Vout), ftInfo.Version, isCoin, false)
 	if err != nil {
 		return "", err
 	}
