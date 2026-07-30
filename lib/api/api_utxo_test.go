@@ -37,6 +37,7 @@ func TestTBCAmountToSatoshisStrictConversion(t *testing.T) {
 		{name: "zero", amount: 0, want: 0},
 		{name: "six decimals", amount: 1.000001, want: 1_000_001},
 		{name: "floating point noise", amount: 0.1 * 3, want: 300_000},
+		{name: "large six-decimal amount", amount: 21_000_000.123456, want: 21_000_000_123_456},
 		{name: "negative", amount: -1, wantErr: true},
 		{name: "nan", amount: math.NaN(), wantErr: true},
 		{name: "positive infinity", amount: math.Inf(1), wantErr: true},
