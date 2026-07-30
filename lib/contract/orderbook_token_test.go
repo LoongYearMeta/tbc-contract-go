@@ -7,8 +7,10 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
 )
@@ -190,5 +192,247 @@ func TestTokenOrderUnlockUsesTwelveOutputSlots(t *testing.T) {
 	// missing slots add eight zero bytes to currentTxData.
 	if got, want := len(token), len(standard)+16; got != want {
 		t.Fatalf("token unlock hex length = %d, want %d", got, want)
+	}
+}
+
+func TestBuildTokenSellOrderOutputLayout(t *testing.T) {
+	fx := newHTLCTokenFixture(t, 1_000)
+	order := NewOrderBook()
+	raw, err := order.BuildTokenSellOrderTX(
+		fx.sender, fx.sender,
+		big.NewInt(600), big.NewInt(1_000_000), big.NewInt(3),
+		strings.Repeat("71", 32), strings.Repeat("72", 32),
+		fx.code.ToHex(), fx.code.ToHex(),
+		[]*bt.UTXO{fx.feeUTXO}, []*util.FtUTXO{fx.ftUTXO},
+		[]*bt.Tx{fx.preTX},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx := mustTx(t, raw)
+	if len(tx.Inputs) != 2 {
+		t.Fatalf("inputs = %d, want FT + fee", len(tx.Inputs))
+	}
+	if len(tx.Outputs) != 6 {
+		t.Fatalf("outputs = %d, want order + locked pair + FT change pair + fee change", len(tx.Outputs))
+	}
+	if tx.Outputs[0].LockingScript.Len() != tokenOrderLength || tx.Outputs[0].Satoshis != 300 {
+		t.Fatalf("unexpected order output length/value")
+	}
+	locked, err := util.GetFtBalanceFromTape(tx.Outputs[2].LockingScript.ToHex())
+	if err != nil {
+		t.Fatal(err)
+	}
+	change, err := util.GetFtBalanceFromTape(tx.Outputs[4].LockingScript.ToHex())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if locked.Cmp(big.NewInt(600)) != 0 || change.Cmp(big.NewInt(400)) != 0 {
+		t.Fatalf("locked/change = %s/%s, want 600/400", locked, change)
+	}
+}
+
+func TestBuildTokenBuyOrderOutputLayout(t *testing.T) {
+	fx := newHTLCTokenFixture(t, 1_000)
+	order := NewOrderBook()
+	raw, err := order.BuildTokenBuyOrderTX(
+		fx.sender, fx.sender,
+		big.NewInt(300), big.NewInt(2_000_000), big.NewInt(3),
+		strings.Repeat("71", 32), strings.Repeat("72", 32),
+		fx.code.ToHex(), fx.code.ToHex(),
+		[]*bt.UTXO{fx.feeUTXO}, []*util.FtUTXO{fx.ftUTXO},
+		[]*bt.Tx{fx.preTX},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx := mustTx(t, raw)
+	if len(tx.Outputs) != 6 {
+		t.Fatalf("outputs = %d, want order + locked pair + FT change pair + fee change", len(tx.Outputs))
+	}
+	locked, err := util.GetFtBalanceFromTape(tx.Outputs[2].LockingScript.ToHex())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if locked.Cmp(big.NewInt(600)) != 0 {
+		t.Fatalf("locked Token B = %s, want 600", locked)
+	}
+	data, err := GetTokenOrderData(tx.Outputs[0].LockingScript.ToHex(), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if data.FTAID != strings.Repeat("71", 32) || data.FTBID != strings.Repeat("72", 32) {
+		t.Fatalf("wrong pair IDs: %#v", data)
+	}
+}
+
+func TestBuildTokenOrderRejectsInsufficientBalance(t *testing.T) {
+	fx := newHTLCTokenFixture(t, 500)
+	_, err := NewOrderBook().BuildTokenSellOrderTX(
+		fx.sender, fx.sender,
+		big.NewInt(501), big.NewInt(1_000_000), big.NewInt(0),
+		strings.Repeat("71", 32), strings.Repeat("72", 32),
+		fx.code.ToHex(), fx.code.ToHex(),
+		[]*bt.UTXO{fx.feeUTXO}, []*util.FtUTXO{fx.ftUTXO},
+		[]*bt.Tx{fx.preTX},
+	)
+	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "insufficient") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestBuildCancelTokenSellOrderReturnsLockedToken(t *testing.T) {
+	fx := newHTLCTokenFixture(t, 1_000)
+	order := NewOrderBook()
+	raw, err := order.BuildTokenSellOrderTX(
+		fx.sender, fx.sender,
+		big.NewInt(600), big.NewInt(1_000_000), big.NewInt(3),
+		strings.Repeat("71", 32), strings.Repeat("72", 32),
+		fx.code.ToHex(), fx.code.ToHex(),
+		[]*bt.UTXO{fx.feeUTXO}, []*util.FtUTXO{fx.ftUTXO},
+		[]*bt.Tx{fx.preTX},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	createTX := mustTx(t, raw)
+	createID, err := hex.DecodeString(createTX.TxID())
+	if err != nil {
+		t.Fatal(err)
+	}
+	orderUTXO := &bt.UTXO{
+		TxID: createID, Vout: 0,
+		LockingScript: createTX.Outputs[0].LockingScript,
+		Satoshis:      createTX.Outputs[0].Satoshis,
+	}
+	lockedFT := &util.FtUTXO{
+		TxID: createID, Vout: 1,
+		LockingScript: createTX.Outputs[1].LockingScript,
+		Satoshis:      createTX.Outputs[1].Satoshis,
+		FtBalance:     big.NewInt(600),
+	}
+	cancelFee := &bt.UTXO{
+		TxID:          bytesOf(0x73, 32),
+		Vout:          0,
+		LockingScript: fx.feeUTXO.LockingScript,
+		Satoshis:      20_000,
+	}
+	cancelRaw, err := order.BuildCancelTokenSellOrderTX(
+		orderUTXO, lockedFT, createTX, []*bt.UTXO{cancelFee},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cancelTX := mustTx(t, cancelRaw)
+	if len(cancelTX.Inputs) != 3 || len(cancelTX.Outputs) != 3 {
+		t.Fatalf("cancel inputs/outputs = %d/%d, want 3/3", len(cancelTX.Inputs), len(cancelTX.Outputs))
+	}
+	returned, err := util.GetFtBalanceFromTape(cancelTX.Outputs[1].LockingScript.ToHex())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if returned.Cmp(big.NewInt(600)) != 0 {
+		t.Fatalf("returned balance = %s, want 600", returned)
+	}
+}
+
+func bytesOf(value byte, count int) []byte {
+	out := make([]byte, count)
+	for i := range out {
+		out[i] = value
+	}
+	return out
+}
+
+func TestFillSigsMakeTokenSellOrderPopulatesEveryInput(t *testing.T) {
+	fx := newHTLCTokenFixture(t, 1_000)
+	order := NewOrderBook()
+	raw, err := order.BuildTokenSellOrderTX(
+		fx.sender, fx.sender,
+		big.NewInt(600), big.NewInt(1_000_000), big.NewInt(3),
+		strings.Repeat("71", 32), strings.Repeat("72", 32),
+		fx.code.ToHex(), fx.code.ToHex(),
+		[]*bt.UTXO{fx.feeUTXO}, []*util.FtUTXO{fx.ftUTXO},
+		[]*bt.Tx{fx.preTX},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sigs := signHTLCTokenFixtureInputs(
+		t, raw,
+		[]*bt.UTXO{util.FtUTXOToUTXO(fx.ftUTXO), fx.feeUTXO},
+		fx.senderKey,
+	)
+	pubKey := hex.EncodeToString(fx.senderKey.PubKey().SerialiseCompressed())
+	filled, err := order.FillSigsMakeTokenSellOrder(
+		raw, sigs, pubKey, []*bt.Tx{fx.preTX}, []string{""},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx := mustTx(t, filled)
+	for i, input := range tx.Inputs {
+		if input.UnlockingScript == nil || input.UnlockingScript.Len() == 0 {
+			t.Fatalf("input %d has empty unlocking script", i)
+		}
+	}
+}
+
+func TestFillSigsCancelTokenSellOrderUsesOrderAndFTUnlocks(t *testing.T) {
+	fx := newHTLCTokenFixture(t, 1_000)
+	order := NewOrderBook()
+	createRaw, err := order.BuildTokenSellOrderTX(
+		fx.sender, fx.sender,
+		big.NewInt(600), big.NewInt(1_000_000), big.NewInt(3),
+		strings.Repeat("71", 32), strings.Repeat("72", 32),
+		fx.code.ToHex(), fx.code.ToHex(),
+		[]*bt.UTXO{fx.feeUTXO}, []*util.FtUTXO{fx.ftUTXO},
+		[]*bt.Tx{fx.preTX},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	createTX := mustTx(t, createRaw)
+	createID, _ := hex.DecodeString(createTX.TxID())
+	orderUTXO := &bt.UTXO{
+		TxID: createID, Vout: 0,
+		LockingScript: createTX.Outputs[0].LockingScript,
+		Satoshis:      createTX.Outputs[0].Satoshis,
+	}
+	lockedFT := &util.FtUTXO{
+		TxID: createID, Vout: 1,
+		LockingScript: createTX.Outputs[1].LockingScript,
+		Satoshis:      createTX.Outputs[1].Satoshis,
+		FtBalance:     big.NewInt(600),
+	}
+	cancelFee := feeUTXOForAddress(t, fx.sender, 0x74)
+	cancelRaw, err := order.BuildCancelTokenSellOrderTX(
+		orderUTXO, lockedFT, createTX, []*bt.UTXO{cancelFee},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sigs := signHTLCTokenFixtureInputs(
+		t, cancelRaw,
+		[]*bt.UTXO{orderUTXO, util.FtUTXOToUTXO(lockedFT), cancelFee},
+		fx.senderKey,
+	)
+	pubKey := hex.EncodeToString(fx.senderKey.PubKey().SerialiseCompressed())
+	filled, err := order.FillSigsCancelTokenSellOrder(
+		cancelRaw, sigs, pubKey, createTX, createTX, "",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx := mustTx(t, filled)
+	if got := tx.Inputs[0].UnlockingScript.Chunks(); len(got) != 3 ||
+		got[len(got)-1].OpcodeNum != bscript.Op2 {
+		t.Fatalf("order cancel unlock does not end in OP_2")
+	}
+	if tx.Inputs[1].UnlockingScript.Len() < 100 {
+		t.Fatalf("FT swap unlock is unexpectedly short: %d", tx.Inputs[1].UnlockingScript.Len())
+	}
+	if tx.Inputs[2].UnlockingScript.Len() == 0 {
+		t.Fatal("fee input is unsigned")
 	}
 }

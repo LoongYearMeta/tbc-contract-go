@@ -10,7 +10,9 @@ import (
 
 	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
+	"github.com/LoongYearMeta/tbc-lib-go/bec"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
+	"github.com/LoongYearMeta/tbc-lib-go/crypto"
 )
 
 const (
@@ -229,4 +231,463 @@ func GetTokenOrderUnlock(currentTX, preTX *bt.Tx, preTxVout int) (string, error)
 		return "", err
 	}
 	return currentTxData + preTxData + "51", nil
+}
+
+func tokenOrderPositiveUint64(value *big.Int, field string) error {
+	if _, err := tokenOrderUint64(value, field); err != nil {
+		return err
+	}
+	if value.Sign() <= 0 {
+		return fmt.Errorf("%s must be positive", field)
+	}
+	return nil
+}
+
+func (o *OrderBook) prepareTokenOrder(
+	orderType, holdAddress, taxAddress string,
+	saleVolume, unitPrice, feeRate *big.Int,
+	ftaID, ftbID, ftaCode, ftbCode string,
+) error {
+	if !obIsValidAddress(holdAddress) || !obIsValidAddress(taxAddress) {
+		return fmt.Errorf("invalid hold address or tax address")
+	}
+	if err := tokenOrderPositiveUint64(saleVolume, "sale volume"); err != nil {
+		return err
+	}
+	if err := tokenOrderPositiveUint64(unitPrice, "unit price"); err != nil {
+		return err
+	}
+	if _, err := tokenOrderUint64(feeRate, "fee rate"); err != nil {
+		return err
+	}
+	if !obIsValidSHA256Hex(ftaID) || !obIsValidSHA256Hex(ftbID) {
+		return fmt.Errorf("FTA ID and FTB ID must be 32-byte hex strings")
+	}
+	ftaInfo, err := classifyOrderBookFTCode(ftaCode)
+	if err != nil {
+		return fmt.Errorf("classify FTA code: %w", err)
+	}
+	ftbInfo, err := classifyOrderBookFTCode(ftbCode)
+	if err != nil {
+		return fmt.Errorf("classify FTB code: %w", err)
+	}
+	ftaPartial, err := ComputeFtPartialHash(ftaCode, ftaInfo.IsCoin)
+	if err != nil {
+		return fmt.Errorf("FTA partial hash: %w", err)
+	}
+	ftbPartial, err := ComputeFtPartialHash(ftbCode, ftbInfo.IsCoin)
+	if err != nil {
+		return fmt.Errorf("FTB partial hash: %w", err)
+	}
+
+	o.Type = orderType
+	o.HoldAddress = holdAddress
+	o.TokenSaleVolume = new(big.Int).Set(saleVolume)
+	o.TokenUnitPrice = new(big.Int).Set(unitPrice)
+	o.TokenFeeRate = new(big.Int).Set(feeRate)
+	o.FtID = strings.ToLower(ftaID)
+	o.FtBID = strings.ToLower(ftbID)
+	o.FtPartialHash = ftaPartial
+	o.FtBPartialHash = ftbPartial
+	return nil
+}
+
+func tokenOrderTotalBalance(ftUTXOs []*util.FtUTXO) ([]*big.Int, *big.Int, error) {
+	if len(ftUTXOs) == 0 {
+		return nil, nil, fmt.Errorf("FT UTXOs must be non-empty")
+	}
+	if len(ftUTXOs) > 6 {
+		return nil, nil, fmt.Errorf("FT UTXOs length must be <= 6")
+	}
+	amounts := make([]*big.Int, len(ftUTXOs))
+	total := new(big.Int)
+	for i, ftUTXO := range ftUTXOs {
+		if ftUTXO == nil || ftUTXO.LockingScript == nil || ftUTXO.FtBalance == nil ||
+			ftUTXO.FtBalance.Sign() < 0 || ftUTXO.FtBalance.BitLen() > 64 {
+			return nil, nil, fmt.Errorf("invalid FT UTXO %d", i)
+		}
+		amounts[i] = new(big.Int).Set(ftUTXO.FtBalance)
+		total.Add(total, ftUTXO.FtBalance)
+	}
+	return amounts, total, nil
+}
+
+func tokenOrderTargetFee(tx *bt.Tx, extraBytes int) int {
+	return obTargetFee(tx.JSEstimateSize() + extraBytes)
+}
+
+func (o *OrderBook) buildTokenOrderTX(
+	orderType, holdAddress, taxAddress string,
+	saleVolume, unitPrice, feeRate *big.Int,
+	ftaID, ftbID, ftaCode, ftbCode string,
+	feeUTXOs []*bt.UTXO,
+	ftUTXOs []*util.FtUTXO,
+	preTXs []*bt.Tx,
+) (string, error) {
+	if len(preTXs) != len(ftUTXOs) || len(preTXs) == 0 {
+		return "", fmt.Errorf("FT UTXOs and preTXs length mismatch")
+	}
+	if err := o.prepareTokenOrder(
+		orderType, holdAddress, taxAddress, saleVolume, unitPrice, feeRate,
+		ftaID, ftbID, ftaCode, ftbCode,
+	); err != nil {
+		return "", fmt.Errorf("BuildToken%sOrderTX: %w", strings.Title(orderType), err)
+	}
+
+	var orderCode *bscript.Script
+	var err error
+	if orderType == "sell" {
+		orderCode, err = o.GetTokenSellOrderCode(taxAddress)
+	} else {
+		orderCode, err = o.GetTokenBuyOrderCode(taxAddress)
+	}
+	if err != nil {
+		return "", err
+	}
+
+	lockAmount := new(big.Int).Set(saleVolume)
+	if orderType == "buy" {
+		lockAmount.Mul(lockAmount, unitPrice)
+		lockAmount.Div(lockAmount, big.NewInt(1_000_000))
+		if lockAmount.Sign() <= 0 {
+			return "", fmt.Errorf("buy order FT amount is too small")
+		}
+	}
+	tapeAmounts, tapeTotal, err := tokenOrderTotalBalance(ftUTXOs)
+	if err != nil {
+		return "", err
+	}
+	if lockAmount.Cmp(tapeTotal) > 0 {
+		return "", fmt.Errorf("token order FT balance is insufficient")
+	}
+	amountHex, changeHex := BuildTapeAmount(lockAmount, tapeAmounts)
+	firstTape, err := htlcTokenTapeAt(preTXs[0], int(ftUTXOs[0].Vout))
+	if err != nil {
+		return "", err
+	}
+	ftCodeHex := ftUTXOs[0].LockingScript.ToHex()
+	ftTapeHex := firstTape.ToHex()
+	orderHash160 := hex.EncodeToString(crypto.Hash160(crypto.Sha256(orderCode.Bytes())))
+	lockedCode, err := BuildFTtransferCode(ftCodeHex, orderHash160)
+	if err != nil {
+		return "", err
+	}
+	lockedTape, err := BuildFTtransferTape(ftTapeHex, amountHex)
+	if err != nil {
+		return "", err
+	}
+
+	tx := newFTTx()
+	if err := tx.FromUTXOs(util.FtUTXOsToUTXOs(ftUTXOs)...); err != nil {
+		return "", err
+	}
+	if err := tx.FromUTXOs(feeUTXOs...); err != nil {
+		return "", err
+	}
+	orderDust := o.BuyCodeDust
+	if orderDust == 0 {
+		orderDust = 300
+	}
+	tx.AddOutput(&bt.Output{LockingScript: orderCode, Satoshis: orderDust})
+	tx.AddOutput(&bt.Output{LockingScript: lockedCode, Satoshis: ftUTXOs[0].Satoshis})
+	tx.AddOutput(&bt.Output{LockingScript: lockedTape, Satoshis: 0})
+	if lockAmount.Cmp(tapeTotal) < 0 {
+		changeCode, err := BuildFTtransferCode(ftCodeHex, holdAddress)
+		if err != nil {
+			return "", err
+		}
+		changeTape, err := BuildFTtransferTape(ftTapeHex, changeHex)
+		if err != nil {
+			return "", err
+		}
+		tx.AddOutput(&bt.Output{LockingScript: changeCode, Satoshis: ftUTXOs[0].Satoshis})
+		tx.AddOutput(&bt.Output{LockingScript: changeTape, Satoshis: 0})
+	}
+	if err := tx.ChangeToAddress(holdAddress, newFeeQuote80()); err != nil {
+		return "", err
+	}
+	if err := tx.AdjustImplicitFeeToTarget(tokenOrderTargetFee(tx, len(ftUTXOs)*2000)); err != nil {
+		return "", err
+	}
+	return tx.String(), nil
+}
+
+// BuildTokenSellOrderTX locks Token A into a new Token-for-Token sell order.
+func (o *OrderBook) BuildTokenSellOrderTX(
+	holdAddress, taxAddress string,
+	saleVolume, unitPrice, feeRate *big.Int,
+	ftaID, ftbID, ftaCode, ftbCode string,
+	feeUTXOs []*bt.UTXO,
+	ftUTXOs []*util.FtUTXO,
+	preTXs []*bt.Tx,
+) (string, error) {
+	return o.buildTokenOrderTX(
+		"sell", holdAddress, taxAddress, saleVolume, unitPrice, feeRate,
+		ftaID, ftbID, ftaCode, ftbCode, feeUTXOs, ftUTXOs, preTXs,
+	)
+}
+
+// BuildTokenBuyOrderTX locks Token B into a new Token-for-Token buy order.
+func (o *OrderBook) BuildTokenBuyOrderTX(
+	holdAddress, taxAddress string,
+	saleVolume, unitPrice, feeRate *big.Int,
+	ftaID, ftbID, ftaCode, ftbCode string,
+	feeUTXOs []*bt.UTXO,
+	ftUTXOs []*util.FtUTXO,
+	preTXs []*bt.Tx,
+) (string, error) {
+	return o.buildTokenOrderTX(
+		"buy", holdAddress, taxAddress, saleVolume, unitPrice, feeRate,
+		ftaID, ftbID, ftaCode, ftbCode, feeUTXOs, ftUTXOs, preTXs,
+	)
+}
+
+func (o *OrderBook) buildCancelTokenOrderTX(
+	orderUTXO *bt.UTXO,
+	ftUTXO *util.FtUTXO,
+	ftPreTX *bt.Tx,
+	feeUTXOs []*bt.UTXO,
+	mainnet ...bool,
+) (string, error) {
+	if orderUTXO == nil || ftUTXO == nil || ftPreTX == nil {
+		return "", fmt.Errorf("order UTXO, FT UTXO, and FT preTX are required")
+	}
+	useMainnet := true
+	if len(mainnet) > 0 {
+		useMainnet = mainnet[0]
+	}
+	data, err := GetTokenOrderData(orderUTXO.LockingScript.ToHex(), useMainnet)
+	if err != nil {
+		return "", err
+	}
+	tapeAmounts, total, err := tokenOrderTotalBalance([]*util.FtUTXO{ftUTXO})
+	if err != nil {
+		return "", err
+	}
+	amountHex, changeHex := BuildTapeAmountWithFtInputIndex(total, tapeAmounts, 1)
+	if changeHex != strings.Repeat("00", 48) {
+		return "", fmt.Errorf("change amount is not zero")
+	}
+	tape, err := htlcTokenTapeAt(ftPreTX, int(ftUTXO.Vout))
+	if err != nil {
+		return "", err
+	}
+	returnCode, err := BuildFTtransferCode(ftUTXO.LockingScript.ToHex(), data.HoldAddress)
+	if err != nil {
+		return "", err
+	}
+	returnTape, err := BuildFTtransferTape(tape.ToHex(), amountHex)
+	if err != nil {
+		return "", err
+	}
+
+	tx := newFTTx()
+	if err := tx.FromUTXOs(orderUTXO); err != nil {
+		return "", err
+	}
+	if err := tx.FromUTXOs(util.FtUTXOToUTXO(ftUTXO)); err != nil {
+		return "", err
+	}
+	if err := tx.FromUTXOs(feeUTXOs...); err != nil {
+		return "", err
+	}
+	tx.AddOutput(&bt.Output{LockingScript: returnCode, Satoshis: ftUTXO.Satoshis})
+	tx.AddOutput(&bt.Output{LockingScript: returnTape, Satoshis: 0})
+	if err := tx.ChangeToAddress(data.HoldAddress, newFeeQuote80()); err != nil {
+		return "", err
+	}
+	if err := tx.AdjustImplicitFeeToTarget(tokenOrderTargetFee(tx, 2000)); err != nil {
+		return "", err
+	}
+	return tx.String(), nil
+}
+
+func (o *OrderBook) BuildCancelTokenSellOrderTX(
+	orderUTXO *bt.UTXO,
+	ftUTXO *util.FtUTXO,
+	ftPreTX *bt.Tx,
+	feeUTXOs []*bt.UTXO,
+	mainnet ...bool,
+) (string, error) {
+	return o.buildCancelTokenOrderTX(orderUTXO, ftUTXO, ftPreTX, feeUTXOs, mainnet...)
+}
+
+func (o *OrderBook) BuildCancelTokenBuyOrderTX(
+	orderUTXO *bt.UTXO,
+	ftUTXO *util.FtUTXO,
+	ftPreTX *bt.Tx,
+	feeUTXOs []*bt.UTXO,
+	mainnet ...bool,
+) (string, error) {
+	return o.buildCancelTokenOrderTX(orderUTXO, ftUTXO, ftPreTX, feeUTXOs, mainnet...)
+}
+
+func tokenOrderValidateFillArgs(raw string, sigs []string, publicKey string) (*bt.Tx, error) {
+	tx, err := bt.NewTxFromString(raw)
+	if err != nil {
+		return nil, fmt.Errorf("invalid token order transaction: %w", err)
+	}
+	pubKeyBytes, err := hex.DecodeString(publicKey)
+	if err != nil {
+		return nil, fmt.Errorf("invalid public key hex")
+	}
+	if _, err := bec.ParsePubKey(pubKeyBytes, bec.S256()); err != nil {
+		return nil, fmt.Errorf("invalid public key: %w", err)
+	}
+	if len(sigs) < len(tx.Inputs) {
+		return nil, fmt.Errorf("signatures length is less than inputs length")
+	}
+	for i, sig := range sigs {
+		if _, err := hex.DecodeString(sig); err != nil || sig == "" {
+			return nil, fmt.Errorf("invalid signature %d", i)
+		}
+	}
+	return tx, nil
+}
+
+func tokenOrderInsertP2PKHUnlock(tx *bt.Tx, index int, sig, publicKey string) error {
+	script, err := bscript.NewFromASM(sig + " " + publicKey)
+	if err != nil {
+		return err
+	}
+	return tx.InsertInputUnlockingScript(uint32(index), script)
+}
+
+func (o *OrderBook) fillSigsMakeTokenOrder(
+	raw string,
+	sigs []string,
+	publicKey string,
+	preTXs []*bt.Tx,
+	prePreTxData []string,
+) (string, error) {
+	tx, err := tokenOrderValidateFillArgs(raw, sigs, publicKey)
+	if err != nil {
+		return "", err
+	}
+	if len(preTXs) == 0 || len(preTXs) != len(prePreTxData) {
+		return "", fmt.Errorf("preTXs and prePreTxData length mismatch")
+	}
+	if len(preTXs) > len(tx.Inputs) || len(tx.Outputs) < 2 {
+		return "", fmt.Errorf("token order transaction structure mismatch")
+	}
+	info, err := util.ClassifyFTScript(tx.Outputs[1].LockingScript)
+	if err != nil {
+		return "", fmt.Errorf("classify locked FT output: %w", err)
+	}
+	for i := range preTXs {
+		if preTXs[i] == nil {
+			return "", fmt.Errorf("nil preTX %d", i)
+		}
+		if info.IsCoin {
+			tx.Inputs[i].SequenceNumber = 0xfffffffe
+		}
+		vout := int(tx.Inputs[i].PreviousTxOutIndex)
+		unlock, err := StaticGetFTunlock(
+			sigs[i], publicKey, tx, preTXs[i], prePreTxData[i],
+			i, vout, info.IsCoin,
+		)
+		if err != nil {
+			return "", fmt.Errorf("FT input %d: %w", i, err)
+		}
+		if err := tx.InsertInputUnlockingScript(uint32(i), unlock); err != nil {
+			return "", err
+		}
+	}
+	for i := len(preTXs); i < len(tx.Inputs); i++ {
+		if err := tokenOrderInsertP2PKHUnlock(tx, i, sigs[i], publicKey); err != nil {
+			return "", err
+		}
+	}
+	return tx.String(), nil
+}
+
+func (o *OrderBook) FillSigsMakeTokenSellOrder(
+	raw string,
+	sigs []string,
+	publicKey string,
+	preTXs []*bt.Tx,
+	prePreTxData []string,
+) (string, error) {
+	return o.fillSigsMakeTokenOrder(raw, sigs, publicKey, preTXs, prePreTxData)
+}
+
+func (o *OrderBook) FillSigsMakeTokenBuyOrder(
+	raw string,
+	sigs []string,
+	publicKey string,
+	preTXs []*bt.Tx,
+	prePreTxData []string,
+) (string, error) {
+	return o.fillSigsMakeTokenOrder(raw, sigs, publicKey, preTXs, prePreTxData)
+}
+
+func (o *OrderBook) fillSigsCancelTokenOrder(
+	raw string,
+	sigs []string,
+	publicKey string,
+	orderPreTX, ftPreTX *bt.Tx,
+	ftPrePreTxData string,
+) (string, error) {
+	tx, err := tokenOrderValidateFillArgs(raw, sigs, publicKey)
+	if err != nil {
+		return "", err
+	}
+	if orderPreTX == nil || ftPreTX == nil || len(tx.Inputs) < 2 || len(tx.Outputs) == 0 {
+		return "", fmt.Errorf("cancel token order transaction structure mismatch")
+	}
+	cancelUnlock, err := bscript.NewFromASM(sigs[0] + " " + publicKey + " OP_2")
+	if err != nil {
+		return "", err
+	}
+	if err := tx.InsertInputUnlockingScript(0, cancelUnlock); err != nil {
+		return "", err
+	}
+	info, err := util.ClassifyFTScript(tx.Outputs[0].LockingScript)
+	if err != nil {
+		return "", fmt.Errorf("classify returned FT output: %w", err)
+	}
+	if info.IsCoin {
+		tx.Inputs[1].SequenceNumber = 0xfffffffe
+	}
+	vout := int(tx.Inputs[1].PreviousTxOutIndex)
+	ftUnlock, err := StaticGetFTUnlockSwap(
+		sigs[1], publicKey, tx, ftPreTX, ftPrePreTxData, orderPreTX,
+		1, vout, info.Version, info.IsCoin, false,
+	)
+	if err != nil {
+		return "", fmt.Errorf("FT swap input: %w", err)
+	}
+	if err := tx.InsertInputUnlockingScript(1, ftUnlock); err != nil {
+		return "", err
+	}
+	for i := 2; i < len(tx.Inputs); i++ {
+		if err := tokenOrderInsertP2PKHUnlock(tx, i, sigs[i], publicKey); err != nil {
+			return "", err
+		}
+	}
+	return tx.String(), nil
+}
+
+func (o *OrderBook) FillSigsCancelTokenSellOrder(
+	raw string,
+	sigs []string,
+	publicKey string,
+	orderPreTX, ftPreTX *bt.Tx,
+	ftPrePreTxData string,
+) (string, error) {
+	return o.fillSigsCancelTokenOrder(
+		raw, sigs, publicKey, orderPreTX, ftPreTX, ftPrePreTxData,
+	)
+}
+
+func (o *OrderBook) FillSigsCancelTokenBuyOrder(
+	raw string,
+	sigs []string,
+	publicKey string,
+	orderPreTX, ftPreTX *bt.Tx,
+	ftPrePreTxData string,
+) (string, error) {
+	return o.fillSigsCancelTokenOrder(
+		raw, sigs, publicKey, orderPreTX, ftPreTX, ftPrePreTxData,
+	)
 }
