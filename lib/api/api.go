@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
+	"math/bits"
 	"net"
 	"net/http"
 	"regexp"
@@ -22,6 +24,11 @@ import (
 )
 
 var defaultHTTPClient = &http.Client{Timeout: 30 * time.Second}
+
+var (
+	ErrNoSufficientUTXO = errors.New("no single UTXO satisfies the requested minimum")
+	ErrInvalidTBCAmount = errors.New("invalid TBC amount")
+)
 
 const (
 	mainnetAPIURL = "https://api.turingbitchain.io/api/tbc/"
@@ -166,14 +173,41 @@ type balanceResponse struct {
 	} `json:"data"`
 }
 
+type utxoListItem struct {
+	TxID  string `json:"txid"`
+	Index int    `json:"index"`
+	Value uint64 `json:"value"`
+}
+
 type utxoListResponse struct {
 	Data struct {
-		UTXOs []struct {
-			TxID  string `json:"txid"`
-			Index int    `json:"index"`
-			Value uint64 `json:"value"`
-		} `json:"utxos"`
+		UTXOs []utxoListItem `json:"utxos"`
 	} `json:"data"`
+}
+
+func selectUTXOAtLeast(utxos []utxoListItem, minimumSat uint64) (*utxoListItem, error) {
+	for i := range utxos {
+		if utxos[i].Value >= minimumSat {
+			return &utxos[i], nil
+		}
+	}
+	return nil, fmt.Errorf("%w: requested %d sat", ErrNoSufficientUTXO, minimumSat)
+}
+
+func tbcAmountToSatoshis(amountTBC float64) (uint64, error) {
+	if math.IsNaN(amountTBC) || math.IsInf(amountTBC, 0) || amountTBC < 0 {
+		return 0, ErrInvalidTBCAmount
+	}
+
+	scaled := amountTBC * 1_000_000
+	if math.IsInf(scaled, 0) || scaled >= math.Ldexp(1, 64) {
+		return 0, ErrInvalidTBCAmount
+	}
+	rounded := math.Round(scaled)
+	if math.Abs(scaled-rounded) > 1e-6 {
+		return 0, fmt.Errorf("%w: amount has more than six decimal places", ErrInvalidTBCAmount)
+	}
+	return uint64(rounded), nil
 }
 
 type broadcastResponse struct {
@@ -350,7 +384,7 @@ func FetchUTXOList(address, network string) ([]*bt.UTXO, error) {
 	return result, nil
 }
 
-func fetchUTXOInternal(address string, amountTBC float64, network string) (*bt.UTXO, string, error) {
+func fetchUTXOInternalSat(address string, minimumSat uint64, network string) (*bt.UTXO, string, error) {
 	baseURL := getBaseURL(network)
 	url := fmt.Sprintf("%sutxo/address/%s", baseURL, indexerP2PKHLookupAddress(network, address))
 
@@ -370,13 +404,9 @@ func fetchUTXOInternal(address string, amountTBC float64, network string) (*bt.U
 		return nil, "", fmt.Errorf("该地址没有可用的 UTXO")
 	}
 
-	amountSatoshis := uint64(amountTBC * 1e6)
-	selected := &ur.Data.UTXOs[0]
-	for i := range ur.Data.UTXOs {
-		if ur.Data.UTXOs[i].Value >= amountSatoshis {
-			selected = &ur.Data.UTXOs[i]
-			break
-		}
+	selected, err := selectUTXOAtLeast(ur.Data.UTXOs, minimumSat)
+	if err != nil {
+		return nil, "", err
 	}
 
 	apiTxid := strings.ToLower(strings.TrimSpace(selected.TxID))
@@ -396,6 +426,10 @@ func fetchUTXOInternal(address string, amountTBC float64, network string) (*bt.U
 	if out.LockingScript == nil {
 		return nil, "", fmt.Errorf("链上输出 %s:%d 无 locking script", selected.TxID, selected.Index)
 	}
+	if out.Satoshis < minimumSat {
+		return nil, "", fmt.Errorf("%w: chain output %s:%d has %d sat, requested %d sat",
+			ErrNoSufficientUTXO, selected.TxID, selected.Index, out.Satoshis, minimumSat)
+	}
 
 	return &bt.UTXO{
 		TxID:          txidBytes,
@@ -405,15 +439,33 @@ func fetchUTXOInternal(address string, amountTBC float64, network string) (*bt.U
 	}, apiTxid, nil
 }
 
+// FetchUTXOSat returns the first UTXO whose chain value meets minimumSat.
+func FetchUTXOSat(address string, minimumSat uint64, network string) (*bt.UTXO, error) {
+	u, _, err := fetchUTXOInternalSat(address, minimumSat, network)
+	return u, err
+}
+
 // FetchUTXO returns a single UTXO for an address meeting the minimum TBC amount.
 func FetchUTXO(address string, amountTBC float64, network string) (*bt.UTXO, error) {
-	u, _, err := fetchUTXOInternal(address, amountTBC, network)
-	return u, err
+	minimumSat, err := tbcAmountToSatoshis(amountTBC)
+	if err != nil {
+		return nil, err
+	}
+	return FetchUTXOSat(address, minimumSat, network)
+}
+
+// FetchUTXOWithAPITxIDSat returns a sufficient UTXO plus its normalized API txid.
+func FetchUTXOWithAPITxIDSat(address string, minimumSat uint64, network string) (*bt.UTXO, string, error) {
+	return fetchUTXOInternalSat(address, minimumSat, network)
 }
 
 // FetchUTXOWithAPITxID returns a UTXO plus the raw txid string from the API.
 func FetchUTXOWithAPITxID(address string, amountTBC float64, network string) (*bt.UTXO, string, error) {
-	return fetchUTXOInternal(address, amountTBC, network)
+	minimumSat, err := tbcAmountToSatoshis(amountTBC)
+	if err != nil {
+		return nil, "", err
+	}
+	return FetchUTXOWithAPITxIDSat(address, minimumSat, network)
 }
 
 // FetchUTXOs returns all UTXOs for an address (alias for FetchUTXOList with different error handling).
@@ -458,22 +510,35 @@ func FetchUTXOs(address, network string) ([]*bt.UTXO, error) {
 	return result, nil
 }
 
-// GetUTXOs returns all UTXOs for an address, returning an error if the total
-// balance is less than the requested amount.
-func GetUTXOs(address string, amountTBC float64, network string) ([]*bt.UTXO, error) {
+// GetUTXOsSat returns all UTXOs for an address when their checked total meets
+// minimumSat.
+func GetUTXOsSat(address string, minimumSat uint64, network string) ([]*bt.UTXO, error) {
 	utxos, err := FetchUTXOs(address, network)
 	if err != nil {
 		return nil, err
 	}
-	amountSatoshis := uint64(amountTBC * 1e6)
 	var total uint64
 	for _, u := range utxos {
-		total += u.Satoshis
+		next, carry := bits.Add64(total, u.Satoshis, 0)
+		if carry != 0 {
+			return nil, bt.ErrAmountOverflow
+		}
+		total = next
 	}
-	if total < amountSatoshis {
+	if total < minimumSat {
 		return nil, fmt.Errorf("Insufficient tbc balance")
 	}
 	return utxos, nil
+}
+
+// GetUTXOs returns all UTXOs for an address, returning an error if the total
+// balance is less than the requested amount.
+func GetUTXOs(address string, amountTBC float64, network string) ([]*bt.UTXO, error) {
+	minimumSat, err := tbcAmountToSatoshis(amountTBC)
+	if err != nil {
+		return nil, err
+	}
+	return GetUTXOsSat(address, minimumSat, network)
 }
 
 // MergeUTXO merges all UTXOs for the address derived from privKey into a single UTXO.

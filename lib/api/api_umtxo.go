@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/bits"
 
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
@@ -37,16 +38,21 @@ func SimpleUTXOToBTUTXO(u *SimpleUTXO) (*bt.UTXO, error) {
 
 type utxoByScriptHashResponse struct {
 	Data struct {
-		UTXOs []struct {
-			TxID  string `json:"txid"`
-			Index int    `json:"index"`
-			Value uint64 `json:"value"`
-		} `json:"utxos"`
+		UTXOs []utxoListItem `json:"utxos"`
 	} `json:"data"`
 }
 
 // FetchUMTXO fetches a single UTXO by custom script ASM, meeting the minimum TBC amount.
 func FetchUMTXO(scriptASM string, tbcAmount float64, network string) (*bt.UTXO, error) {
+	minimumSat, err := tbcAmountToSatoshis(tbcAmount)
+	if err != nil {
+		return nil, err
+	}
+	return FetchUMTXOSat(scriptASM, minimumSat, network)
+}
+
+// FetchUMTXOSat fetches a single custom-script UTXO meeting minimumSat.
+func FetchUMTXOSat(scriptASM string, minimumSat uint64, network string) (*bt.UTXO, error) {
 	script, err := bscript.NewFromASM(scriptASM)
 	if err != nil {
 		return nil, err
@@ -57,7 +63,6 @@ func FetchUMTXO(scriptASM string, tbcAmount float64, network string) (*bt.UTXO, 
 		return nil, err
 	}
 
-	amountSatoshis := uint64(tbcAmount * 1e6)
 	baseURL := getBaseURL(network)
 	url := fmt.Sprintf("%sutxo/scriptpubkeyhash/%s", baseURL, hash)
 
@@ -77,24 +82,22 @@ func FetchUMTXO(scriptASM string, tbcAmount float64, network string) (*bt.UTXO, 
 		return nil, fmt.Errorf("The balance in the account is zero.")
 	}
 
-	selected := &r.Data.UTXOs[0]
-	for i := range r.Data.UTXOs {
-		v := r.Data.UTXOs[i].Value
-		if v > amountSatoshis && v < 3200000000 {
-			selected = &r.Data.UTXOs[i]
-			break
-		}
-	}
-
-	if selected.Value < amountSatoshis {
+	selected, err := selectUTXOAtLeast(r.Data.UTXOs, minimumSat)
+	if err != nil {
 		var total uint64
 		for i := range r.Data.UTXOs {
-			total += r.Data.UTXOs[i].Value
+			next, carry := bits.Add64(total, r.Data.UTXOs[i].Value, 0)
+			if carry != 0 {
+				return nil, bt.ErrAmountOverflow
+			}
+			total = next
 		}
-		if total < amountSatoshis {
-			return nil, fmt.Errorf("Insufficient tbc balance")
+		if total < minimumSat {
+			return nil, fmt.Errorf("%w: total balance %d sat, requested %d sat",
+				ErrNoSufficientUTXO, total, minimumSat)
 		}
-		return nil, fmt.Errorf("Please mergeUTXO")
+		return nil, fmt.Errorf("%w: total balance is sufficient but must be merged",
+			ErrNoSufficientUTXO)
 	}
 
 	ls, err := bscript.NewFromHexString(multiScript)
@@ -166,19 +169,32 @@ func FetchUMTXOs(scriptASM string, network string) ([]*bt.UTXO, error) {
 	return result, nil
 }
 
-// GetUMTXOs returns all UTXOs for a custom script ASM, checking total balance.
-func GetUMTXOs(scriptASM string, amountTBC float64, network string) ([]*bt.UTXO, error) {
+// GetUMTXOsSat returns all custom-script UTXOs when their checked total meets
+// minimumSat.
+func GetUMTXOsSat(scriptASM string, minimumSat uint64, network string) ([]*bt.UTXO, error) {
 	utxos, err := FetchUMTXOs(scriptASM, network)
 	if err != nil {
 		return nil, err
 	}
-	amountSatoshis := uint64(amountTBC * 1e6)
 	var total uint64
 	for _, u := range utxos {
-		total += u.Satoshis
+		next, carry := bits.Add64(total, u.Satoshis, 0)
+		if carry != 0 {
+			return nil, bt.ErrAmountOverflow
+		}
+		total = next
 	}
-	if total < amountSatoshis {
+	if total < minimumSat {
 		return nil, fmt.Errorf("Insufficient tbc balance")
 	}
 	return utxos, nil
+}
+
+// GetUMTXOs returns all UTXOs for a custom script ASM, checking total balance.
+func GetUMTXOs(scriptASM string, amountTBC float64, network string) ([]*bt.UTXO, error) {
+	minimumSat, err := tbcAmountToSatoshis(amountTBC)
+	if err != nil {
+		return nil, err
+	}
+	return GetUMTXOsSat(scriptASM, minimumSat, network)
 }
