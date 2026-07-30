@@ -178,3 +178,21 @@ func TestTransferWithAdditionalInfo(t *testing.T) {
 		t.Fatalf("additional info = %x, want %x", got, additionalInfo)
 	}
 }
+
+func TestMintFTSourceContractOutputMeetsCurrentNodeDust(t *testing.T) {
+	fx := newHTLCTokenFixture(t, 1_000)
+	ft, err := NewFT(&FtParams{
+		Name: "DustPolicy", Symbol: "DUST", Amount: 1_000, Decimal: 2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	raws, err := ft.MintFT(fx.senderKey, fx.sender, fx.feeUTXO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source := mustTx(t, raws[0])
+	if got := source.Outputs[0].Satoshis; got < 10_000 {
+		t.Fatalf("mint source contract output = %d, current testnet rejects values below 10000 as dust", got)
+	}
+}

@@ -138,7 +138,11 @@ func (f *FT) MintFT(privKey *bec.PrivateKey, addressTo string, utxo *bt.UTXO) ([
 	if err := txSource.FromUTXOs(utxo); err != nil {
 		return nil, err
 	}
-	txSource.AddOutput(&bt.Output{LockingScript: sourceOutputScript, Satoshis: 9900})
+	// JS 1.6.5 used 9900 sat here. The current TBC testnet policy rejects
+	// that non-standard source output with `64: dust`; 10000 is the smallest
+	// accepted value observed by the live-node validation harness.
+	const mintSourceSatoshis = uint64(10_000)
+	txSource.AddOutput(&bt.Output{LockingScript: sourceOutputScript, Satoshis: mintSourceSatoshis})
 	txSource.AddOutput(&bt.Output{LockingScript: tapeScript, Satoshis: 0})
 
 	// Mirror TS: .change(addr) is appended BEFORE getEstimateSize so the
@@ -153,7 +157,7 @@ func (f *FT) MintFT(privKey *bec.PrivateKey, addressTo string, utxo *bt.UTXO) ([
 	estSource := txSource.JSEstimateSize()
 	targetSourceFee := mintSourceTargetFeeSat(estSource)
 	inSat := txSource.TotalInputSatoshis()
-	outSat := txSource.TotalOutputSatoshis() // change is currently 0 → outSat = 9900
+	outSat := txSource.TotalOutputSatoshis() // change is currently 0
 	initialChange := int64(inSat) - int64(outSat) - int64(targetSourceFee)
 	if initialChange < 0 {
 		initialChange = 0
@@ -175,7 +179,7 @@ func (f *FT) MintFT(privKey *bec.PrivateKey, addressTo string, utxo *bt.UTXO) ([
 	f.TapeScript = hex.EncodeToString(tapeScript.Bytes())
 
 	txMint := newFTTx()
-	if err := txMint.From(sourceTxID, 0, sourceOutputScript.String(), 9900); err != nil {
+	if err := txMint.From(sourceTxID, 0, sourceOutputScript.String(), mintSourceSatoshis); err != nil {
 		return nil, err
 	}
 	txMint.AddOutput(&bt.Output{LockingScript: codeScript, Satoshis: 500})
