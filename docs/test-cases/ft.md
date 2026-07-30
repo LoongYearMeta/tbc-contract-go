@@ -9,7 +9,7 @@
 
 | 名称 | 必填 | 说明 |
 |------|------|------|
-| `TBC_WIF_A` | 是 | 发送方 WIF（推导出 `addressA`） |
+| `TBC_TESTNET_WIF` | 是 | 发送方 WIF（推导出 `addressA`） |
 | `TBC_ADDRESS_B` | 是 | 接收方 P2PKH 地址 |
 | `TBC_NETWORK` | 否 | `"testnet"` / `"mainnet"`，默认 `"testnet"` |
 | `FT_NAME` / `FT_SYMBOL` | Mint 时必填 | FT 名称 / 符号 |
@@ -67,10 +67,10 @@ func ftInfoFromAPI(txid string, info *api.FtInfoResponse) *contract.FtInfo {
 
 func main() {
 	network := env("TBC_NETWORK", "testnet")
-	wifStr := strings.TrimSpace(os.Getenv("TBC_WIF_A"))
+	wifStr := strings.TrimSpace(os.Getenv("TBC_TESTNET_WIF"))
 	addressB := strings.TrimSpace(os.Getenv("TBC_ADDRESS_B"))
 	if wifStr == "" || addressB == "" {
-		fmt.Println("请设置 TBC_WIF_A 和 TBC_ADDRESS_B")
+		fmt.Println("请设置 TBC_TESTNET_WIF 和 TBC_ADDRESS_B")
 		os.Exit(1)
 	}
 	dec, err := wif.DecodeWIF(wifStr)

@@ -20,12 +20,10 @@ import (
 
 // === 配置区（直接改这里） ===
 //
-//   wifSender = A 锁币（用 A 的 TBC 锁进 HTLC）
-//   wifRecv   = B 取币（用 secret 解锁拿走）
+//	TBC_TESTNET_WIF   = A 锁币（用 A 的 TBC 锁进 HTLC）
+//	TBC_TESTNET_WIF_B = B 取币（用 secret 解锁拿走）
 const (
 	network    = "testnet"
-	wifSender  = "L1u2TmR7hMMMSV9Bx2Lyt3sujbboqEFqnKygnPRnQERhKB4qptuK" // 发送方 = orderbook 的 A
-	wifRecv    = "L5HRwv9CUz2yQKXGueeBqfpGGH7jtZxSxYKhgwA93sjcAsMqRNXQ" // 接收方 = orderbook 的 B
 	amountTBC  = 0.001
 	timelock   = uint32(1_774_427_165) // 退款解锁时间（unix 秒）
 	secretInit = "2033b33005b1072dc9af3f3a8d83f2551b95c8b8487951746a69cd01789e7924"
@@ -41,6 +39,15 @@ func mustExit(err error, msg string) {
 		fmt.Println(msg+":", err)
 		os.Exit(1)
 	}
+}
+
+func requiredEnv(name string) string {
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		fmt.Fprintln(os.Stderr, "missing required environment variable:", name)
+		os.Exit(2)
+	}
+	return value
 }
 
 func loadKey(name, w string) (*bec.PrivateKey, string) {
@@ -70,6 +77,8 @@ func loadHTLCUTXO(htlcTxid string) *bt.UTXO {
 }
 
 func main() {
+	wifSender := requiredEnv("TBC_TESTNET_WIF")
+	wifRecv := requiredEnv("TBC_TESTNET_WIF_B")
 	privSender, addrSender := loadKey("wifSender", wifSender)
 	privReceiver, addrReceiver := loadKey("wifRecv", wifRecv)
 

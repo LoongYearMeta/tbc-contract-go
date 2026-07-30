@@ -17,7 +17,6 @@ import (
 // === 配置区（直接改这里） ===
 const (
 	network              = "testnet"
-	wifA                 = "L1u2TmR7hMMMSV9Bx2Lyt3sujbboqEFqnKygnPRnQERhKB4qptuK"             // 操作者 WIF（必填）
 	ftContractTxid       = "62ac8fb58fc18d7c0bbcc7e4fa11c704ef62faa17be078e3c530d5dec9cc231f" // 标的 FT 合约 txid
 	poolContractTxidInit = "a18f147d27beddafc4a92e05e40286295b839979446c57fd3ba205d4baf2cc32" // 已有池子 txid；CreatePoolNFT 之后会被覆盖
 
@@ -56,6 +55,15 @@ func mustExit(err error, msg string) {
 	}
 }
 
+func requiredEnv(name string) string {
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		fmt.Fprintln(os.Stderr, "missing required environment variable:", name)
+		os.Exit(2)
+	}
+	return value
+}
+
 func mustFloat(s string) float64 {
 	f, err := strconv.ParseFloat(s, 64)
 	mustExit(err, "ParseFloat "+s)
@@ -63,10 +71,7 @@ func mustFloat(s string) float64 {
 }
 
 func main() {
-	if strings.TrimSpace(wifA) == "" {
-		fmt.Println("请在源码顶部把 wifA 设成你的 WIF")
-		os.Exit(1)
-	}
+	wifA := requiredEnv("TBC_TESTNET_WIF")
 	dec, err := wif.DecodeWIF(wifA)
 	mustExit(err, "DecodeWIF")
 	priv := dec.PrivKey

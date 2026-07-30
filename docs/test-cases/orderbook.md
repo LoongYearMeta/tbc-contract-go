@@ -7,9 +7,9 @@
 
 | 角色 | 职责 | 起始资源 |
 |------|------|---------|
-| `wifA` | 撮合者（pay match-tx miner fee） | TBC（足够付撮合手续费 + 流转给 B/C） |
-| `wifB` | 买家（用 token 买 TBC） | token + 少量 TBC（付买单 tx 手续费） |
-| `wifC` | 卖家（用 TBC 换 token） | TBC（够挂单 + 手续费） |
+| `TBC_TESTNET_WIF` | 撮合者（pay match-tx miner fee） | TBC（足够付撮合手续费 + 流转给 B/C） |
+| `TBC_TESTNET_WIF_B` | 买家（用 token 买 TBC） | token + 少量 TBC（付买单 tx 手续费） |
+| `TBC_TESTNET_WIF_C` | 卖家（用 TBC 换 token） | TBC（够挂单 + 手续费） |
 
 如果只想验证「创建/撤销」，单 WIF 即可，撮合必须 3 钱包。
 
@@ -17,7 +17,7 @@
 
 | 名称 | 必填 | 说明 |
 |------|------|------|
-| `wifA` / `wifB` / `wifC` | 撮合时必填 | 三个角色的 WIF（地址必须各不相同） |
+| `TBC_TESTNET_WIF` / `TBC_TESTNET_WIF_B` / `TBC_TESTNET_WIF_C` | 撮合时必填 | 三个角色的 WIF（地址必须各不相同） |
 | `network` | 否 | 默认 `"testnet"` |
 | `ftContractTxid` | 是 | FT 合约 txid |
 | `taxAddress` | 是 | 写入订单数据的 tax 地址（订单创建后不可改） |
@@ -63,9 +63,6 @@ import (
 
 const (
 	network        = "testnet"
-	wifA           = "..." // 撮合者
-	wifB           = "..." // 买家（A 提前转 token + 一点 TBC 过来）
-	wifC           = "..." // 卖家（A 提前转 TBC 过来）
 	ftContractTxid = "..."
 	taxAddress     = "..." // 写入订单的 tax pkh
 	ftFeeAddress   = taxAddress
@@ -90,8 +87,11 @@ func must(err error) {
 }
 
 func main() {
-	if strings.TrimSpace(wifA) == "" {
-		fmt.Println("请填三个 WIF")
+	wifA := strings.TrimSpace(os.Getenv("TBC_TESTNET_WIF"))
+	wifB := strings.TrimSpace(os.Getenv("TBC_TESTNET_WIF_B"))
+	wifC := strings.TrimSpace(os.Getenv("TBC_TESTNET_WIF_C"))
+	if wifA == "" || wifB == "" || wifC == "" {
+		fmt.Println("请设置三个测试网 WIF 环境变量")
 		os.Exit(1)
 	}
 	privA, _ := decodeWif(wifA)

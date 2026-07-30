@@ -1,16 +1,17 @@
 // OrderBook 测试程序 — 三钱包循环撮合，对应 TS test/orderBook.test.ts 的 10 轮循环。
 //
 // 撮合合约要求三个角色的地址各不相同：
-//   wifA — 撮合者（用 A 的 TBC 付撮合 tx 的矿工费）
-//   wifB — 买家（用 token 买 TBC；A 提前转 token + 一点 TBC 过来）
-//   wifC — 卖家（用 TBC 换 token；A 提前转 TBC 过来；卖单成交后会拿到 token）
+//
+//	TBC_TESTNET_WIF   — 撮合者（用 A 的 TBC 付撮合 tx 的矿工费）
+//	TBC_TESTNET_WIF_B — 买家（用 token 买 TBC；A 提前转 token + 一点 TBC 过来）
+//	TBC_TESTNET_WIF_C — 卖家（用 TBC 换 token；A 提前转 TBC 过来；卖单成交后会拿到 token）
 //
 // 每轮：
-//   1. 随机生成 unitPrice / sellVolume / buyVolume / feeRate
-//   2. C 创建卖单
-//   3. B 创建买单
-//   4. A 撮合
-//   5. 如果撮合 tx 有 7+ 个 output（部分成交），用找零订单再撮一次
+//  1. 随机生成 unitPrice / sellVolume / buyVolume / feeRate
+//  2. C 创建卖单
+//  3. B 创建买单
+//  4. A 撮合
+//  5. 如果撮合 tx 有 7+ 个 output（部分成交），用找零订单再撮一次
 package main
 
 import (
@@ -37,9 +38,6 @@ import (
 
 const (
 	network        = "testnet"
-	wifA           = "L1u2TmR7hMMMSV9Bx2Lyt3sujbboqEFqnKygnPRnQERhKB4qptuK" // 撮合者
-	wifB           = "L5HRwv9CUz2yQKXGueeBqfpGGH7jtZxSxYKhgwA93sjcAsMqRNXQ" // 买家
-	wifC           = "Kz3BsRyVH7jegeSZ2akAoagVKbSojEqKzXyJVwNroozfirhm7368" // 卖家
 	ftContractTxid = "62ac8fb58fc18d7c0bbcc7e4fa11c704ef62faa17be078e3c530d5dec9cc231f"
 	taxAddress     = "1BitcoinEaterAddressDontSendf59kuE"
 	ftFeeAddress   = "1BitcoinEaterAddressDontSendf59kuE"
@@ -66,6 +64,15 @@ func mustExit(err error, msg string) {
 	}
 }
 
+func requiredEnv(name string) string {
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		fmt.Fprintln(os.Stderr, "missing required environment variable:", name)
+		os.Exit(2)
+	}
+	return value
+}
+
 func decodeWif(s string) (*bec.PrivateKey, string) {
 	dec, err := wif.DecodeWIF(s)
 	mustExit(err, "DecodeWIF")
@@ -76,10 +83,9 @@ func decodeWif(s string) (*bec.PrivateKey, string) {
 }
 
 func main() {
-	if strings.TrimSpace(wifA) == "" || strings.TrimSpace(wifB) == "" || strings.TrimSpace(wifC) == "" {
-		fmt.Println("请把 wifA / wifB / wifC 都填上")
-		os.Exit(1)
-	}
+	wifA := requiredEnv("TBC_TESTNET_WIF")
+	wifB := requiredEnv("TBC_TESTNET_WIF_B")
+	wifC := requiredEnv("TBC_TESTNET_WIF_C")
 	privA, addrA := decodeWif(wifA)
 	privB, addrB := decodeWif(wifB)
 	privC, addrC := decodeWif(wifC)
@@ -125,8 +131,9 @@ func main() {
 // mirroring TS `Math.floor((Math.random() * 0.4 - 0.2) * 1000) * 1000`.
 //
 // TS produces 400 buckets:
-//   Math.random() ∈ [0,1), * 0.4 - 0.2 ∈ [-0.2, 0.2), * 1000 ∈ [-200, 200), floor → [-200, 199].
-//   * 1000 → [-200_000, 199_000] in 1000-step increments (last 3 digits always 0).
+//
+//	Math.random() ∈ [0,1), * 0.4 - 0.2 ∈ [-0.2, 0.2), * 1000 ∈ [-200, 200), floor → [-200, 199].
+//	* 1000 → [-200_000, 199_000] in 1000-step increments (last 3 digits always 0).
 //
 // Go matches with rand.Intn(400) → [0, 399], -200 → [-200, 199], *1000 → [-200_000, 199_000].
 // The `*1000` keeps unitPrice/sellVolume/buyVolume always multiples of 1000 so the random

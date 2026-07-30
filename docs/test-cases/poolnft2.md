@@ -10,7 +10,7 @@
 
 | 名称 | 必填 | 说明 |
 |------|------|------|
-| `TBC_WIF_A` | 是 | 操作者 WIF（建池/swap/LP 都用它） |
+| `TBC_TESTNET_WIF` | 是 | 操作者 WIF（建池/swap/LP 都用它） |
 | `TBC_NETWORK` | 否 | 默认 `"testnet"` |
 | `FT_CONTRACT_TXID` | 是 | 标的 FT 合约 txid |
 | `POOL_CONTRACT_TXID` | 后续步骤必填 | CreatePoolNFT 完成后的池子 txid |
@@ -53,9 +53,9 @@ func must(err error) {
 
 func main() {
 	network := env("TBC_NETWORK", "testnet")
-	wifStr := strings.TrimSpace(os.Getenv("TBC_WIF_A"))
+	wifStr := strings.TrimSpace(os.Getenv("TBC_TESTNET_WIF"))
 	if wifStr == "" {
-		fmt.Println("请设置 TBC_WIF_A")
+		fmt.Println("请设置 TBC_TESTNET_WIF")
 		os.Exit(1)
 	}
 	dec, err := wif.DecodeWIF(wifStr)

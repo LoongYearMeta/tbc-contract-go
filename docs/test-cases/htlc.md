@@ -9,8 +9,8 @@
 
 | 名称 | 必填 | 说明 |
 |------|------|------|
-| `TBC_WIF_SENDER` | 是 | 发送方 WIF |
-| `TBC_WIF_RECEIVER` | 是 | 接收方 WIF |
+| `TBC_TESTNET_WIF` | 是 | 发送方 WIF |
+| `TBC_TESTNET_WIF_B` | 是 | 接收方 WIF |
 | `TBC_NETWORK` | 否 | 默认 `"testnet"` |
 | `HTLC_AMOUNT_TBC` | 否 | 锁定金额（TBC），默认 `0.001` |
 | `HTLC_TIMELOCK` | 否 | 退款时间锁（unix 秒），默认 `1774427165` |
@@ -68,8 +68,8 @@ func loadKey(envName string) (*bec.PrivateKey, string, string) {
 
 func main() {
 	network := env("TBC_NETWORK", "testnet")
-	privSender, addrSender, pubSender := loadKey("TBC_WIF_SENDER")
-	privReceiver, addrReceiver, pubReceiver := loadKey("TBC_WIF_RECEIVER")
+	privSender, addrSender, pubSender := loadKey("TBC_TESTNET_WIF")
+	privReceiver, addrReceiver, pubReceiver := loadKey("TBC_TESTNET_WIF_B")
 
 	amountTBC, _ := strconv.ParseFloat(env("HTLC_AMOUNT_TBC", "0.001"), 64)
 	amountSat := uint64(amountTBC * 1e6)
