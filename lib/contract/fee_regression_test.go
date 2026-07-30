@@ -14,7 +14,7 @@ func assertRawPaysContractFee(t *testing.T, raw string, inputSatoshis uint64) {
 	t.Helper()
 
 	tx := mustTx(t, raw)
-	outputSatoshis, err := tx.TotalOutputSatoshisChecked()
+	outputSatoshis, err := checkedOutputSatoshis(tx)
 	if err != nil {
 		t.Fatal(err)
 	}

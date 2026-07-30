@@ -435,7 +435,7 @@ func BuildMultiSigTransactionSendTBC(
 	for i, u := range utxos {
 		next, carry := bits.Add64(totalIn, u.Satoshis, 0)
 		if carry != 0 {
-			return nil, bt.ErrAmountOverflow
+			return nil, ErrContractAmountOverflow
 		}
 		totalIn = next
 		amounts[i] = u.Satoshis

@@ -102,7 +102,7 @@ func UnfreezeTBC(address string, utxos []*bt.UTXO, currentBlockHeight uint32) (s
 	for _, u := range utxos {
 		next, carry := bits.Add64(sumAmount, u.Satoshis, 0)
 		if carry != 0 {
-			return "", bt.ErrAmountOverflow
+			return "", ErrContractAmountOverflow
 		}
 		sumAmount = next
 	}
@@ -184,7 +184,7 @@ func UnfreezeTBCWithSign(privKey *bec.PrivateKey, utxos []*bt.UTXO, currentBlock
 	for _, u := range utxos {
 		next, carry := bits.Add64(sumAmount, u.Satoshis, 0)
 		if carry != 0 {
-			return "", bt.ErrAmountOverflow
+			return "", ErrContractAmountOverflow
 		}
 		sumAmount = next
 	}

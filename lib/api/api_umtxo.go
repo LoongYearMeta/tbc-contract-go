@@ -88,7 +88,7 @@ func FetchUMTXOSat(scriptASM string, minimumSat uint64, network string) (*bt.UTX
 		for i := range r.Data.UTXOs {
 			next, carry := bits.Add64(total, r.Data.UTXOs[i].Value, 0)
 			if carry != 0 {
-				return nil, bt.ErrAmountOverflow
+				return nil, ErrUTXOAmountOverflow
 			}
 			total = next
 		}
@@ -180,7 +180,7 @@ func GetUMTXOsSat(scriptASM string, minimumSat uint64, network string) ([]*bt.UT
 	for _, u := range utxos {
 		next, carry := bits.Add64(total, u.Satoshis, 0)
 		if carry != 0 {
-			return nil, bt.ErrAmountOverflow
+			return nil, ErrUTXOAmountOverflow
 		}
 		total = next
 	}

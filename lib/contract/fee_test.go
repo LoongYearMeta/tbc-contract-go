@@ -32,8 +32,8 @@ func TestContractTargetFeeBoundaries(t *testing.T) {
 	}
 
 	_, err := contractTargetFee(-1)
-	if !errors.Is(err, bt.ErrInvalidFee) {
-		t.Fatalf("negative size: got %v, want %v", err, bt.ErrInvalidFee)
+	if !errors.Is(err, ErrInvalidContractFee) {
+		t.Fatalf("negative size: got %v, want %v", err, ErrInvalidContractFee)
 	}
 }
 

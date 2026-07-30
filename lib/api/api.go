@@ -26,8 +26,9 @@ import (
 var defaultHTTPClient = &http.Client{Timeout: 30 * time.Second}
 
 var (
-	ErrNoSufficientUTXO = errors.New("no single UTXO satisfies the requested minimum")
-	ErrInvalidTBCAmount = errors.New("invalid TBC amount")
+	ErrNoSufficientUTXO   = errors.New("no single UTXO satisfies the requested minimum")
+	ErrInvalidTBCAmount   = errors.New("invalid TBC amount")
+	ErrUTXOAmountOverflow = errors.New("UTXO amount sum overflow")
 )
 
 const (
@@ -521,7 +522,7 @@ func GetUTXOsSat(address string, minimumSat uint64, network string) ([]*bt.UTXO,
 	for _, u := range utxos {
 		next, carry := bits.Add64(total, u.Satoshis, 0)
 		if carry != 0 {
-			return nil, bt.ErrAmountOverflow
+			return nil, ErrUTXOAmountOverflow
 		}
 		total = next
 	}

@@ -11,26 +11,65 @@ import (
 const (
 	contractSatoshisPerKB  = uint64(80)
 	contractMinimumFee     = uint64(80)
+	sdkDustLimit           = uint64(42)
 	maxFeeFinalizeAttempts = 8
 )
 
 var (
 	ErrFeeDidNotConverge       = errors.New("signed transaction fee did not converge")
 	ErrInvalidChangeOutput     = errors.New("invalid fee change output")
+	ErrInvalidContractFee      = errors.New("invalid contract fee")
+	ErrContractFeeOverflow     = errors.New("contract fee calculation overflow")
+	ErrContractAmountOverflow  = errors.New("contract amount sum overflow")
 	ErrInsufficientContractFee = errors.New("insufficient inputs for contract fee")
 	ErrOrdinaryOutputDust      = errors.New("ordinary output is below SDK dust")
 )
 
 func contractTargetFee(sizeBytes int) (uint64, error) {
-	return bt.CeilFeeForBytes(sizeBytes, contractSatoshisPerKB, contractMinimumFee)
+	if sizeBytes < 0 {
+		return 0, ErrInvalidContractFee
+	}
+	hi, lo := bits.Mul64(uint64(sizeBytes), contractSatoshisPerKB)
+	if hi != 0 || lo > ^uint64(0)-999 {
+		return 0, ErrContractFeeOverflow
+	}
+	fee := (lo + 999) / 1000
+	if fee < contractMinimumFee {
+		fee = contractMinimumFee
+	}
+	return fee, nil
 }
 
 func requireOrdinaryOutput(valueSat uint64, context string) error {
-	if valueSat < bt.DustLimit {
+	if valueSat < sdkDustLimit {
 		return fmt.Errorf("%w: %s is %d sat, need at least %d sat",
-			ErrOrdinaryOutputDust, context, valueSat, bt.DustLimit)
+			ErrOrdinaryOutputDust, context, valueSat, sdkDustLimit)
 	}
 	return nil
+}
+
+func checkedInputSatoshis(tx *bt.Tx) (uint64, error) {
+	var total uint64
+	for _, input := range tx.Inputs {
+		next, carry := bits.Add64(total, input.PreviousTxSatoshis, 0)
+		if carry != 0 {
+			return 0, ErrContractAmountOverflow
+		}
+		total = next
+	}
+	return total, nil
+}
+
+func checkedOutputSatoshis(tx *bt.Tx) (uint64, error) {
+	var total uint64
+	for _, output := range tx.Outputs {
+		next, carry := bits.Add64(total, output.Satoshis, 0)
+		if carry != 0 {
+			return 0, ErrContractAmountOverflow
+		}
+		total = next
+	}
+	return total, nil
 }
 
 func setChangeForTarget(tx *bt.Tx, changeIndex int, targetFee uint64) (bool, error) {
@@ -38,7 +77,7 @@ func setChangeForTarget(tx *bt.Tx, changeIndex int, targetFee uint64) (bool, err
 		return false, ErrInvalidChangeOutput
 	}
 
-	inputSum, err := tx.TotalInputSatoshisChecked()
+	inputSum, err := checkedInputSatoshis(tx)
 	if err != nil {
 		return false, err
 	}
@@ -50,7 +89,7 @@ func setChangeForTarget(tx *bt.Tx, changeIndex int, targetFee uint64) (bool, err
 		}
 		next, carry := bits.Add64(nonChangeSum, output.Satoshis, 0)
 		if carry != 0 {
-			return false, bt.ErrAmountOverflow
+			return false, ErrContractAmountOverflow
 		}
 		nonChangeSum = next
 	}
@@ -73,11 +112,11 @@ func setChangeForTarget(tx *bt.Tx, changeIndex int, targetFee uint64) (bool, err
 }
 
 func verifyPaidFee(tx *bt.Tx, targetFee uint64) error {
-	inputSum, err := tx.TotalInputSatoshisChecked()
+	inputSum, err := checkedInputSatoshis(tx)
 	if err != nil {
 		return err
 	}
-	outputSum, err := tx.TotalOutputSatoshisChecked()
+	outputSum, err := checkedOutputSatoshis(tx)
 	if err != nil {
 		return err
 	}
