@@ -2,19 +2,19 @@
 //
 // stableCoin is an FT subclass with two execution paths:
 //
-//   1. Owner-signed FT moves (Transfer / BatchTransfer / MergeCoin) which
-//      reuse FT.getFTunlock with isCoin=true. These produce raw txs ready to
-//      broadcast.
+//  1. Owner-signed FT moves (Transfer / BatchTransfer / MergeCoin) which
+//     reuse FT.getFTunlock with isCoin=true. These produce raw txs ready to
+//     broadcast.
 //
-//   2. Admin-MuSig2 paths (CreateCoin / MintCoin / FreezeCoinUTXO /
-//      UnfreezeCoinUTXO) which return *AdminPrepared. The Go side cannot do
-//      MuSig2 (tbc-lib-go has no Schnorr/BIP340), so the prepare* methods
-//      pre-seed admin-input unlocks with 64-byte zero placeholders, freeze
-//      the fee, and return the SHA256d sighashes for those inputs. The
-//      caller runs the external MuSig ceremony, gets back 64-byte BIP340
-//      sigs, and passes them to (*AdminPrepared).Finalize, which swaps the
-//      placeholders for real sigs (same byte length → no fee shift) and
-//      serializes the tx.
+//  2. Admin-MuSig2 paths (CreateCoin / MintCoin / FreezeCoinUTXO /
+//     UnfreezeCoinUTXO) which return *AdminPrepared. The Go side cannot do
+//     MuSig2 (tbc-lib-go has no Schnorr/BIP340), so the prepare* methods
+//     pre-seed admin-input unlocks with 64-byte zero placeholders, freeze
+//     the fee, and return the SHA256d sighashes for those inputs. The
+//     caller runs the external MuSig ceremony, gets back 64-byte BIP340
+//     sigs, and passes them to (*AdminPrepared).Finalize, which swaps the
+//     placeholders for real sigs (same byte length → no fee shift) and
+//     serializes the tx.
 package contract
 
 import (
@@ -194,15 +194,10 @@ func (sc *StableCoin) Transfer(
 		return "", fmt.Errorf("ChangeToAddress: %w", err)
 	}
 
-	if err := scSignAllOwner(tx, privKey, ftutxos, preTXs, prepreTxDatas); err != nil {
-		return "", err
-	}
-	// Two-pass adjust when ≥2 FT inputs (JSEstimateSize underpays at 41 B
-	// per non-P2PKH input — see CLAUDE.md "two-pass fee adjust" rule).
-	if len(ftutxos) >= 2 {
-		if err := scAdjustFeeAndResign(tx, privKey, ftutxos, preTXs, prepreTxDatas); err != nil {
-			return "", err
-		}
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, func() error {
+		return scSignAllOwner(tx, privKey, ftutxos, preTXs, prepreTxDatas)
+	}); err != nil {
+		return "", fmt.Errorf("stablecoin transfer: finalize fee: %w", err)
 	}
 	return hex.EncodeToString(tx.Bytes()), nil
 }
@@ -364,13 +359,10 @@ func (sc *StableCoin) BatchTransfer(
 			return nil, fmt.Errorf("batch ChangeToAddress: %w", err)
 		}
 
-		if err := scSignAllOwner(tx, privKey, ftutxosForTx, preTXsForTx, prepreForTx); err != nil {
-			return nil, err
-		}
-		if nFt >= 2 {
-			if err := scAdjustFeeAndResign(tx, privKey, ftutxosForTx, preTXsForTx, prepreForTx); err != nil {
-				return nil, err
-			}
+		if err := finalizeSignedFee(tx, len(tx.Outputs)-1, func() error {
+			return scSignAllOwner(tx, privKey, ftutxosForTx, preTXsForTx, prepreForTx)
+		}); err != nil {
+			return nil, fmt.Errorf("stablecoin batch transfer: finalize fee: %w", err)
 		}
 
 		txsraw = append(txsraw, hex.EncodeToString(tx.Bytes()))
@@ -608,11 +600,10 @@ func (sc *StableCoin) mergeCoinSingle(
 		return nil, fmt.Errorf("merge ChangeToAddress: %w", err)
 	}
 
-	if err := scSignAllOwner(tx, privKey, ftutxos, preTXs, prepreTxDatas); err != nil {
-		return nil, err
-	}
-	if err := scAdjustFeeAndResign(tx, privKey, ftutxos, preTXs, prepreTxDatas); err != nil {
-		return nil, err
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, func() error {
+		return scSignAllOwner(tx, privKey, ftutxos, preTXs, prepreTxDatas)
+	}); err != nil {
+		return nil, fmt.Errorf("stablecoin merge: finalize fee: %w", err)
 	}
 	return tx, nil
 }
@@ -1458,9 +1449,8 @@ func scSignAllOwner(
 	return nil
 }
 
-// scAdjustFeeAndResign recomputes the fee from the actual signed-tx size,
-// adjusts the trailing change output, and re-signs every input. Mirrors the
-// `mergeFTSingle` two-pass pattern in ft.go.
+// scAdjustFeeAndResign finalizes the actual signed-tx fee and re-signs every
+// input until the serialized size and change amount converge.
 func scAdjustFeeAndResign(
 	tx *bt.Tx,
 	privKey *bec.PrivateKey,
@@ -1468,28 +1458,9 @@ func scAdjustFeeAndResign(
 	preTXs []*bt.Tx,
 	prepreTxDatas []string,
 ) error {
-	actualSize := len(tx.Bytes())
-	var targetFee uint64
-	if actualSize < 1000 {
-		targetFee = 80
-	} else {
-		targetFee = (uint64(actualSize)*80 + 999) / 1000
-	}
-	inputSum := uint64(0)
-	for _, in := range tx.Inputs {
-		inputSum += in.PreviousTxSatoshis
-	}
-	nonChangeSum := uint64(0)
-	for i, out := range tx.Outputs {
-		if i < len(tx.Outputs)-1 {
-			nonChangeSum += out.Satoshis
-		}
-	}
-	if inputSum < nonChangeSum+targetFee {
-		return fmt.Errorf("two-pass: insufficient inputs to cover %d sat fee", targetFee)
-	}
-	tx.Outputs[len(tx.Outputs)-1].Satoshis = inputSum - nonChangeSum - targetFee
-	return scSignAllOwner(tx, privKey, ftutxos, preTXs, prepreTxDatas)
+	return finalizeSignedFee(tx, len(tx.Outputs)-1, func() error {
+		return scSignAllOwner(tx, privKey, ftutxos, preTXs, prepreTxDatas)
+	})
 }
 
 // encodeSchnorrSig65PushHex returns "41" + sig64hex + "<sighash flag byte>"
@@ -1502,7 +1473,8 @@ func encodeSchnorrSig65PushHex(sig64 []byte) string {
 
 // buildSchnorrP2PKHLikeUnlock builds the unlock for a coin-NFT-hold input,
 // which is a P2PKH-style script over an x-only Schnorr pubkey:
-//   <65-byte sig+flag> <32-byte xonly pubkey>
+//
+//	<65-byte sig+flag> <32-byte xonly pubkey>
 func buildSchnorrP2PKHLikeUnlock(sig64 []byte, xOnlyPubkey32 []byte) (*bscript.Script, error) {
 	if len(sig64) != 64 {
 		return nil, fmt.Errorf("sig64 must be 64 bytes")
@@ -1524,7 +1496,8 @@ func buildOpReturnMessage(msg string) (*bscript.Script, error) {
 // is the head field; lockTime is the per-tape lockTime (0 = unlocked).
 //
 // Layout: OP_FALSE OP_RETURN <48B amount tape> <decimal hex> <name> <symbol>
-//         <4B lockTime LE> 4654617065  // "FTape"
+//
+//	<4B lockTime LE> 4654617065  // "FTape"
 func buildStableCoinTapeScript(name, symbol string, decimal int, headAmount *big.Int, lockTime uint32) (*bscript.Script, error) {
 	tape := writeTapeAmount(headAmount)
 	nameHex := hex.EncodeToString([]byte(name))
@@ -1536,4 +1509,3 @@ func buildStableCoinTapeScript(name, symbol string, decimal int, headAmount *big
 		tape, decimalHex, nameHex, symbolHex, hex.EncodeToString(ltBuf))
 	return bscript.NewFromASM(asm)
 }
-

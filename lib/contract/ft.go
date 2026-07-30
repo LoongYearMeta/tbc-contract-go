@@ -165,8 +165,10 @@ func (f *FT) MintFT(privKey *bec.PrivateKey, addressTo string, utxo *bt.UTXO) ([
 	txSource.Outputs[len(txSource.Outputs)-1].Satoshis = uint64(initialChange)
 
 	ctx := context.Background()
-	if err := txSource.FillAllInputs(ctx, &unlocker.Getter{PrivateKey: privKey}); err != nil {
-		return nil, err
+	if err := finalizeSignedFee(txSource, len(txSource.Outputs)-1, func() error {
+		return txSource.FillAllInputs(ctx, &unlocker.Getter{PrivateKey: privKey})
+	}); err != nil {
+		return nil, fmt.Errorf("MintFT: finalize source fee: %w", err)
 	}
 	txSourceRaw := hex.EncodeToString(txSource.Bytes())
 
@@ -191,8 +193,10 @@ func (f *FT) MintFT(privKey *bec.PrivateKey, addressTo string, utxo *bt.UTXO) ([
 		return nil, fmt.Errorf("MintFT: txMint.ChangeToAddress: %w", err)
 	}
 
-	if err := signP2PKHInput(txMint, privKey, 0); err != nil {
-		return nil, err
+	if err := finalizeSignedFee(txMint, len(txMint.Outputs)-1, func() error {
+		return signP2PKHInput(txMint, privKey, 0)
+	}); err != nil {
+		return nil, fmt.Errorf("MintFT: finalize mint fee: %w", err)
 	}
 
 	f.ContractTxid = txMint.TxID()
@@ -325,15 +329,17 @@ func (f *FT) transfer(
 	}
 
 	nFt := len(ftutxos)
-	if err := ftSignFeeInputs(tx, privKey, nFt); err != nil {
-		return "", err
-	}
-	ftUnlocks, err := f.buildFTUnlocks(privKey, tx, preTXs, prepreTxDatas, ftutxos)
-	if err != nil {
-		return "", err
-	}
-	if err := ftInsertUnlocks(tx, ftUnlocks, nFt); err != nil {
-		return "", err
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, func() error {
+		if err := ftSignFeeInputs(tx, privKey, nFt); err != nil {
+			return err
+		}
+		ftUnlocks, err := f.buildFTUnlocks(privKey, tx, preTXs, prepreTxDatas, ftutxos)
+		if err != nil {
+			return err
+		}
+		return ftInsertUnlocks(tx, ftUnlocks, nFt)
+	}); err != nil {
+		return "", fmt.Errorf("transfer: finalize fee: %w", err)
 	}
 
 	return hex.EncodeToString(tx.Bytes()), nil
@@ -467,20 +473,23 @@ func (f *FT) BatchTransfer(
 			return nil, fmt.Errorf("batch ChangeToAddress: %w", err)
 		}
 
-		if err := ftSignFeeInputs(tx, privKey, nFt); err != nil {
-			return nil, err
-		}
-		var ftUnlocks []*bscript.Script
-		if b == 0 {
-			ftUnlocks, err = f.buildFTUnlocks(privKey, tx, currentPreTXs, currentPrepreTxDatas, currentFtutxos)
-		} else {
-			ftUnlocks, err = f.buildFTUnlocksFromPrevVouts(privKey, tx, currentPreTXs, currentPrepreTxDatas, []int{ftChangeIndex})
-		}
-		if err != nil {
-			return nil, err
-		}
-		if err := ftInsertUnlocks(tx, ftUnlocks, nFt); err != nil {
-			return nil, err
+		if err := finalizeSignedFee(tx, len(tx.Outputs)-1, func() error {
+			if err := ftSignFeeInputs(tx, privKey, nFt); err != nil {
+				return err
+			}
+			var ftUnlocks []*bscript.Script
+			var err error
+			if b == 0 {
+				ftUnlocks, err = f.buildFTUnlocks(privKey, tx, currentPreTXs, currentPrepreTxDatas, currentFtutxos)
+			} else {
+				ftUnlocks, err = f.buildFTUnlocksFromPrevVouts(privKey, tx, currentPreTXs, currentPrepreTxDatas, []int{ftChangeIndex})
+			}
+			if err != nil {
+				return err
+			}
+			return ftInsertUnlocks(tx, ftUnlocks, nFt)
+		}); err != nil {
+			return nil, fmt.Errorf("batch transfer: finalize fee: %w", err)
 		}
 
 		txsraw = append(txsraw, hex.EncodeToString(tx.Bytes()))
@@ -737,58 +746,17 @@ func (f *FT) mergeFTSingle(
 		nFt = 5
 	}
 
-	// First pass: sign every input so we know the true tx byte size. The
-	// initial ChangeToAddress only saw `JSEstimateSize` which assigns 41 B
-	// per non-P2PKH input — fine for 1-2 FT inputs but grossly wrong for a
-	// 5-FT merge (actual FT unlock is ~1200 B/input). Without this two-pass
-	// adjust, a 5-input merge underpays the relay by ~470 sat and the
-	// indexer rejects with "66: insufficient priority".
-	if err := ftSignFeeInputs(tx, privKey, nFt); err != nil {
-		return nil, err
-	}
-	ftUnlocks, err := f.buildFTUnlocks(privKey, tx, preTXs, prepreTxDatas, ftutxos)
-	if err != nil {
-		return nil, err
-	}
-	if err := ftInsertUnlocks(tx, ftUnlocks, nFt); err != nil {
-		return nil, err
-	}
-
-	// Second pass: recompute fee from actual signed bytes, adjust change,
-	// re-sign every input (sighash includes the change output). The unlock
-	// script *size* is deterministic across re-signs, so a single redo is
-	// enough — no further iteration needed.
-	actualSize := len(tx.Bytes())
-	var targetFee uint64
-	if actualSize < 1000 {
-		targetFee = 80
-	} else {
-		targetFee = (uint64(actualSize)*80 + 999) / 1000 // ceil
-	}
-	inputSum := uint64(0)
-	for _, in := range tx.Inputs {
-		inputSum += in.PreviousTxSatoshis
-	}
-	nonChangeSum := uint64(0)
-	for i, out := range tx.Outputs {
-		if i < len(tx.Outputs)-1 {
-			nonChangeSum += out.Satoshis
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, func() error {
+		if err := ftSignFeeInputs(tx, privKey, nFt); err != nil {
+			return err
 		}
-	}
-	if inputSum < nonChangeSum+targetFee {
-		return nil, fmt.Errorf("merge: insufficient inputs to cover %d sat fee", targetFee)
-	}
-	tx.Outputs[len(tx.Outputs)-1].Satoshis = inputSum - nonChangeSum - targetFee
-
-	if err := ftSignFeeInputs(tx, privKey, nFt); err != nil {
-		return nil, err
-	}
-	ftUnlocks2, err := f.buildFTUnlocks(privKey, tx, preTXs, prepreTxDatas, ftutxos)
-	if err != nil {
-		return nil, err
-	}
-	if err := ftInsertUnlocks(tx, ftUnlocks2, nFt); err != nil {
-		return nil, err
+		ftUnlocks, err := f.buildFTUnlocks(privKey, tx, preTXs, prepreTxDatas, ftutxos)
+		if err != nil {
+			return err
+		}
+		return ftInsertUnlocks(tx, ftUnlocks, nFt)
+	}); err != nil {
+		return nil, fmt.Errorf("merge: finalize fee: %w", err)
 	}
 	return tx, nil
 }
