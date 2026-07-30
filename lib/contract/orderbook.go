@@ -28,8 +28,6 @@ import (
 const (
 	obOrderDataEncodedLen = 114
 
-	// FT code script lengths (from TS orderBook.ts)
-	obCoinLength  = 2012
 	obFTv2Partial = 1856
 	obCoinPartial = 1984
 
@@ -278,9 +276,15 @@ func ComputeFtPartialHash(ftCodeScriptHex string, isCoin bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	info, err := classifyOrderBookFTCode(ftCodeScriptHex)
+	if err != nil {
+		return "", err
+	}
 	partialOffset := obFTv2Partial
-	if isCoin {
+	if isCoin || info.IsCoin {
 		partialOffset = obCoinPartial
+	} else if info.Version == util.FTVersion1 {
+		partialOffset = 1536
 	}
 	if len(buf) < partialOffset {
 		return "", fmt.Errorf("ComputeFtPartialHash: script too short (%d < %d)", len(buf), partialOffset)
@@ -288,9 +292,14 @@ func ComputeFtPartialHash(ftCodeScriptHex string, isCoin bool) (string, error) {
 	return partialsha256.CalculatePartialHash(buf[:partialOffset]), nil
 }
 
-// IsCoinScript reports whether a code script hex belongs to a stablecoin (2012 bytes vs 1884).
+func classifyOrderBookFTCode(codeScriptHex string) (util.FTScriptInfo, error) {
+	return util.ClassifyFTScriptHex(codeScriptHex)
+}
+
+// IsCoinScript reports whether a code script hex belongs to a stablecoin.
 func IsCoinScript(codeScriptHex string) bool {
-	return len(codeScriptHex)/2 == obCoinLength
+	info, err := classifyOrderBookFTCode(codeScriptHex)
+	return err == nil && info.IsCoin
 }
 
 // ---------------------------------------------------------------------------
@@ -336,7 +345,11 @@ func (o *OrderBook) BuildSellOrderTX(
 		return "", fmt.Errorf("BuildSellOrderTX: ftID must be a valid SHA256 hash string")
 	}
 
-	isCoin := IsCoinScript(ftCodeScriptHex)
+	ftInfo, err := classifyOrderBookFTCode(ftCodeScriptHex)
+	if err != nil {
+		return "", fmt.Errorf("BuildSellOrderTX: classify FT code: %w", err)
+	}
+	isCoin := ftInfo.IsCoin
 	partialHash, err := ComputeFtPartialHash(ftCodeScriptHex, isCoin)
 	if err != nil {
 		return "", err
@@ -608,7 +621,11 @@ func (o *OrderBook) BuildBuyOrderTX(
 	}
 
 	ftCodeScriptHex := hex.EncodeToString(ftutxos[0].LockingScript.Bytes())
-	isCoin := IsCoinScript(ftCodeScriptHex)
+	ftInfo, err := classifyOrderBookFTCode(ftCodeScriptHex)
+	if err != nil {
+		return "", fmt.Errorf("BuildBuyOrderTX: classify FT code: %w", err)
+	}
+	isCoin := ftInfo.IsCoin
 	partialHash, err := ComputeFtPartialHash(ftCodeScriptHex, isCoin)
 	if err != nil {
 		return "", err
@@ -799,7 +816,11 @@ func (o *OrderBook) CancelBuyOrderWithSign(
 	}
 	ftTapeHex := hex.EncodeToString(ftPreTX.Outputs[int(ftUTXO.Vout)+1].LockingScript.Bytes())
 	ftCodeScriptHex := hex.EncodeToString(ftUTXO.LockingScript.Bytes())
-	isCoin := IsCoinScript(ftCodeScriptHex)
+	ftInfo, err := classifyOrderBookFTCode(ftCodeScriptHex)
+	if err != nil {
+		return "", fmt.Errorf("CancelBuyOrderWithSign: classify FT code: %w", err)
+	}
+	isCoin := ftInfo.IsCoin
 
 	ftCodeOut, err := BuildFTtransferCode(ftCodeScriptHex, buyData.HoldAddress)
 	if err != nil {
@@ -853,8 +874,8 @@ func (o *OrderBook) CancelBuyOrderWithSign(
 		if err := tx.InsertInputUnlockingScript(0, cancelScript); err != nil {
 			return err
 		}
-		// Input 1: FT swap unlock (BUY ORDER as contractTX, FT v2).
-		swapUnlock, err := ft.GetFTunlockSwap(privKey, tx, ftPreTX, ftPrePreTxData, buyPreTX, 1, int(ftUTXO.Vout), 2, isCoin)
+		// Input 1: FT swap unlock (BUY ORDER as contractTX).
+		swapUnlock, err := ft.GetFTunlockSwap(privKey, tx, ftPreTX, ftPrePreTxData, buyPreTX, 1, int(ftUTXO.Vout), int(ftInfo.Version), isCoin)
 		if err != nil {
 			return err
 		}
@@ -975,7 +996,14 @@ func (o *OrderBook) FillSigsCancelBuyOrder(
 
 	// Input 1: FT swap unlock
 	vout1 := int(tx.Inputs[1].PreviousTxOutIndex)
-	us1, err := StaticGetFTunlockSwap(sigs[1], publicKey, tx, ftPreTX, ftPrePreTxData, buyPreTX, 1, vout1, 2, isCoin)
+	if vout1 < 0 || vout1 >= len(ftPreTX.Outputs) {
+		return "", fmt.Errorf("FillSigsCancelBuyOrder: FT input vout %d is out of range", vout1)
+	}
+	ftInfo, err := util.ClassifyFTScript(ftPreTX.Outputs[vout1].LockingScript)
+	if err != nil {
+		return "", fmt.Errorf("FillSigsCancelBuyOrder: classify FT code: %w", err)
+	}
+	us1, err := StaticGetFTunlockSwap(sigs[1], publicKey, tx, ftPreTX, ftPrePreTxData, buyPreTX, 1, vout1, int(ftInfo.Version), isCoin || ftInfo.IsCoin)
 	if err != nil {
 		return "", err
 	}
@@ -1040,7 +1068,11 @@ func (o *OrderBook) MatchOrder(
 
 	ftBalance := ftUTXO.FtBalance
 	ftCodeScriptHex := hex.EncodeToString(ftUTXO.LockingScript.Bytes())
-	isCoin := IsCoinScript(ftCodeScriptHex)
+	ftInfo, err := classifyOrderBookFTCode(ftCodeScriptHex)
+	if err != nil {
+		return "", fmt.Errorf("MatchOrder: classify FT code: %w", err)
+	}
+	isCoin := ftInfo.IsCoin
 
 	if len(ftPreTX.Outputs) <= int(ftUTXO.Vout)+1 {
 		return "", fmt.Errorf("MatchOrder: ftPreTX insufficient outputs")
@@ -1188,7 +1220,7 @@ func (o *OrderBook) MatchOrder(
 
 	// FT swap unlock (input 1): use buyData.FtID as the FT contract ID (mirrors TS: new FT(buyData.ftID))
 	ftInstance := &FT{ContractTxid: buyData.FtID}
-	ftSwapUnlock, err := ftInstance.GetFTunlockSwap(privKey, tx, ftPreTX, ftPrePreTxData, buyPreTX, 1, int(ftUTXO.Vout), 2, isCoin)
+	ftSwapUnlock, err := ftInstance.GetFTunlockSwap(privKey, tx, ftPreTX, ftPrePreTxData, buyPreTX, 1, int(ftUTXO.Vout), int(ftInfo.Version), isCoin)
 	if err != nil {
 		return "", err
 	}

@@ -22,14 +22,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
+	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bec"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
 	"github.com/LoongYearMeta/tbc-lib-go/crypto"
 	"github.com/LoongYearMeta/tbc-lib-go/sighash"
 	"github.com/LoongYearMeta/tbc-lib-go/util/partialsha256"
-	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
-	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 )
 
 //go:embed asm/poolnft2_code.asm
@@ -696,22 +696,17 @@ func getServiceFeeAddress(lpPlan int) (string, error) {
 // --------------------------------------------------------------------------
 
 const (
-	ftV2Length        = 1884
-	coinLength        = 2012
 	ftV1PartialOffset = 1536
 	ftV2PartialOffset = 1856
 	coinPartialOffset = 1984
 )
 
-// ftVersionFromCodeLen returns (ftVersion, isCoin) from codeScript byte length.
-func ftVersionFromCodeLen(codeLen int) (ftVersion int, isCoin bool) {
-	if codeLen == coinLength {
-		return 2, true
+func classifyPoolFTCode(codeHex string) (ftVersion int, isCoin bool, err error) {
+	info, err := util.ClassifyFTScriptHex(codeHex)
+	if err != nil {
+		return 0, false, err
 	}
-	if codeLen == ftV2Length {
-		return 2, false
-	}
-	return 1, false
+	return int(info.Version), info.IsCoin, nil
 }
 
 // ftCodeSizeHex returns the 2-byte LE hex for the FT code size used in pool script.
@@ -1169,8 +1164,10 @@ func (p *PoolNFT2) fetchFtlpUTXOList(address string) ([]*api.LpUTXO, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fetchFtlpUTXOList FetchFtInfo: %w", err)
 	}
-	codeLen := len(ftaInfo.CodeScript) / 2
-	ftVersion, isCoin := ftVersionFromCodeLen(codeLen)
+	ftVersion, isCoin, err := classifyPoolFTCode(ftaInfo.CodeScript)
+	if err != nil {
+		return nil, fmt.Errorf("fetchFtlpUTXOList classify FT code: %w", err)
+	}
 	tapeLen := len(ftaInfo.TapeScript) / 2
 
 	poolNftHash, err := poolNFTCodeSHA256(p.PoolNftCode)
@@ -1260,8 +1257,10 @@ func (p *PoolNFT2) fetchFtlpUTXO(address string, amount *big.Int) (*api.LpUTXO, 
 	if err != nil {
 		return nil, fmt.Errorf("fetchFtlpUTXO FetchFtInfo: %w", err)
 	}
-	codeLen := len(ftaInfo.CodeScript) / 2
-	ftVersion, isCoin := ftVersionFromCodeLen(codeLen)
+	ftVersion, isCoin, err := classifyPoolFTCode(ftaInfo.CodeScript)
+	if err != nil {
+		return nil, fmt.Errorf("fetchFtlpUTXO classify FT code: %w", err)
+	}
 	tapeLen := len(ftaInfo.TapeScript) / 2
 
 	poolNftHash, err := poolNFTCodeSHA256(p.PoolNftCode)
@@ -1379,7 +1378,6 @@ func (p *PoolNFT2) getPoolNftUnlock(
 	return p.GetPoolNftUnlockOffLine(privKey, currentTX, currentUnlockIndex, preTX, prePreTX, inputsTXs, withLock, option, swapOption)
 }
 
-
 // --------------------------------------------------------------------------
 // CreatePoolNFT — mirrors TS poolNFT2.createPoolNFT
 // --------------------------------------------------------------------------
@@ -1450,8 +1448,10 @@ func (p *PoolNFT2) CreatePoolNFT(
 	if err != nil {
 		return nil, fmt.Errorf("CreatePoolNFT FetchFtInfo: %w", err)
 	}
-	codeLen := len(ftaInfo.CodeScript) / 2
-	ftVersion, isCoin := ftVersionFromCodeLen(codeLen)
+	ftVersion, isCoin, err := classifyPoolFTCode(ftaInfo.CodeScript)
+	if err != nil {
+		return nil, fmt.Errorf("CreatePoolNFT classify FT code: %w", err)
+	}
 	tapeLen := len(ftaInfo.TapeScript) / 2
 
 	// Build poolNft code
@@ -1620,8 +1620,10 @@ func (p *PoolNFT2) CreatePoolNFTWithLock(
 	if err != nil {
 		return nil, fmt.Errorf("CreatePoolNFTWithLock FetchFtInfo: %w", err)
 	}
-	codeLen := len(ftaInfo.CodeScript) / 2
-	ftVersion, isCoin := ftVersionFromCodeLen(codeLen)
+	ftVersion, isCoin, err := classifyPoolFTCode(ftaInfo.CodeScript)
+	if err != nil {
+		return nil, fmt.Errorf("CreatePoolNFTWithLock classify FT code: %w", err)
+	}
 	tapeLen := len(ftaInfo.TapeScript) / 2
 
 	// Build poolNft code with multisig lock
@@ -1761,8 +1763,10 @@ func (p *PoolNFT2) InitPoolNFT(
 	if err != nil {
 		return "", fmt.Errorf("InitPoolNFT FetchFtInfo: %w", err)
 	}
-	codeLen := len(ftaInfo.CodeScript) / 2
-	ftVersion, isCoin := ftVersionFromCodeLen(codeLen)
+	ftVersion, isCoin, err := classifyPoolFTCode(ftaInfo.CodeScript)
+	if err != nil {
+		return "", fmt.Errorf("InitPoolNFT classify FT code: %w", err)
+	}
 	tapeLen := len(ftaInfo.TapeScript) / 2
 
 	// parse amounts
@@ -2199,8 +2203,10 @@ func (p *PoolNFT2) IncreaseLP(
 	if err != nil {
 		return "", fmt.Errorf("IncreaseLP FetchFtInfo: %w", err)
 	}
-	codeLen := len(ftaInfo.CodeScript) / 2
-	ftVersion, isCoin := ftVersionFromCodeLen(codeLen)
+	ftVersion, isCoin, err := classifyPoolFTCode(ftaInfo.CodeScript)
+	if err != nil {
+		return "", fmt.Errorf("IncreaseLP classify FT code: %w", err)
+	}
 	tapeLen := len(ftaInfo.TapeScript) / 2
 
 	// Snapshot pool state for rollback on any downstream error.
@@ -2441,8 +2447,10 @@ func (p *PoolNFT2) ConsumeLP(
 	if err != nil {
 		return nil, fmt.Errorf("ConsumeLP FetchFtInfo: %w", err)
 	}
-	codeLen := len(ftaInfo.CodeScript) / 2
-	ftVersion, isCoin := ftVersionFromCodeLen(codeLen)
+	ftVersion, isCoin, err := classifyPoolFTCode(ftaInfo.CodeScript)
+	if err != nil {
+		return nil, fmt.Errorf("ConsumeLP classify FT code: %w", err)
+	}
 
 	amountLPBN, err := util.ParseDecimalToBigInt(amountLP, 6)
 	if err != nil {
@@ -2776,8 +2784,10 @@ func (p *PoolNFT2) SwapToToken(
 	if err != nil {
 		return "", fmt.Errorf("SwapToToken FetchFtInfo: %w", err)
 	}
-	codeLen := len(ftaInfo.CodeScript) / 2
-	ftVersion, isCoin := ftVersionFromCodeLen(codeLen)
+	ftVersion, isCoin, err := classifyPoolFTCode(ftaInfo.CodeScript)
+	if err != nil {
+		return "", fmt.Errorf("SwapToToken classify FT code: %w", err)
+	}
 
 	// TS precedence: instance value wins over caller param.
 	if p.LpPlan >= 1 && p.LpPlan <= 5 {
@@ -3017,8 +3027,10 @@ func (p *PoolNFT2) SwapToTBC(
 	if err != nil {
 		return "", fmt.Errorf("SwapToTBC FetchFtInfo: %w", err)
 	}
-	codeLen := len(ftaInfo.CodeScript) / 2
-	ftVersion, isCoin := ftVersionFromCodeLen(codeLen)
+	ftVersion, isCoin, err := classifyPoolFTCode(ftaInfo.CodeScript)
+	if err != nil {
+		return "", fmt.Errorf("SwapToTBC classify FT code: %w", err)
+	}
 	_ = ftVersion
 
 	// TS precedence: instance value wins over caller param.
@@ -3807,8 +3819,10 @@ func (p *PoolNFT2) MergeFTinPool(
 	if err != nil {
 		return nil, fmt.Errorf("MergeFTinPool FetchFtInfo: %w", err)
 	}
-	codeLen := len(ftaInfo.CodeScript) / 2
-	ftVersion, isCoin := ftVersionFromCodeLen(codeLen)
+	ftVersion, isCoin, err := classifyPoolFTCode(ftaInfo.CodeScript)
+	if err != nil {
+		return nil, fmt.Errorf("MergeFTinPool classify FT code: %w", err)
+	}
 
 	poolCodeHash160, err := poolNFTSHA256thenHash160(p.PoolNftCode)
 	if err != nil {

@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/base58"
 	"github.com/LoongYearMeta/tbc-lib-go/bec"
@@ -23,12 +24,15 @@ import (
 	"github.com/LoongYearMeta/tbc-lib-go/crypto"
 	"github.com/LoongYearMeta/tbc-lib-go/sighash"
 	"github.com/LoongYearMeta/tbc-lib-go/unlocker"
-	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 )
 
-// ft_v2_length is the byte length of an FT v2 code script.
-// Mirrors the TS constant ft_v2_length = 1884.
-const multiSigFTV2Length = 1884
+func classifyMultiSigFTCode(script *bscript.Script) (int, error) {
+	info, err := util.ClassifyFTScript(script)
+	if err != nil {
+		return 0, err
+	}
+	return int(info.Version), nil
+}
 
 // MultiSigTxRaw holds a partially-built multi-sig tx together with the input
 // satoshi amounts needed to re-attach locking scripts for signing.
@@ -727,10 +731,13 @@ func BuildMultiSigTransactionTransferFT(
 	// ftInputIndex=1 because utxo is input 0 and ftutxos start at 1
 	amountHex, changeHex := BuildTapeAmountWithFtInputIndex(amountBN, tapeAmountSet, 1)
 
-	// Determine ft script version
+	// Determine FT script version from both length and the v3 fill marker.
 	ftVersion := 1
-	if len(ftutxos) > 0 && len(ftutxos[0].LockingScript.Bytes()) == multiSigFTV2Length {
-		ftVersion = 2
+	if len(ftutxos) > 0 {
+		ftVersion, err = classifyMultiSigFTCode(ftutxos[0].LockingScript)
+		if err != nil {
+			return nil, fmt.Errorf("classify FT code: %w", err)
+		}
 	}
 
 	scriptFrom, err := multiSigLockScript(addressFrom)
