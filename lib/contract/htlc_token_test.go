@@ -11,6 +11,7 @@ import (
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bec"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
+	"github.com/LoongYearMeta/tbc-lib-go/sighash"
 )
 
 type htlcTokenFixture struct {
@@ -262,4 +263,130 @@ func TestFillSigWithdrawAndRefundHTLCTokenFillThreeInputs(t *testing.T) {
 			t.Fatalf("refund input %d remains unsigned", i)
 		}
 	}
+}
+
+func signHTLCTokenFixtureInputs(
+	t *testing.T,
+	raw string,
+	inputs []*bt.UTXO,
+	key *bec.PrivateKey,
+) []string {
+	t.Helper()
+	tx := mustTx(t, raw)
+	if len(tx.Inputs) != len(inputs) {
+		t.Fatalf("sign fixture input count = %d, want %d", len(tx.Inputs), len(inputs))
+	}
+	sigs := make([]string, len(inputs))
+	for i, input := range inputs {
+		tx.Inputs[i].PreviousTxScript = input.LockingScript
+		tx.Inputs[i].PreviousTxSatoshis = input.Satoshis
+		hash, err := tx.CalcInputSignatureHash(uint32(i), sighash.AllForkID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		sig, err := key.Sign(hash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		sigs[i] = hex.EncodeToString(append(sig.Serialise(), byte(sighash.AllForkID)))
+	}
+	return sigs
+}
+
+func feeUTXOForAddress(t *testing.T, address string, marker byte) *bt.UTXO {
+	t.Helper()
+	script, err := bscript.NewP2PKHFromAddress(address)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return &bt.UTXO{
+		TxID:          bytes.Repeat([]byte{marker}, 32),
+		Vout:          0,
+		LockingScript: script,
+		Satoshis:      20_000,
+	}
+}
+
+func TestDeployHTLCTokenWithSignMatchesFilledTransaction(t *testing.T) {
+	fx := newHTLCTokenFixture(t, 1_000)
+	unsigned, err := DeployHTLCToken(
+		fx.sender, fx.receiver, fx.hashlock, 900_000,
+		big.NewInt(600), []*util.FtUTXO{fx.ftUTXO}, fx.feeUTXO,
+		[]*bt.Tx{fx.preTX}, []string{""},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sigs := signHTLCTokenFixtureInputs(
+		t, unsigned,
+		[]*bt.UTXO{util.FtUTXOToUTXO(fx.ftUTXO), fx.feeUTXO},
+		fx.senderKey,
+	)
+	pubKey := hex.EncodeToString(fx.senderKey.PubKey().SerialiseCompressed())
+	filled, err := FillSigDeployHTLCToken(unsigned, sigs, pubKey, []*bt.Tx{fx.preTX}, []string{""})
+	if err != nil {
+		t.Fatal(err)
+	}
+	direct, err := DeployHTLCTokenWithSign(
+		fx.sender, fx.receiver, fx.hashlock, 900_000,
+		big.NewInt(600), []*util.FtUTXO{fx.ftUTXO}, fx.feeUTXO,
+		[]*bt.Tx{fx.preTX}, []string{""}, fx.senderKey,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertSameTransactionStructureAndScripts(t, direct, filled)
+}
+
+func TestWithdrawHTLCTokenWithSignMatchesFilledTransaction(t *testing.T) {
+	fx, deployTX, htlcUTXO, ftUTXO := deployedHTLCTokenFixture(t)
+	feeUTXO := feeUTXOForAddress(t, fx.receiver, 0x61)
+	unsigned, err := WithdrawHTLCToken(fx.receiver, htlcUTXO, ftUTXO, deployTX, feeUTXO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sigs := signHTLCTokenFixtureInputs(
+		t, unsigned,
+		[]*bt.UTXO{htlcUTXO, util.FtUTXOToUTXO(ftUTXO), feeUTXO},
+		fx.receiverKey,
+	)
+	pubKey := hex.EncodeToString(fx.receiverKey.PubKey().SerialiseCompressed())
+	filled, err := FillSigWithdrawHTLCToken(unsigned, sigs, pubKey, "1234", deployTX, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	direct, err := WithdrawHTLCTokenWithSign(
+		fx.receiverKey, fx.receiver, htlcUTXO, ftUTXO,
+		deployTX, "", feeUTXO, "1234",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertSameTransactionStructureAndScripts(t, direct, filled)
+}
+
+func TestRefundHTLCTokenWithSignMatchesFilledTransaction(t *testing.T) {
+	fx, deployTX, htlcUTXO, ftUTXO := deployedHTLCTokenFixture(t)
+	unsigned, err := RefundHTLCToken(fx.sender, htlcUTXO, ftUTXO, deployTX, fx.feeUTXO, 900_000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sigs := signHTLCTokenFixtureInputs(
+		t, unsigned,
+		[]*bt.UTXO{htlcUTXO, util.FtUTXOToUTXO(ftUTXO), fx.feeUTXO},
+		fx.senderKey,
+	)
+	pubKey := hex.EncodeToString(fx.senderKey.PubKey().SerialiseCompressed())
+	filled, err := FillSigRefundHTLCToken(unsigned, sigs, pubKey, deployTX, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	direct, err := RefundHTLCTokenWithSign(
+		fx.senderKey, fx.sender, htlcUTXO, ftUTXO,
+		deployTX, "", fx.feeUTXO, 900_000,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertSameTransactionStructureAndScripts(t, direct, filled)
 }

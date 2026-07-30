@@ -8,8 +8,10 @@ import (
 
 	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
+	"github.com/LoongYearMeta/tbc-lib-go/bec"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
 	"github.com/LoongYearMeta/tbc-lib-go/crypto"
+	"github.com/LoongYearMeta/tbc-lib-go/sighash"
 )
 
 const (
@@ -419,4 +421,113 @@ func FillSigRefundHTLCToken(
 	prePreTxData string,
 ) (string, error) {
 	return fillSigHTLCTokenRedemption(raw, sigs, publicKey, nil, deployTX, prePreTxData)
+}
+
+func signHTLCTokenInputs(
+	raw string,
+	inputs []*bt.UTXO,
+	privateKey *bec.PrivateKey,
+) ([]string, string, error) {
+	if privateKey == nil {
+		return nil, "", fmt.Errorf("private key is required")
+	}
+	tx, err := bt.NewTxFromString(raw)
+	if err != nil {
+		return nil, "", err
+	}
+	if len(tx.Inputs) != len(inputs) {
+		return nil, "", fmt.Errorf("input metadata count mismatch")
+	}
+	sigs := make([]string, len(inputs))
+	for i, input := range inputs {
+		if input == nil || input.LockingScript == nil {
+			return nil, "", fmt.Errorf("input metadata %d is missing", i)
+		}
+		tx.Inputs[i].PreviousTxScript = input.LockingScript
+		tx.Inputs[i].PreviousTxSatoshis = input.Satoshis
+		hash, err := tx.CalcInputSignatureHash(uint32(i), sighash.AllForkID)
+		if err != nil {
+			return nil, "", fmt.Errorf("sign input %d: %w", i, err)
+		}
+		sig, err := privateKey.Sign(hash)
+		if err != nil {
+			return nil, "", fmt.Errorf("sign input %d: %w", i, err)
+		}
+		sigBytes := append(sig.Serialise(), byte(sighash.AllForkID))
+		sigs[i] = hex.EncodeToString(sigBytes)
+	}
+	publicKey := hex.EncodeToString(privateKey.PubKey().SerialiseCompressed())
+	return sigs, publicKey, nil
+}
+
+// DeployHTLCTokenWithSign builds and signs a Token HTLC deployment.
+func DeployHTLCTokenWithSign(
+	sender, receiver, hashlock string,
+	timelock uint32,
+	amount *big.Int,
+	ftUTXOs []*util.FtUTXO,
+	feeUTXO *bt.UTXO,
+	preTXs []*bt.Tx,
+	prePreTxData []string,
+	privateKey *bec.PrivateKey,
+) (string, error) {
+	raw, err := DeployHTLCToken(
+		sender, receiver, hashlock, timelock, amount,
+		ftUTXOs, feeUTXO, preTXs, prePreTxData,
+	)
+	if err != nil {
+		return "", err
+	}
+	inputs := append(util.FtUTXOsToUTXOs(ftUTXOs), feeUTXO)
+	sigs, publicKey, err := signHTLCTokenInputs(raw, inputs, privateKey)
+	if err != nil {
+		return "", err
+	}
+	return FillSigDeployHTLCToken(raw, sigs, publicKey, preTXs, prePreTxData)
+}
+
+// WithdrawHTLCTokenWithSign builds and signs a Token HTLC secret redemption.
+func WithdrawHTLCTokenWithSign(
+	privateKey *bec.PrivateKey,
+	receiver string,
+	htlcUTXO *bt.UTXO,
+	ftUTXO *util.FtUTXO,
+	deployTX *bt.Tx,
+	prePreTxData string,
+	feeUTXO *bt.UTXO,
+	secret string,
+) (string, error) {
+	raw, err := WithdrawHTLCToken(receiver, htlcUTXO, ftUTXO, deployTX, feeUTXO)
+	if err != nil {
+		return "", err
+	}
+	inputs := []*bt.UTXO{htlcUTXO, util.FtUTXOToUTXO(ftUTXO), feeUTXO}
+	sigs, publicKey, err := signHTLCTokenInputs(raw, inputs, privateKey)
+	if err != nil {
+		return "", err
+	}
+	return FillSigWithdrawHTLCToken(raw, sigs, publicKey, secret, deployTX, prePreTxData)
+}
+
+// RefundHTLCTokenWithSign builds and signs a Token HTLC timelock redemption.
+func RefundHTLCTokenWithSign(
+	privateKey *bec.PrivateKey,
+	sender string,
+	htlcUTXO *bt.UTXO,
+	ftUTXO *util.FtUTXO,
+	deployTX *bt.Tx,
+	prePreTxData string,
+	feeUTXO *bt.UTXO,
+	timelock uint32,
+) (string, error) {
+	raw, err := RefundHTLCToken(sender, htlcUTXO, ftUTXO, deployTX, feeUTXO, timelock)
+	if err != nil {
+		return "", err
+	}
+	inputs := []*bt.UTXO{htlcUTXO, util.FtUTXOToUTXO(ftUTXO), feeUTXO}
+	sigs, publicKey, err := signHTLCTokenInputs(raw, inputs, privateKey)
+	if err != nil {
+		return "", err
+	}
+	return FillSigRefundHTLCToken(raw, sigs, publicKey, deployTX, prePreTxData)
 }
