@@ -17,14 +17,16 @@ import (
 
 // OB-specific length constants from orderbookunlock.ts.
 const (
-	obFTCodeLength     = 1884
-	obCoinCodeLength   = 2012
-	obBuyCodeLength    = 960 + 114   // 1074
-	obSellCodeLength   = 832 + 114   // 946
-	obFTPartialOffset  = 1856
-	obCoinPartialOffset = 1984
-	obBuyPartialOffset = 960
-	obSellPartialOffset = 832
+	obFTCodeLength            = 1884
+	obCoinCodeLength          = 2012
+	obBuyCodeLength           = 960 + 114  // 1074
+	obSellCodeLength          = 832 + 114  // 946
+	obTokenOrderLength        = 1152 + 180 // 1332
+	obFTPartialOffset         = 1856
+	obCoinPartialOffset       = 1984
+	obBuyPartialOffset        = 960
+	obSellPartialOffset       = 832
+	obTokenOrderPartialOffset = 1152
 )
 
 // obGetSize mirrors getSize(length) in orderbookunlock.ts.
@@ -115,6 +117,8 @@ func GetPreTxdataOB(tx *bt.Tx, vout int, contractOutputNumber int) (string, erro
 				partialOffset = obBuyPartialOffset
 			} else if scriptLen == obSellCodeLength {
 				partialOffset = obSellPartialOffset
+			} else if scriptLen == obTokenOrderLength {
+				partialOffset = obTokenOrderPartialOffset
 			}
 			partialHash = partialsha256.CalculatePartialHash(lockScript[:partialOffset])
 			suffixData = lockScript[partialOffset:]
@@ -173,8 +177,18 @@ func GetPreTxdataOB(tx *bt.Tx, vout int, contractOutputNumber int) (string, erro
 	return hex.EncodeToString(buf), nil
 }
 
-// GetCurrentTxOutputsDataOB mirrors getCurrentTxOutputsData(tx) in orderbookunlock.ts.
+// GetCurrentTxOutputsDataOB mirrors getCurrentTxOutputsData(tx) in
+// orderbookunlock.ts with its default fixedOutputCount of 10.
 func GetCurrentTxOutputsDataOB(tx *bt.Tx) (string, error) {
+	return GetCurrentTxOutputsDataOBFixed(tx, 10)
+}
+
+// GetCurrentTxOutputsDataOBFixed mirrors
+// getCurrentTxOutputsData(tx, fixedOutputCount) in orderbookunlock.ts.
+func GetCurrentTxOutputsDataOBFixed(tx *bt.Tx, fixedOutputCount int) (string, error) {
+	if fixedOutputCount < 0 {
+		return "", fmt.Errorf("GetCurrentTxOutputsDataOBFixed: fixed output count must be non-negative")
+	}
 	var buf []byte
 	i := 0
 	for i < len(tx.Outputs) {
@@ -192,6 +206,8 @@ func GetCurrentTxOutputsDataOB(tx *bt.Tx) (string, error) {
 			partialOffset = obBuyPartialOffset
 		} else if scriptLen == obSellCodeLength {
 			partialOffset = obSellPartialOffset
+		} else if scriptLen == obTokenOrderLength {
+			partialOffset = obTokenOrderPartialOffset
 		}
 
 		isSpecial := partialOffset > 0
@@ -243,13 +259,11 @@ func GetCurrentTxOutputsDataOB(tx *bt.Tx) (string, error) {
 		i++
 	}
 
-	// Trailing padding matching TS logic:
-	// 7 outputs → 10 padding bytes; 8 outputs → 6 padding bytes
+	// JS pads each missing logical output with four zero bytes, except for
+	// the two terminal bytes already represented by the contract layout.
 	paddingCount := 0
-	if len(tx.Outputs) == 7 {
-		paddingCount = 10
-	} else if len(tx.Outputs) == 8 {
-		paddingCount = 6
+	if missingOutputCount := fixedOutputCount - len(tx.Outputs); missingOutputCount > 0 {
+		paddingCount = missingOutputCount*4 - 2
 	}
 	for i := 0; i < paddingCount; i++ {
 		buf = append(buf, 0x00)

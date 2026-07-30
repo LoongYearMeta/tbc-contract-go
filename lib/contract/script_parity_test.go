@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"math/big"
 	"os"
 	"path/filepath"
 	"testing"
@@ -40,6 +41,16 @@ func renderAllReferenceScripts(t *testing.T) map[string]*bscript.Script {
 	codeHash := "2222222222222222222222222222222222222222222222222222222222222222"
 	adminPubHash := "3333333333333333333333333333333333333333"
 	pool := NewPoolNFT2(&PoolNFT2Config{Network: "testnet"})
+	orderBook := &OrderBook{
+		HoldAddress:     address,
+		TokenSaleVolume: big.NewInt(1000),
+		FtPartialHash:   "5555555555555555555555555555555555555555555555555555555555555555",
+		FtBPartialHash:  "6666666666666666666666666666666666666666666666666666666666666666",
+		TokenFeeRate:    big.NewInt(3),
+		TokenUnitPrice:  big.NewInt(4),
+		FtID:            "7777777777777777777777777777777777777777777777777777777777777777",
+		FtBID:           "8888888888888888888888888888888888888888888888888888888888888888",
+	}
 
 	rendered := make(map[string]*bscript.Script)
 	add := func(name string, build func() (*bscript.Script, error)) {
@@ -74,6 +85,12 @@ func renderAllReferenceScripts(t *testing.T) map[string]*bscript.Script {
 	})
 	add("stableCoinMint", func() (*bscript.Script, error) {
 		return GetCoinMintCode(adminPubHash, address, codeHash, tapeSize)
+	})
+	add("tokenSellOrder", func() (*bscript.Script, error) {
+		return orderBook.GetTokenSellOrderCode(address)
+	})
+	add("tokenBuyOrder", func() (*bscript.Script, error) {
+		return orderBook.GetTokenBuyOrderCode(address)
 	})
 	return rendered
 }

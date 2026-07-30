@@ -62,6 +62,14 @@ type OrderBook struct {
 	FtID            string // 32-byte hex txid of the FT contract
 	ContractVersion int
 	BuyCodeDust     uint64
+
+	// Token Order fields added in tbc-contract 1.6.5. The existing uint64
+	// fields above remain unchanged for source compatibility with TBC orders.
+	TokenSaleVolume *big.Int
+	TokenFeeRate    *big.Int
+	TokenUnitPrice  *big.Int
+	FtBPartialHash  string
+	FtBID           string
 }
 
 // OrderData carries the decoded order parameters from an order code script.

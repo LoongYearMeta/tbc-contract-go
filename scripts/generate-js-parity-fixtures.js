@@ -39,6 +39,15 @@ const ft = new sdk.FT({
   decimal: 6,
 });
 const pool = new sdk.poolNFT2({ network: "testnet" });
+const orderBook = new sdk.orderBook();
+orderBook.hold_address = address;
+orderBook.sale_volume = 1000n;
+orderBook.ft_a_contract_partialhash = "55".repeat(32);
+orderBook.ft_b_contract_partialhash = "66".repeat(32);
+orderBook.fee_rate = 3n;
+orderBook.unit_price = 4n;
+orderBook.ft_a_contract_id = "77".repeat(32);
+orderBook.ft_b_contract_id = "88".repeat(32);
 
 const scripts = {
   ftV3Mint: ft.getFTmintCode(txid, 0, address, tapeSize),
@@ -69,6 +78,8 @@ const scripts = {
     codeHash,
     tapeSize,
   ),
+  tokenSellOrder: orderBook.getTokenSellOrderCode(address),
+  tokenBuyOrder: orderBook.getTokenBuyOrderCode(address),
 };
 
 const fixtures = {};
