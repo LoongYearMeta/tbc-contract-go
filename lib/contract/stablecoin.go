@@ -1364,50 +1364,23 @@ func scPreseedAndFreezeFee(
 	admins []scAdminBuilder,
 	feeInputIdxs []int,
 ) error {
-	for _, b := range admins {
-		us, err := b.Build(dummySchnorrSig64)
-		if err != nil {
-			return fmt.Errorf("preseed admin input %d: %w", b.InputIndex, err)
+	return finalizeSignedFee(tx, len(tx.Outputs)-1, func() error {
+		for _, b := range admins {
+			us, err := b.Build(dummySchnorrSig64)
+			if err != nil {
+				return fmt.Errorf("preseed admin input %d: %w", b.InputIndex, err)
+			}
+			if err := tx.InsertInputUnlockingScript(b.InputIndex, us); err != nil {
+				return err
+			}
 		}
-		if err := tx.InsertInputUnlockingScript(b.InputIndex, us); err != nil {
-			return err
+		for _, fi := range feeInputIdxs {
+			if err := signP2PKHAtIdx(tx, feePrivKey, uint32(fi)); err != nil {
+				return err
+			}
 		}
-	}
-	for _, fi := range feeInputIdxs {
-		if err := signP2PKHAtIdx(tx, feePrivKey, uint32(fi)); err != nil {
-			return err
-		}
-	}
-	// Recompute fee from actual signed bytes (TS schedule: <1000 → 80, else
-	// ceil(size*80/1000)) and adjust the change output (last output).
-	actualSize := len(tx.Bytes())
-	var targetFee uint64
-	if actualSize < 1000 {
-		targetFee = 80
-	} else {
-		targetFee = (uint64(actualSize)*80 + 999) / 1000
-	}
-	inputSum := uint64(0)
-	for _, in := range tx.Inputs {
-		inputSum += in.PreviousTxSatoshis
-	}
-	nonChangeSum := uint64(0)
-	for i, out := range tx.Outputs {
-		if i < len(tx.Outputs)-1 {
-			nonChangeSum += out.Satoshis
-		}
-	}
-	if inputSum < nonChangeSum+targetFee {
-		return fmt.Errorf("preseed: insufficient inputs to cover %d sat fee", targetFee)
-	}
-	tx.Outputs[len(tx.Outputs)-1].Satoshis = inputSum - nonChangeSum - targetFee
-
-	for _, fi := range feeInputIdxs {
-		if err := signP2PKHAtIdx(tx, feePrivKey, uint32(fi)); err != nil {
-			return err
-		}
-	}
-	return nil
+		return nil
+	})
 }
 
 // scComputeSighashes returns the 32-byte SHA256d sighashes for the given

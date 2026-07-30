@@ -17,6 +17,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"math/bits"
 	"sort"
 	"strconv"
 	"strings"
@@ -2182,27 +2183,19 @@ const poolDustAmount uint64 = 42
 // deterministic across re-signs (signature length is fixed), so a single
 // redo converges and `tx.Bytes()` length stays stable.
 func adjustFeeFromActualSize(tx *bt.Tx, satPerKB uint64) error {
-	actualSize := uint64(len(tx.Bytes()))
-	var fee uint64
-	if actualSize < 1000 {
+	sizeBytes := len(tx.Bytes())
+	hi, lo := bits.Mul64(uint64(sizeBytes), satPerKB)
+	if hi != 0 || lo > ^uint64(0)-999 {
+		return ErrContractFeeOverflow
+	}
+	fee := (lo + 999) / 1000
+	if fee < satPerKB {
 		fee = satPerKB
-	} else {
-		fee = (actualSize*satPerKB + 999) / 1000 // ceil
 	}
-	inputSum := uint64(0)
-	for _, in := range tx.Inputs {
-		inputSum += in.PreviousTxSatoshis
+	_, err := setChangeForTarget(tx, len(tx.Outputs)-1, fee)
+	if err != nil {
+		return fmt.Errorf("adjustFeeFromActualSize: size=%d fee=%d: %w", sizeBytes, fee, err)
 	}
-	outSum := uint64(0)
-	for i, out := range tx.Outputs {
-		if i < len(tx.Outputs)-1 {
-			outSum += out.Satoshis
-		}
-	}
-	if inputSum < outSum+fee {
-		return fmt.Errorf("adjustFeeFromActualSize: insufficient inputs to cover %d sat fee (size=%d)", fee, actualSize)
-	}
-	tx.Outputs[len(tx.Outputs)-1].Satoshis = inputSum - outSum - fee
 	return nil
 }
 

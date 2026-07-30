@@ -131,3 +131,13 @@ func TestRequireOrdinaryOutputBoundaries(t *testing.T) {
 		t.Fatalf("42 sat output: %v", err)
 	}
 }
+
+func TestAdjustFeeFromActualSizeRejectsDustChange(t *testing.T) {
+	tx := feeFinalizerTx(t, 221, 100, 42)
+
+	err := adjustFeeFromActualSize(tx, 80)
+
+	if !errors.Is(err, ErrOrdinaryOutputDust) {
+		t.Fatalf("got %v, want %v", err, ErrOrdinaryOutputDust)
+	}
+}
