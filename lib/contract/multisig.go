@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"math/bits"
 
 	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
@@ -432,10 +433,26 @@ func BuildMultiSigTransactionSendTBC(
 	totalIn := uint64(0)
 	amounts := make([]uint64, len(utxos))
 	for i, u := range utxos {
-		totalIn += u.Satoshis
+		next, carry := bits.Add64(totalIn, u.Satoshis, 0)
+		if carry != 0 {
+			return nil, bt.ErrAmountOverflow
+		}
+		totalIn = next
 		amounts[i] = u.Satoshis
 	}
 	fee := uint64((len(utxos)+9)/10) * 1000 // ceil(len/10)*1000
+	required, carry := bits.Add64(tbcAmountSat, fee, 0)
+	if carry != 0 || totalIn < required {
+		return nil, fmt.Errorf("BuildMultiSigTransactionSendTBC: inputs %d cannot cover amount %d plus fee %d",
+			totalIn, tbcAmountSat, fee)
+	}
+	changeSatoshis := totalIn - required
+	if err := requireOrdinaryOutput(changeSatoshis, "multisig change"); err != nil {
+		return nil, err
+	}
+	if err := requireOrdinaryOutput(tbcAmountSat, "multisig recipient"); err != nil {
+		return nil, err
+	}
 
 	tx := newFTTx()
 	if err := tx.FromUTXOs(utxos...); err != nil {
@@ -445,7 +462,7 @@ func BuildMultiSigTransactionSendTBC(
 	// Change back to multisig from-address
 	tx.AddOutput(&bt.Output{
 		LockingScript: scriptFrom,
-		Satoshis:      totalIn - tbcAmountSat - fee,
+		Satoshis:      changeSatoshis,
 	})
 
 	// Recipient output

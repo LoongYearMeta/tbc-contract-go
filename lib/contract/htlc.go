@@ -13,11 +13,11 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bec"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
 	"github.com/LoongYearMeta/tbc-lib-go/sighash"
-	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 )
 
 // --------------------------------------------------------------------------
@@ -114,7 +114,11 @@ func Withdraw(receiver string, htlcUtxo *bt.UTXO) (string, error) {
 	if htlcUtxo.Satoshis < 80 {
 		return "", fmt.Errorf("Withdraw: insufficient satoshis")
 	}
-	tx.AddOutput(&bt.Output{LockingScript: p2pkh, Satoshis: htlcUtxo.Satoshis - 80})
+	recipientSatoshis := htlcUtxo.Satoshis - 80
+	if err := requireOrdinaryOutput(recipientSatoshis, "HTLC withdrawal"); err != nil {
+		return "", err
+	}
+	tx.AddOutput(&bt.Output{LockingScript: p2pkh, Satoshis: recipientSatoshis})
 	return tx.String(), nil
 }
 
@@ -136,7 +140,11 @@ func Refund(sender string, htlcUtxo *bt.UTXO, timelock uint32) (string, error) {
 	if htlcUtxo.Satoshis < 80 {
 		return "", fmt.Errorf("Refund: insufficient satoshis")
 	}
-	tx.AddOutput(&bt.Output{LockingScript: p2pkh, Satoshis: htlcUtxo.Satoshis - 80})
+	refundSatoshis := htlcUtxo.Satoshis - 80
+	if err := requireOrdinaryOutput(refundSatoshis, "HTLC refund"); err != nil {
+		return "", err
+	}
+	tx.AddOutput(&bt.Output{LockingScript: p2pkh, Satoshis: refundSatoshis})
 	// sequence 0xFFFFFFFE enables nLockTime
 	tx.Inputs[0].SequenceNumber = 0xFFFFFFFE
 	tx.LockTime = timelock
@@ -292,7 +300,11 @@ func WithdrawWithSign(
 	if htlcUtxo.Satoshis < 80 {
 		return "", fmt.Errorf("WithdrawWithSign: insufficient satoshis")
 	}
-	tx.AddOutput(&bt.Output{LockingScript: p2pkh, Satoshis: htlcUtxo.Satoshis - 80})
+	recipientSatoshis := htlcUtxo.Satoshis - 80
+	if err := requireOrdinaryOutput(recipientSatoshis, "HTLC signed withdrawal"); err != nil {
+		return "", err
+	}
+	tx.AddOutput(&bt.Output{LockingScript: p2pkh, Satoshis: recipientSatoshis})
 
 	pubKey := hex.EncodeToString(privKey.PubKey().SerialiseCompressed())
 	sig, err := htlcSign(tx, 0, htlcUtxo.LockingScript, htlcUtxo.Satoshis, privKey)
@@ -330,7 +342,11 @@ func RefundWithSign(
 	if htlcUtxo.Satoshis < 80 {
 		return "", fmt.Errorf("RefundWithSign: insufficient satoshis")
 	}
-	tx.AddOutput(&bt.Output{LockingScript: p2pkh, Satoshis: htlcUtxo.Satoshis - 80})
+	refundSatoshis := htlcUtxo.Satoshis - 80
+	if err := requireOrdinaryOutput(refundSatoshis, "HTLC signed refund"); err != nil {
+		return "", err
+	}
+	tx.AddOutput(&bt.Output{LockingScript: p2pkh, Satoshis: refundSatoshis})
 	tx.Inputs[0].SequenceNumber = 0xFFFFFFFE
 	tx.LockTime = timelock
 

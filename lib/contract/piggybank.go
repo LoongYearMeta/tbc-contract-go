@@ -15,6 +15,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"math/bits"
 
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bec"
@@ -99,7 +100,11 @@ func FreezeTBC(address string, tbcAmountSat uint64, lockTime uint32, utxos []*bt
 func UnfreezeTBC(address string, utxos []*bt.UTXO, currentBlockHeight uint32) (string, error) {
 	sumAmount := uint64(0)
 	for _, u := range utxos {
-		sumAmount += u.Satoshis
+		next, carry := bits.Add64(sumAmount, u.Satoshis, 0)
+		if carry != 0 {
+			return "", bt.ErrAmountOverflow
+		}
+		sumAmount = next
 	}
 	tx := newFTTx()
 	if err := tx.FromUTXOs(utxos...); err != nil {
@@ -114,7 +119,11 @@ func UnfreezeTBC(address string, utxos []*bt.UTXO, currentBlockHeight uint32) (s
 	if sumAmount < uint64(fee) {
 		return "", fmt.Errorf("UnfreezeTBC: insufficient satoshis")
 	}
-	tx.AddOutput(&bt.Output{LockingScript: p2pkh, Satoshis: sumAmount - uint64(fee)})
+	unfrozenSatoshis := sumAmount - uint64(fee)
+	if err := requireOrdinaryOutput(unfrozenSatoshis, "PiggyBank unfreeze"); err != nil {
+		return "", err
+	}
+	tx.AddOutput(&bt.Output{LockingScript: p2pkh, Satoshis: unfrozenSatoshis})
 	// Enable nLockTime for all inputs
 	for i := range tx.Inputs {
 		tx.Inputs[i].SequenceNumber = 0xFFFFFFFE
@@ -173,7 +182,11 @@ func UnfreezeTBCWithSign(privKey *bec.PrivateKey, utxos []*bt.UTXO, currentBlock
 	}
 	sumAmount := uint64(0)
 	for _, u := range utxos {
-		sumAmount += u.Satoshis
+		next, carry := bits.Add64(sumAmount, u.Satoshis, 0)
+		if carry != 0 {
+			return "", bt.ErrAmountOverflow
+		}
+		sumAmount = next
 	}
 	tx := newFTTx()
 	if err := tx.FromUTXOs(utxos...); err != nil {
@@ -187,7 +200,11 @@ func UnfreezeTBCWithSign(privKey *bec.PrivateKey, utxos []*bt.UTXO, currentBlock
 	if sumAmount < uint64(fee) {
 		return "", fmt.Errorf("UnfreezeTBCWithSign: insufficient satoshis")
 	}
-	tx.AddOutput(&bt.Output{LockingScript: p2pkh, Satoshis: sumAmount - uint64(fee)})
+	unfrozenSatoshis := sumAmount - uint64(fee)
+	if err := requireOrdinaryOutput(unfrozenSatoshis, "signed PiggyBank unfreeze"); err != nil {
+		return "", err
+	}
+	tx.AddOutput(&bt.Output{LockingScript: p2pkh, Satoshis: unfrozenSatoshis})
 	for i := range tx.Inputs {
 		tx.Inputs[i].SequenceNumber = 0xFFFFFFFE
 	}

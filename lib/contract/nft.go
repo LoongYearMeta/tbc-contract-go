@@ -11,16 +11,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math"
 	"strings"
 
+	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bec"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
 	"github.com/LoongYearMeta/tbc-lib-go/crypto"
 	"github.com/LoongYearMeta/tbc-lib-go/sighash"
 	"github.com/LoongYearMeta/tbc-lib-go/unlocker"
-	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 )
 
 //go:embed asm/nft_code.asm
@@ -248,14 +247,6 @@ func nftFeeQuote80() *bt.FeeQuote {
 	return fq
 }
 
-// nftTargetFee mirrors JS:  if estimatedSize < 1000 → fee(80);  else feePerKb(80).
-func nftTargetFee(estimatedBytes int) int {
-	if estimatedBytes < 1000 {
-		return nftSatPerKB
-	}
-	return int(math.Ceil(float64(estimatedBytes) * float64(nftSatPerKB) / 1000.0))
-}
-
 // ---------------------------------------------------------------------------
 // Internal unlocker types
 // ---------------------------------------------------------------------------
@@ -461,7 +452,9 @@ func nftAddrMainnet(network string) bool {
 // unlockerGetter. Returns the raw tx hex.
 func nftApplyJSFeeAndSign(tx *bt.Tx, ug bt.UnlockerGetter) error {
 	ctx := context.Background()
-	return tx.FillAllInputs(ctx, ug)
+	return finalizeSignedFee(tx, len(tx.Outputs)-1, func() error {
+		return tx.FillAllInputs(ctx, ug)
+	})
 }
 
 // CreateNFT mirrors NFT.createNFT.
@@ -649,19 +642,17 @@ func (n *NFT) TransferNFT(addressFrom, addressTo string, priv *bec.PrivateKey, u
 	}
 
 	ctx := context.Background()
-	// First sign pass.
-	ug1 := &nftTransferUnlockerGetter{priv: priv, preTx: preTx, prePre: prePreTx, useV0: false}
-	if err := tx.FillAllInputs(ctx, ug1); err != nil {
-		return "", err
-	}
 	if addChange {
-		actualBytes := len(tx.Bytes())
-		targetFee := nftTargetFee(actualBytes)
-		if adjustErr := tx.AdjustImplicitFeeToTarget(targetFee); adjustErr == nil {
-			ug2 := &nftTransferUnlockerGetter{priv: priv, preTx: preTx, prePre: prePreTx, useV0: false}
-			if err := tx.FillAllInputs(ctx, ug2); err != nil {
-				return "", err
-			}
+		if err := finalizeSignedFee(tx, len(tx.Outputs)-1, func() error {
+			ug := &nftTransferUnlockerGetter{priv: priv, preTx: preTx, prePre: prePreTx, useV0: false}
+			return tx.FillAllInputs(ctx, ug)
+		}); err != nil {
+			return "", fmt.Errorf("TransferNFT: finalize fee: %w", err)
+		}
+	} else {
+		ug := &nftTransferUnlockerGetter{priv: priv, preTx: preTx, prePre: prePreTx, useV0: false}
+		if err := tx.FillAllInputs(ctx, ug); err != nil {
+			return "", err
 		}
 	}
 	return hex.EncodeToString(tx.Bytes()), nil
@@ -711,17 +702,11 @@ func (n *NFT) TransferNFTWithTBC(addressFrom, addressToNft, addressToTbc string,
 	}
 
 	ctx := context.Background()
-	ug1 := &nftTransferUnlockerGetter{priv: priv, preTx: preTx, prePre: prePreTx, useV0: false}
-	if err := tx.FillAllInputs(ctx, ug1); err != nil {
-		return "", err
-	}
-	actualBytes := len(tx.Bytes())
-	targetFee := nftTargetFee(actualBytes)
-	if adjustErr := tx.AdjustImplicitFeeToTarget(targetFee); adjustErr == nil {
-		ug2 := &nftTransferUnlockerGetter{priv: priv, preTx: preTx, prePre: prePreTx, useV0: false}
-		if err := tx.FillAllInputs(ctx, ug2); err != nil {
-			return "", err
-		}
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, func() error {
+		ug := &nftTransferUnlockerGetter{priv: priv, preTx: preTx, prePre: prePreTx, useV0: false}
+		return tx.FillAllInputs(ctx, ug)
+	}); err != nil {
+		return "", fmt.Errorf("TransferNFTWithTBC: finalize fee: %w", err)
 	}
 	return hex.EncodeToString(tx.Bytes()), nil
 }
@@ -765,17 +750,11 @@ func (n *NFT) TransferNFTV0(addressFrom, addressTo string, priv *bec.PrivateKey,
 	}
 
 	ctx := context.Background()
-	ug1 := &nftTransferUnlockerGetter{priv: priv, preTx: preTx, prePre: prePreTx, useV0: true}
-	if err := tx.FillAllInputs(ctx, ug1); err != nil {
-		return "", err
-	}
-	actualBytes := len(tx.Bytes())
-	targetFee := nftTargetFee(actualBytes)
-	if adjustErr := tx.AdjustImplicitFeeToTarget(targetFee); adjustErr == nil {
-		ug2 := &nftTransferUnlockerGetter{priv: priv, preTx: preTx, prePre: prePreTx, useV0: true}
-		if err := tx.FillAllInputs(ctx, ug2); err != nil {
-			return "", err
-		}
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, func() error {
+		ug := &nftTransferUnlockerGetter{priv: priv, preTx: preTx, prePre: prePreTx, useV0: true}
+		return tx.FillAllInputs(ctx, ug)
+	}); err != nil {
+		return "", fmt.Errorf("TransferNFTV0: finalize fee: %w", err)
 	}
 	return hex.EncodeToString(tx.Bytes()), nil
 }
