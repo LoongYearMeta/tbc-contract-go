@@ -140,16 +140,20 @@ func finalizeSignedFee(tx *bt.Tx, changeIndex int, sign func() error) error {
 		return errors.New("nil transaction signer")
 	}
 
+	var targetFloor uint64
 	for attempt := 0; attempt < maxFeeFinalizeAttempts; attempt++ {
 		if err := sign(); err != nil {
 			return err
 		}
 
-		targetFee, err := contractTargetFee(len(tx.Bytes()))
+		observedTarget, err := contractTargetFee(len(tx.Bytes()))
 		if err != nil {
 			return err
 		}
-		changed, err := setChangeForTarget(tx, changeIndex, targetFee)
+		if observedTarget > targetFloor {
+			targetFloor = observedTarget
+		}
+		changed, err := setChangeForTarget(tx, changeIndex, targetFloor)
 		if err != nil {
 			return err
 		}

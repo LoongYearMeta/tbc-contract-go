@@ -120,6 +120,37 @@ func TestFinalizeSignedFeePropagatesSignerError(t *testing.T) {
 	}
 }
 
+func TestFinalizeSignedFeeConvergesAcrossSignatureSizeOscillation(t *testing.T) {
+	// With an empty unlock this transaction is below 1000 bytes (80 sat
+	// target). An 880-byte unlock makes it exactly 1001 bytes (81 sat
+	// target). The signer deliberately alternates those sizes based on the
+	// current change value, reproducing DER signature-length oscillation.
+	tx := feeFinalizerTx(t, 5_000, 100, 4_820)
+	sign := func() error {
+		unlockSize := 0
+		if tx.Outputs[1].Satoshis == 4_820 {
+			unlockSize = 880
+		}
+		return tx.InsertInputUnlockingScript(
+			0,
+			bscript.NewFromBytes(make([]byte, unlockSize)),
+		)
+	}
+
+	if err := finalizeSignedFee(tx, 1, sign); err != nil {
+		t.Fatal(err)
+	}
+
+	paid := tx.TotalInputSatoshis() - tx.TotalOutputSatoshis()
+	target, err := contractTargetFee(len(tx.Bytes()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if paid < target {
+		t.Fatalf("paid fee %d below final target %d", paid, target)
+	}
+}
+
 func TestRequireOrdinaryOutputBoundaries(t *testing.T) {
 	if err := requireOrdinaryOutput(0, "change"); !errors.Is(err, ErrOrdinaryOutputDust) {
 		t.Fatalf("zero output: got %v, want %v", err, ErrOrdinaryOutputDust)
