@@ -139,6 +139,12 @@ func run(cfg config) error {
 		}
 		return runFTAndHTLC(cfg, decoded, address.AddressString)
 	}
+	if cfg.Stage == "core-contracts" {
+		return runCoreContracts(cfg, decoded, address.AddressString)
+	}
+	if cfg.Stage == "stablecoin" {
+		return runStableCoinLifecycle(cfg, decoded, address.AddressString)
+	}
 	if cfg.Stage == "orders" {
 		if cfg.TokenA == "" || cfg.TokenB == "" {
 			return fmt.Errorf("TBC_TESTNET_TOKEN_A and TBC_TESTNET_TOKEN_B are required for orders stage")

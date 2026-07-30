@@ -997,7 +997,7 @@ func (sc *StableCoin) prepareFreezeUnfreeze(
 		rebuilders[i] = scAdminBuilder{
 			InputIndex: uint32(idx),
 			Build: func(sig64 []byte) (*bscript.Script, error) {
-				sigHex := encodeSchnorrSig65PushHex(sig64)
+				sigHex := encodeSchnorrSig65Hex(sig64)
 				return StaticGetFTunlock(
 					sigHex, xOnlyHex, tx, preTXs[idx], prepreTxDatas[idx],
 					idx, int(ftutxos[idx].Vout), isCoinFlag,
@@ -1436,12 +1436,16 @@ func scAdjustFeeAndResign(
 	})
 }
 
-// encodeSchnorrSig65PushHex returns "41" + sig64hex + "<sighash flag byte>"
-// — i.e. a 65-byte length-prefixed push of the BIP340 sig with appended
-// SIGHASH_ALL_FORKID flag. Both 0x41 (push of 65 bytes) and 0x20 (push of 32)
-// are direct length-prefix opcodes (< 76).
+// encodeSchnorrSig65Hex returns the raw 65-byte signature data: the 64-byte
+// BIP340 signature followed by SIGHASH_ALL_FORKID.
+func encodeSchnorrSig65Hex(sig64 []byte) string {
+	return fmt.Sprintf("%s%02x", hex.EncodeToString(sig64), byte(sighash.AllForkID))
+}
+
+// encodeSchnorrSig65PushHex adds the direct 65-byte push opcode used when
+// constructing a complete unlocking script by concatenating raw script hex.
 func encodeSchnorrSig65PushHex(sig64 []byte) string {
-	return fmt.Sprintf("41%s%02x", hex.EncodeToString(sig64), byte(sighash.AllForkID))
+	return "41" + encodeSchnorrSig65Hex(sig64)
 }
 
 // buildSchnorrP2PKHLikeUnlock builds the unlock for a coin-NFT-hold input,

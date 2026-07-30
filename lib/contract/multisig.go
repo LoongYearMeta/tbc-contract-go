@@ -311,9 +311,11 @@ func multiSigUnlockingScript(sigs []string, pubKeys []string) (*bscript.Script, 
 	for _, s := range sigs {
 		asm += " " + s
 	}
+	combinedPublicKeys := ""
 	for _, pk := range pubKeys {
-		asm += " " + pk
+		combinedPublicKeys += pk
 	}
+	asm += " " + combinedPublicKeys
 	return bscript.NewFromASM(asm)
 }
 
@@ -466,19 +468,18 @@ func BuildMultiSigTransactionSendTBC(
 	})
 
 	// Recipient output
-	if len(addressTo) > 0 && addressTo[0] == '1' {
-		// P2PKH recipient
-		p2pkh, err := bscript.NewP2PKHFromAddress(addressTo)
-		if err != nil {
-			return nil, err
-		}
-		tx.AddOutput(&bt.Output{LockingScript: p2pkh, Satoshis: tbcAmountSat})
-	} else {
+	if ValidateMultiSigAddress(addressTo) {
 		scriptTo, err := multiSigLockScript(addressTo)
 		if err != nil {
 			return nil, err
 		}
 		tx.AddOutput(&bt.Output{LockingScript: scriptTo, Satoshis: tbcAmountSat})
+	} else {
+		p2pkh, err := bscript.NewP2PKHFromAddress(addressTo)
+		if err != nil {
+			return nil, err
+		}
+		tx.AddOutput(&bt.Output{LockingScript: p2pkh, Satoshis: tbcAmountSat})
 	}
 
 	return &MultiSigTxRaw{TxRaw: tx.String(), Amounts: amounts}, nil
@@ -622,14 +623,14 @@ func P2PKHToMultiSigTransferFT(
 
 	// Determine FT recipient hash
 	var recipientHash string
-	if len(addressTo) > 0 && addressTo[0] == '1' {
-		recipientHash = addressTo
-	} else {
+	if ValidateMultiSigAddress(addressTo) {
 		h, err := multiSigScriptHash(addressTo)
 		if err != nil {
 			return "", err
 		}
 		recipientHash = h
+	} else {
+		recipientHash = addressTo
 	}
 
 	// Inputs: FT inputs first, then the TBC UTXO
@@ -786,14 +787,14 @@ func BuildMultiSigTransactionTransferFT(
 
 	// Recipient FT outputs
 	var recipientHash string
-	if len(addressTo) > 0 && addressTo[0] == '1' {
-		recipientHash = addressTo
-	} else {
+	if ValidateMultiSigAddress(addressTo) {
 		h, err := multiSigScriptHash(addressTo)
 		if err != nil {
 			return nil, err
 		}
 		recipientHash = h
+	} else {
+		recipientHash = addressTo
 	}
 	codeScript, err := BuildFTtransferCode(ft.CodeScript, recipientHash)
 	if err != nil {

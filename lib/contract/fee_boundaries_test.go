@@ -42,6 +42,83 @@ func TestMultiSigRejectsFeeUnderflow(t *testing.T) {
 	}
 }
 
+func TestBuildMultiSigTransactionSendTBCAcceptsTestnetP2PKHRecipient(t *testing.T) {
+	pubKeys := make([]string, 3)
+	for i := range pubKeys {
+		pubKeys[i] = hex.EncodeToString(mustTestPrivateKey(t, byte(i+51)).PubKey().SerialiseCompressed())
+	}
+	from, err := GetMultiSigAddress(pubKeys, 2, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	to, err := bscript.NewAddressFromPublicKey(mustTestPrivateKey(t, 60).PubKey(), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lock, err := multiSigLockScript(from)
+	if err != nil {
+		t.Fatal(err)
+	}
+	utxo := &bt.UTXO{
+		TxID:          bytes.Repeat([]byte{0x51}, 32),
+		Vout:          0,
+		LockingScript: lock,
+		Satoshis:      100_000,
+	}
+
+	raw, err := BuildMultiSigTransactionSendTBC(from, to.AddressString, 50_000, []*bt.UTXO{utxo})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx := mustTx(t, raw.TxRaw)
+	if len(tx.Outputs) != 2 {
+		t.Fatalf("outputs = %d, want 2", len(tx.Outputs))
+	}
+	if !tx.Outputs[1].LockingScript.IsP2PKH() {
+		t.Fatalf("testnet recipient output is not P2PKH: %s", tx.Outputs[1].LockingScript.String())
+	}
+}
+
+func TestMultiSigUnlockingScriptConcatenatesPublicKeys(t *testing.T) {
+	pubKeys := make([]string, 3)
+	for i := range pubKeys {
+		pubKeys[i] = hex.EncodeToString(mustTestPrivateKey(t, byte(i+61)).PubKey().SerialiseCompressed())
+	}
+
+	unlock, err := multiSigUnlockingScript([]string{"aa", "bb"}, pubKeys)
+	if err != nil {
+		t.Fatal(err)
+	}
+	chunks := unlock.Chunks()
+	if len(chunks) != 4 {
+		t.Fatalf("unlock chunks = %d, want OP_0 + 2 signatures + 1 concatenated pubkey blob", len(chunks))
+	}
+	want, err := hex.DecodeString(strings.Join(pubKeys, ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(chunks[3].Buf, want) {
+		t.Fatalf("last unlock chunk length = %d, want %d", len(chunks[3].Buf), len(want))
+	}
+}
+
+func TestSchnorrSignatureEncodingSeparatesDataFromPushOpcode(t *testing.T) {
+	signature := bytes.Repeat([]byte{0x7a}, 64)
+
+	raw := encodeSchnorrSig65Hex(signature)
+	if len(raw) != 65*2 {
+		t.Fatalf("raw Schnorr signature hex length = %d, want %d", len(raw), 65*2)
+	}
+	if strings.HasPrefix(raw, "41") {
+		t.Fatal("raw signature unexpectedly contains a 65-byte push opcode")
+	}
+
+	pushed := encodeSchnorrSig65PushHex(signature)
+	if pushed != "41"+raw {
+		t.Fatal("push-encoded signature must contain exactly one 0x41 length prefix")
+	}
+}
+
 func TestHTLCRejectsDustResult(t *testing.T) {
 	key := mustTestPrivateKey(t, 41)
 	address, err := bscript.NewAddressFromPublicKey(key.PubKey(), true)
