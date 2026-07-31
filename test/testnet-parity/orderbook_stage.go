@@ -430,6 +430,9 @@ func buildOrderBookFunding(
 	if err := tx.ChangeToAddress(approvedAddress, harnessFeeQuote80()); err != nil {
 		return "", err
 	}
+	if err := tx.AdjustImplicitFeeToTarget(80); err != nil {
+		return "", err
+	}
 	if err := tx.FillAllInputs(
 		context.Background(),
 		&unlocker.Getter{PrivateKey: privateKey},

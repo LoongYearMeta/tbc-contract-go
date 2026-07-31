@@ -18,6 +18,11 @@ import (
 	"github.com/LoongYearMeta/tbc-lib-go/wif"
 )
 
+const (
+	poolCreateStageFundingMinimumSatoshis = uint64(60_000)
+	poolLockStageFundingMinimumSatoshis   = uint64(30_000)
+)
+
 type poolAmounts struct {
 	LP  *big.Int
 	FT  *big.Int
@@ -587,8 +592,22 @@ func waitForFTLPTransaction(
 	return fmt.Errorf("FTLP indexer did not converge: %w", lastErr)
 }
 
+func poolCreationFunding(source, mint *bt.Tx) (*bt.UTXO, error) {
+	if source == nil || mint == nil || len(mint.Inputs) == 0 {
+		return nil, fmt.Errorf("pool FT mint ancestry is incomplete")
+	}
+	if err := validateOutpoint(mint, 0, source, 0); err != nil {
+		return nil, fmt.Errorf("pool FT mint ancestry: %w", err)
+	}
+	return outputUTXO(source, 2)
+}
+
 func runPoolCreateStage(cfg config, decoded *wif.WIF, address string) error {
-	funding, err := api.FetchUTXO(address, 0.03, cfg.Network)
+	funding, err := api.FetchUTXO(
+		address,
+		float64(poolCreateStageFundingMinimumSatoshis)/1_000_000,
+		cfg.Network,
+	)
 	if err != nil {
 		return fmt.Errorf("pool token funding: %w", err)
 	}
@@ -604,6 +623,10 @@ func runPoolCreateStage(cfg config, decoded *wif.WIF, address string) error {
 	}
 	if len(mintRaws) != 2 {
 		return fmt.Errorf("pool token mint returned %d transactions", len(mintRaws))
+	}
+	source, err := parsePlannedTransaction("pool-token-source", mintRaws[0])
+	if err != nil {
+		return err
 	}
 	mint, err := parsePlannedTransaction("pool-token-mint", mintRaws[1])
 	if err != nil {
@@ -634,7 +657,7 @@ func runPoolCreateStage(cfg config, decoded *wif.WIF, address string) error {
 		return err
 	}
 
-	poolFunding, err := changeUTXO(mint)
+	poolFunding, err := poolCreationFunding(source, mint)
 	if err != nil {
 		return err
 	}
@@ -953,7 +976,11 @@ func runPoolLockStage(cfg config, decoded *wif.WIF, address string) error {
 	if _, err := waitForFTV3Info(cfg.TokenA, cfg.Network); err != nil {
 		return err
 	}
-	funding, err := api.FetchUTXO(address, 0.02, cfg.Network)
+	funding, err := api.FetchUTXO(
+		address,
+		float64(poolLockStageFundingMinimumSatoshis)/1_000_000,
+		cfg.Network,
+	)
 	if err != nil {
 		return err
 	}

@@ -1527,8 +1527,11 @@ func (p *PoolNFT2) CreatePoolNFT(
 	change := inputTotal - outputTotal
 	txSource.Outputs[1].Satoshis = change
 
-	// Sign txSource with P2PKH unlocker
-	err = signP2PKH(txSource, privKey)
+	// Finalize against the signed wire size; the pool scripts can move the
+	// estimate across an 80-sat/kB boundary.
+	err = finalizeSignedFee(txSource, 1, func() error {
+		return signP2PKH(txSource, privKey)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("CreatePoolNFT sign source: %w", err)
 	}
@@ -1629,7 +1632,9 @@ func (p *PoolNFT2) CreatePoolNFT(
 		txMint.Outputs[2].Satoshis = in2 - out2
 	}
 
-	if err := signP2PKH(txMint, privKey); err != nil {
+	if err := finalizeSignedFee(txMint, 2, func() error {
+		return signP2PKH(txMint, privKey)
+	}); err != nil {
 		return nil, fmt.Errorf("CreatePoolNFT sign mint: %w", err)
 	}
 	_ = prevTxIDBytes // already wired into txMint via FromUTXOs upstream
@@ -1701,7 +1706,9 @@ func (p *PoolNFT2) CreatePoolNFTWithLock(
 	change := inputTotal - outputTotal
 	txSource.Outputs[1].Satoshis = change
 
-	if err := signP2PKH(txSource, privKey); err != nil {
+	if err := finalizeSignedFee(txSource, 1, func() error {
+		return signP2PKH(txSource, privKey)
+	}); err != nil {
 		return nil, fmt.Errorf("CreatePoolNFTWithLock sign source: %w", err)
 	}
 	txSourceRaw := txSource.String()
@@ -1799,7 +1806,9 @@ func (p *PoolNFT2) CreatePoolNFTWithLock(
 		txMint.Outputs[2].Satoshis = in2 - out2
 	}
 
-	if err := signP2PKH(txMint, privKey); err != nil {
+	if err := finalizeSignedFee(txMint, 2, func() error {
+		return signP2PKH(txMint, privKey)
+	}); err != nil {
 		return nil, fmt.Errorf("CreatePoolNFTWithLock sign mint: %w", err)
 	}
 	txMintRaw := txMint.String()

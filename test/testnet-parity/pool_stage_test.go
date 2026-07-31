@@ -2,7 +2,10 @@ package main
 
 import (
 	"encoding/hex"
+	"fmt"
 	"math/big"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -171,5 +174,171 @@ func TestValidatePoolInitTransition(t *testing.T) {
 		after.FT.Cmp(big.NewInt(456)) != 0 ||
 		after.TBC.Cmp(big.NewInt(789)) != 0 {
 		t.Fatal("pool init amounts changed during validation")
+	}
+}
+
+func TestPoolCreateStageUsesUnspentFTSourceChange(t *testing.T) {
+	privateKey, address, funding := ftStageFixture(t)
+	funding.Satoshis = poolCreateStageFundingMinimumSatoshis
+	token, err := contract.NewFT(&contract.FtParams{
+		Name: "Pool Matrix", Symbol: "PMX", Amount: 1_000_000, Decimal: 2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	raws, err := token.MintFT(privateKey, address, funding)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := bt.NewTxFromString(raws[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	mint, err := bt.NewTxFromString(raws[1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := poolCreationFunding(source, mint)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hex.EncodeToString(got.TxID) != source.TxID() || got.Vout != 2 {
+		t.Fatalf(
+			"pool funding=%s:%d want unspent FT source change=%s:2",
+			hex.EncodeToString(got.TxID),
+			got.Vout,
+			source.TxID(),
+		)
+	}
+	if got.Satoshis <= 20_000 {
+		t.Fatalf("pool funding=%d leaves no margin for create+init", got.Satoshis)
+	}
+}
+
+func TestPoolCreationTransactionsPayFinalSignedSizeFee(t *testing.T) {
+	privateKey, address, funding := ftStageFixture(t)
+	funding.Satoshis = poolCreateStageFundingMinimumSatoshis
+	token, err := contract.NewFT(&contract.FtParams{
+		Name: "Pool Matrix", Symbol: "PMX", Amount: 1_000_000, Decimal: 2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mintRaws, err := token.MintFT(privateKey, address, funding)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ftSource, err := bt.NewTxFromString(mintRaws[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	ftMint, err := bt.NewTxFromString(mintRaws[1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(
+		response http.ResponseWriter,
+		request *http.Request,
+	) {
+		if request.URL.Path != "/ft/info/contract/"+token.ContractTxid {
+			http.NotFound(response, request)
+			return
+		}
+		response.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprintf(
+			response,
+			`{"code":"200","data":{"code_script":%q,"tape_script":%q,`+
+				`"amount":"100000000","decimal":2,"name":"Pool Matrix","symbol":"PMX"}}`,
+			token.CodeScript,
+			token.TapeScript,
+		)
+	}))
+	defer server.Close()
+
+	poolFunding, err := poolCreationFunding(ftSource, ftMint)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, test := range []struct {
+		name  string
+		build func(*contract.PoolNFT2) ([]string, error)
+	}{
+		{
+			name: "ordinary",
+			build: func(pool *contract.PoolNFT2) ([]string, error) {
+				return pool.CreatePoolNFT(
+					privateKey,
+					poolFunding,
+					"fee-test",
+					35,
+					2,
+					false,
+				)
+			},
+		},
+		{
+			name: "multisig-lock",
+			build: func(pool *contract.PoolNFT2) ([]string, error) {
+				return pool.CreatePoolNFTWithLock(
+					privateKey,
+					poolFunding,
+					"fee-test-lock",
+					address,
+					0.0001,
+					[]string{
+						hex.EncodeToString(
+							privateKey.PubKey().SerialiseCompressed(),
+						),
+					},
+					35,
+					2,
+					true,
+				)
+			},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			pool := contract.NewPoolNFT2(&contract.PoolNFT2Config{
+				Network: server.URL + "/",
+			})
+			if err := pool.InitCreate(token.ContractTxid); err != nil {
+				t.Fatal(err)
+			}
+			raws, err := test.build(pool)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(raws) != 2 {
+				t.Fatalf("transactions=%d want=2", len(raws))
+			}
+			parents := map[string]*bt.Tx{ftSource.TxID(): ftSource}
+			for index, raw := range raws {
+				tx, err := bt.NewTxFromString(raw)
+				if err != nil {
+					t.Fatal(err)
+				}
+				paid, err := feeFromParents(tx, func(txid string) (*bt.Tx, error) {
+					parent, ok := parents[txid]
+					if !ok {
+						return nil, fmt.Errorf("missing parent %s", txid)
+					}
+					return parent, nil
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				target := targetFee80(len(tx.Bytes()))
+				if paid < target {
+					t.Fatalf(
+						"transaction %d fee=%d target=%d bytes=%d",
+						index,
+						paid,
+						target,
+						len(tx.Bytes()),
+					)
+				}
+				parents[tx.TxID()] = tx
+			}
+		})
 	}
 }
