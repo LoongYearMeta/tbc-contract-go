@@ -314,26 +314,13 @@ func localPrePre(parent *bt.Tx, vout int) (string, error) {
 }
 
 func broadcastOne(label, raw, network string) (*bt.Tx, string, error) {
-	tx, err := bt.NewTxFromString(raw)
+	tx, evidence, err := broadcastAndVerify(
+		label, raw, network, "txid-raw-fee", nil,
+	)
 	if err != nil {
-		return nil, "", fmt.Errorf("%s parse: %w", label, err)
+		return nil, "", err
 	}
-	txid, err := api.BroadcastTXRaw(raw, network)
-	if err != nil {
-		return nil, "", fmt.Errorf("%s broadcast: %w", label, err)
-	}
-	if txid != tx.TxID() {
-		return nil, "", fmt.Errorf("%s returned txid mismatch", label)
-	}
-	refetched, err := api.FetchTXRaw(txid, network)
-	if err != nil {
-		return nil, "", fmt.Errorf("%s refetch: %w", label, err)
-	}
-	if refetched.TxID() != txid {
-		return nil, "", fmt.Errorf("%s refetched txid mismatch", label)
-	}
-	fmt.Printf("%s txid=%s refetched_txid=%s\n", label, txid, refetched.TxID())
-	return tx, txid, nil
+	return tx, evidence.TxID, nil
 }
 
 func runFTAndHTLC(cfg config, decoded *wif.WIF, address string) error {
@@ -520,10 +507,6 @@ func mintAndBroadcast(
 	if len(raws) != 2 {
 		return nil, nil, fmt.Errorf("%s build returned %d transactions", label, len(raws))
 	}
-	sourceTX, err := bt.NewTxFromString(raws[0])
-	if err != nil {
-		return nil, nil, fmt.Errorf("%s parse source: %w", label, err)
-	}
 	mintTX, err := bt.NewTxFromString(raws[1])
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s parse mint: %w", label, err)
@@ -535,38 +518,18 @@ func mintAndBroadcast(
 		return nil, nil, fmt.Errorf("%s mint code length %d, want released FT v3 length 1884", label, got)
 	}
 	fmt.Printf("%s mint_code_bytes=%d\n", label, mintTX.Outputs[0].LockingScript.Len())
-	sourceID, err := api.BroadcastTXRaw(raws[0], network)
+	refetchedSource, _, err := broadcastOne(label+"-source", raws[0], network)
 	if err != nil {
-		return nil, nil, fmt.Errorf("%s source broadcast: %w", label, err)
+		return nil, nil, err
 	}
-	if sourceID != sourceTX.TxID() {
-		return nil, nil, fmt.Errorf("%s source returned txid mismatch", label)
-	}
-	refetchedSource, err := api.FetchTXRaw(sourceID, network)
+	refetchedMint, mintID, err := broadcastOne(label+"-mint", raws[1], network)
 	if err != nil {
-		return nil, nil, fmt.Errorf("%s source refetch: %w", label, err)
+		return nil, nil, err
 	}
-	if refetchedSource.TxID() != sourceID {
-		return nil, nil, fmt.Errorf("%s source refetched txid mismatch", label)
-	}
-	fmt.Printf("%s source_txid=%s source_refetched_txid=%s\n", label, sourceID, refetchedSource.TxID())
-	mintID, err := api.BroadcastTXRaw(raws[1], network)
-	if err != nil {
-		return nil, nil, fmt.Errorf("%s mint broadcast: %w", label, err)
-	}
-	fmt.Printf("%s mint_txid=%s\n", label, mintID)
 	if mintID != mintTX.TxID() || token.ContractTxid != mintTX.TxID() {
 		return nil, nil, fmt.Errorf("%s returned txid mismatch", label)
 	}
-	refetchedMint, err := api.FetchTXRaw(mintID, network)
-	if err != nil {
-		return nil, nil, fmt.Errorf("%s mint refetch: %w", label, err)
-	}
-	if refetchedMint.TxID() != mintID {
-		return nil, nil, fmt.Errorf("%s mint refetched txid mismatch", label)
-	}
-	fmt.Printf("%s mint_refetched_txid=%s\n", label, refetchedMint.TxID())
-	return sourceTX, mintTX, nil
+	return refetchedSource, refetchedMint, nil
 }
 
 func main() {

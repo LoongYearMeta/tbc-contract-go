@@ -39,7 +39,7 @@
 - Modify: `test/testnet-parity/main.go`
 - Modify: `test/testnet-fee-report/main.go`
 
-- [ ] **Step 1: Write failing unit tests for the fee formula and public result**
+- [x] **Step 1: Write failing unit tests for the fee formula and public result**
 
 ```go
 func TestTargetFee80PerKBWithFloor(t *testing.T) {
@@ -71,13 +71,13 @@ func TestEvidenceJSONContainsOnlyPublicFields(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run the focused tests and confirm they fail before implementation**
+- [x] **Step 2: Run the focused tests and confirm they fail before implementation**
 
 Run: `go test ./test/testnet-parity -run 'TestTargetFee80PerKBWithFloor|TestEvidenceJSONContainsOnlyPublicFields' -count=1`
 
 Expected: FAIL because `targetFee80` and `txEvidence` do not exist.
 
-- [ ] **Step 3: Implement the evidence collector**
+- [x] **Step 3: Implement the evidence collector**
 
 ```go
 type txEvidence struct {
@@ -139,13 +139,13 @@ func feeFromParents(tx *bt.Tx, fetch func(string) (*bt.Tx, error)) (uint64, erro
 
 Implement `broadcastAndVerify` so it parses and validates the transaction before the POST, calls `api.BroadcastTXRaw` exactly once, compares the returned txid to `tx.TxID()`, refetches with at most ten GET attempts, checks byte-for-byte raw equality, calculates the fee from refetched parents, rejects underpayment, runs the family invariant callback, and prints `RESULT <json>`.
 
-- [ ] **Step 4: Make the evidence unit tests pass**
+- [x] **Step 4: Make the evidence unit tests pass**
 
 Run: `go test ./test/testnet-parity ./test/testnet-fee-report -count=1`
 
 Expected: PASS.
 
-- [ ] **Step 5: Route existing broadcasts through the collector**
+- [x] **Step 5: Route existing broadcasts through the collector**
 
 Replace `broadcastOne` calls with:
 
@@ -158,7 +158,7 @@ accepted, evidence, err := broadcastAndVerify(
 
 Retain a compatibility wrapper only until every family file is migrated, then remove it.
 
-- [ ] **Step 6: Commit the evidence foundation**
+- [x] **Step 6: Commit the evidence foundation**
 
 ```bash
 git add test/testnet-parity/evidence.go test/testnet-parity/evidence_test.go \
