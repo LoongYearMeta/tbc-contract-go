@@ -44,7 +44,9 @@ Every transaction below was:
 6. independently re-fetched after the lifecycle and checked for serialized
    byte length, paid fee, and signed-size target fee.
 
-All 69 final testnet transactions passed these checks.
+All 79 final testnet transactions passed these checks. Transactions from
+diagnostic attempts superseded by a later complete lifecycle are intentionally
+excluded from this final set.
 
 ## Live transaction evidence
 
@@ -78,18 +80,21 @@ All 69 final testnet transactions passed these checks.
 
 ### MultiSig
 
-The public 2-of-3 test wallet address was
-FRJMtisnUuocSsG7hLpkqXmwRQA6Ekh3Ei. Two temporary keys existed in memory
-only.
+The public source 2-of-3 test wallet address was
+FLypxmWSDts3TTmMhUZHvUKUF9LTZpjzV6. The destination wallet was a separate
+2-of-3 wallet. Ephemeral keys existed in memory only.
 
 | Stage | Testnet txid | Bytes | Paid/target fee (sat) |
 |---|---|---:|---:|
-| FT source | d35eb318b804e223ed340081a422d98437e5290ed33be8323f18858dbd0cd52a | 328 | 80 / 80 |
-| FT mint | a4bf4d857203628dab121544633a29d72e7bb5f9a04651277e13b339204ec721 | 2176 | 175 / 175 |
-| Wallet create | bd9e41a99b04ed31f3decfdf6e6ae6ac8e4b54b5306d268fccb36b2fe1a1f2c8 | 662 | 80 / 80 |
-| TBC spend | 9915055cd0271d539c06ce6ac848fa41df1d11746ec0ae21a51286f132522bbe | 383 | 1000 / 80 |
-| FT deposit | cef1991c0e2581e8b688f1a6a76b8c9b6d9a53519ff5b478202763f0de51e82c | 5200 | 416 / 416 |
-| FT spend | e2fe2aa4b9250b089fcec5eee9781a47a5c01c3f0884b272d76e3d98e511922f | 3643 | 4000 / 292 |
+| FT source | a68d53e1142e984faf208b176cef25e92d6c5e9d42080512576e79dcd4f849b5 | 327 | 80 / 80 |
+| FT mint | c64dc3aaf4decc551de0dd36d8bf9602b73f18f7a3e2dacbb3a63512cfefa32e | 2174 | 174 / 174 |
+| Wallet create | ac9dfdb11f4cf8f4054cf6696559b821b1a85b688b708461d908eb5e26322b3d | 663 | 80 / 80 |
+| P2PKH to MultiSig TBC | 4069048837098a7be1908f6b164db0b8b117994f0ac468c34341915ae1941467 | 241 | 80 / 80 |
+| MultiSig to P2PKH TBC | c81fc105d447f418141eb7888dff3a083e081a9c5879891be84db20322c8c992 | 382 | 1000 / 80 |
+| MultiSig to MultiSig TBC | f1a7cd9c1b60fd634dd5e179bfda73c555b9cef02d40e9f4bb14d04edb3566b0 | 398 | 1000 / 80 |
+| P2PKH to MultiSig FT | 60b1e9e9dbcc72be7ea3aa19879df473bc2176d5e2eacf33683ace1dd2ff1d6d | 5199 | 416 / 416 |
+| MultiSig to P2PKH FT | 31db3e360d3b5c7c1184140ecea6e9b88a4d79abe53c6171f4773139ec88aacb | 5792 | 2000 / 464 |
+| MultiSig to MultiSig FT | d4358b3ed86f5d353d1cb592cf2a9d22254fa25097369bac43ea3cc4705dcc7e | 5993 | 2000 / 480 |
 
 ### Base HTLC and PiggyBank
 
@@ -150,15 +155,24 @@ cb985a93ad70e0e8ae8bf8bc0854a75b8a56e8714fbd74fbf88d3b21b771b1bf.
 ### Locked Pool NFT 2.0
 
 Locked Pool id:
-065114e4462b14f121764041e5a90f5665c85ba78409ef496c895b4fd437a1ae.
+7c1a437174dba495620e56e870ea467598b21acfcdeab5ab853ec25c3dc56522.
+It uses the fresh MultiSig-stage FT id
+c64dc3aaf4decc551de0dd36d8bf9602b73f18f7a3e2dacbb3a63512cfefa32e.
 
 | Stage | Testnet txid | Bytes | Paid/target fee (sat) |
 |---|---|---:|---:|
-| Locked Pool source | d88779702e1aaaa49a8dfab01bd4e63b1cfeacb05e8e9ec7ca3241c214e6aa36 | 243 | 80 / 80 |
-| Three-key locked Pool mint | 065114e4462b14f121764041e5a90f5665c85ba78409ef496c895b4fd437a1ae | 3823 | 306 / 306 |
-| Lock-time FTLp initialization | 512be13280ed05b5d83117049c855ac5532f7e457883c25b3f48b963a71f764e | 13648 | 1092 / 1092 |
-| FTLp unlock | f12d2ceb42c5e4413b47cddd3680ced28a498d3719b2f7f6c715f9d71ee10068 | 3387 | 271 / 271 |
-| Consume unlocked FTLp | 3d1e101922d38a67ad19153304a00171977c0c9dd875eb4c4736a27015d5ee17 | 19238 | 1540 / 1540 |
+| Locked Pool source | f2fec9f462eea0470a4e41fd92ecd37050e620002cdcda164a1e9ad1f9eecdd3 | 244 | 80 / 80 |
+| Three-key locked Pool mint | 7c1a437174dba495620e56e870ea467598b21acfcdeab5ab853ec25c3dc56522 | 3823 | 306 / 306 |
+| Lock-time FTLp initialization | af95386fb13918d11c09506f3dd34afe5d7a78aefb6436549311659857192a2b | 13759 | 1101 / 1101 |
+| Locked Increase LP | 7a1edb59e12c6d357d249c60a40256ded7db6e02bf11a45d53fe47f281f0738e | 14274 | 1142 / 1142 |
+| Locked swap TBC to FT | 19a649a14aa8a0df3b48cc018fee77b5cd11a3c2cc4d65870bbf7624f5f58e0a | 16040 | 1284 / 1284 |
+| Locked swap FT to TBC | 07172e92c5a8e79d2e80663360cefa6da37137de35ca015ee031533d1e275536 | 12315 | 986 / 986 |
+| Merge locked FTLp and clear expired lock | 2d4202f8b1037a328b6e624e4a6fb39f997b7b0c4caaf7805950835666017bb1 | 4873 | 390 / 390 |
+| Locked Increase LP after merge | 4358aef630a86c75a9295ced383c8b46e776091ecaaaa89b9efc5d5b76adb9fc | 14475 | 1158 / 1158 |
+| Unlock mixed FTLp set | 2ae78e63304d085aa1b273b16dd7015c32706e6e63a823dc99272338c5fee4f7 | 5366 | 430 / 430 |
+| Consume unlocked FTLp | 0c47724c068fe2e8b3d7ac02d279def52044e25ea6cd3842277033f409f14de4 | 23982 | 1919 / 1919 |
+| Burn remaining FTLp | b33fff99f89f721db2b52d1025aa2dd64ebe41475f1aa51cc795d492b262132c | 3596 | 288 / 288 |
+| Merge locked-pool-held FT | 1156af6dbac49da0cec4a14ac539de9fd7ee57e7aeb7895040fe7f780a589c55 | 14433 | 1155 / 1155 |
 
 ### Ordinary FT/TBC OrderBook
 
@@ -167,19 +181,19 @@ matcher keys existed in memory only.
 
 | Stage | Testnet txid | Bytes | Paid/target fee (sat) |
 |---|---|---:|---:|
-| FT source | 932636f2a802c2afdfe7b519a44b77300290600e35cbc121db5ca42105fd9683 | 330 | 80 / 80 |
-| FT mint | 49bc445be4be13fb9b05d30e0c730747f1bd6948736b26b336b4b6faf2f0b7bc | 2178 | 175 / 175 |
-| Participant funding | 4e25b3929554eeb13e91f02cc48746f7f1c1f6aec3fd752153890ab5a2e72030 | 294 | 80 / 80 |
-| Sell create | d09fc604c191f62de81aa09721a2e2ae6335831599d56fe2eb5bc5e7c30674e6 | 1148 | 95 / 92 |
-| Sell cancel | 4443cbe4902e4e413a8b9548d7bedfebaabe84e3ba262d5d94fd3e4b5ab2053a | 374 | 80 / 80 |
-| Buy create | 2f1a1446dc3976a3eb441e8f4b9fbd0ddeff72fdc0dbb56b0d317fb8bdacf718 | 6391 | 586 / 512 |
-| Buy cancel | 6e3c356f4e89066d9fcd8ebee27b5889ff07a6f5c846942daad3a6d8e34b48a5 | 3864 | 310 / 310 |
-| Full sell create | aa2143b786bd55ad73a7318c6b2b789513511b079737bd7f01168061849d33c3 | 1296 | 109 / 104 |
-| Full buy create | 0eba568d50c9b1d775b73866635fd99b4da90ceff95d4f29e1b6bcf418b2c584 | 6616 | 586 / 530 |
-| Full match | 0bdf45ba8651a5a99b4eb89a8f708e2479db14ea3ffa9fd225ca813a3f742ed5 | 8059 | 1769 / 645 |
-| Partial sell create | 1ef8fc1d11c6ac2f4a2a8289c05775e729e338dca54bf1930116a92b93cbfaa7 | 1149 | 95 / 92 |
-| Partial buy create | 20587d2229e496ebef4fdd3b05cd1c5a4225b6b2a002cffa09f73761c28385ef | 4421 | 427 / 354 |
-| Partial match with residual order | ec824cd61b669631df094354ef5639aa34988bec964c7b150fa9c4392f935f17 | 9220 | 1769 / 738 |
+| FT source | 4d219c3a8ac3fcb0b7cf26ea70c768b57cb99a7fffa137f019c444264de54de7 | 330 | 80 / 80 |
+| FT mint | f784b303abfa32aa40efeb8e308fd48719591c6d3002da42f8efecaf69eed85b | 2177 | 175 / 175 |
+| Participant funding | 4f7a4f071df54eacd4b783b1e064c3078ee7f1c7cd233e850ccbc0e9502b2ef6 | 294 | 80 / 80 |
+| Sell create | 141c5e9589fa07c45e2e18fc54da8cbe5189eb2edaf366135429e6222006720f | 1148 | 95 / 92 |
+| Sell cancel | 3c0cf593278040b27c34a14893321f754704cbdb01f2cb248df47c729ef9fd60 | 375 | 80 / 80 |
+| Buy create | d8c1bb3282189fe036891a5a872203f8abe3e64828f1b176da0ecd630ad8220a | 6391 | 586 / 512 |
+| Buy cancel | 793ec44a36c0291e1a1aa1cdf410f262ac6cca3a5d368ab6fa7b712c41dc000c | 3863 | 310 / 310 |
+| Full sell create | d9738fd2be0afc28d767c7b4d1170759a24bdabeeb2a5aad512f77a4404d4f76 | 1296 | 109 / 104 |
+| Full buy create | 7d84732c27dbd0e40b38b07f1a890cf3b827fa921714fef64d81729bce025e90 | 6615 | 586 / 530 |
+| Full match | 3e3ac801924fac75b1645d59350a808c04243f68a1c19c0835ac5852a1770844 | 8061 | 1769 / 645 |
+| Partial sell create | 6c1d858a599ac633cd5cfeef3931d913e1efd10f11829d561e65af7c0c65f398 | 1148 | 95 / 92 |
+| Partial buy create | ab736c50a339af93aadb1a4020311947eb6df78382097ad7e8353e5080f8abd8 | 4422 | 427 / 354 |
+| Partial match with residual order | 1ec93517d8c310dff97d54a9bc6abc429f4d989650c8b02338650793060e037a | 9220 | 1769 / 738 |
 
 ## Defects found by live validation
 
@@ -201,8 +215,19 @@ matcher keys existed in memory only.
    failure before POST; the final lifecycle uses three distinct identities.
 10. Read-only API GETs parsed Cloudflare 502 text as JSON instead of retrying
     transient status codes and returning an explicit HTTP error.
+11. Pool operations and OrderBook cancellation assumed one fee adjustment and
+    re-sign was sufficient, although DER signature length can change with the
+    updated sighash. All such call sites now use bounded iterative convergence.
+12. The initial MultiSig matrix omitted the released P2PKH-to-MultiSig TBC,
+    MultiSig-to-MultiSig TBC, and MultiSig-to-MultiSig FT branches.
+13. The initial locked-Pool matrix omitted locked IncreaseLP, both swap
+    directions, locked merge/burn, and locked pool-held FT merge behavior.
+14. MultiSig address construction accepted a declared public-key count that
+    did not match the supplied compressed public keys.
 
-Every defect has a regression test. Broadcast POSTs remain non-retrying.
+Library defects have regression tests, and the coverage gaps are enforced by
+the complete lifecycle tests and public evidence rows. Broadcast POSTs remain
+non-retrying.
 
 ## Final static verification
 
@@ -217,5 +242,5 @@ The final working tree passed:
 | Static analysis | go vet ./... |
 | Build | go build ./... |
 | Patch hygiene | git diff --check |
-| Evidence completeness | exactly 69 final transaction rows |
+| Evidence completeness | exactly 79 final transaction rows |
 | Secret scan | no WIF-like material in the worktree |
