@@ -215,4 +215,3 @@ The matrix passes only if:
 - Every fee meets `max(80, ceil(actual_signed_bytes * 80 / 1000))`.
 - Every asset/state invariant passes.
 - No private key or HTLC secret is stored in git.
-
