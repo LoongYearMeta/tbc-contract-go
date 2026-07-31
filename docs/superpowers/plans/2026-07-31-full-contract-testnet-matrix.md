@@ -174,7 +174,7 @@ git commit -m "test: add testnet transaction evidence collector"
 - Modify: `test/testnet-parity/main.go`
 - Modify: `test/testnet-parity/main_test.go`
 
-- [ ] **Step 1: Write failing config and public-state tests**
+- [x] **Step 1: Write failing config and public-state tests**
 
 ```go
 func TestParseStageRejectsUnknownStage(t *testing.T) {
@@ -197,13 +197,13 @@ func TestPublicStateRejectsSecretFields(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run the focused config tests and confirm failure**
+- [x] **Step 2: Run the focused config tests and confirm failure**
 
 Run: `go test ./test/testnet-parity -run 'TestParseStage|TestPublicState|TestLoadConfig' -count=1`
 
 Expected: FAIL because the new state parser is absent.
 
-- [ ] **Step 3: Implement explicit stage names and public resume state**
+- [x] **Step 3: Implement explicit stage names and public resume state**
 
 ```go
 type stageName string
@@ -287,7 +287,7 @@ git commit -m "test: make contract testnet runner resumable"
 - Create: `test/testnet-parity/ft_stage_test.go`
 - Modify: `test/testnet-parity/main.go`
 
-- [ ] **Step 1: Write failing pure assertions for released FT v3**
+- [x] **Step 1: Write failing pure assertions for released FT v3**
 
 ```go
 func TestValidateFTV3Pair(t *testing.T) {
@@ -313,13 +313,13 @@ func TestValidateFTV3Pair(t *testing.T) {
 
 `validateFTV3Outputs` must require Code and Tape outputs, a 1,884-byte code script, the 1,856-byte partial boundary, the expected amount, and matching contract ancestry.
 
-- [ ] **Step 2: Run the FT assertion test and confirm failure**
+- [x] **Step 2: Run the FT assertion test and confirm failure**
 
 Run: `go test ./test/testnet-parity -run TestValidateFTV3Pair -count=1`
 
 Expected: FAIL because `validateFTV3Outputs` is absent.
 
-- [ ] **Step 3: Implement the FT lifecycle in strict parent-first order**
+- [x] **Step 3: Implement the FT lifecycle in strict parent-first order**
 
 Use one fresh FT v3 with enough supply, then broadcast:
 
@@ -338,11 +338,11 @@ token-htlc-refund
 
 Construct the batch with two independently generated recipient addresses and return both resulting FT branches to the approved address in the merge. Generate HTLC preimages with `crypto/rand`, keep them in memory, and emit only public txids.
 
-- [ ] **Step 4: Assert amounts, output layout, and alternative signing equivalence**
+- [x] **Step 4: Assert amounts, output layout, and alternative signing equivalence**
 
 For every FT transaction, decode each Tape amount with `contractutil.GetFtBalanceFromTape`, sum inputs and outputs as `big.Int`, and require equality. Locally build the token-HTLC direct-sign and build/fill variants from cloned state and require equal version, lock time, sequences, input outpoints, output scripts, and output values; broadcast only the direct-sign variant.
 
-- [ ] **Step 5: Run local tests and commit**
+- [x] **Step 5: Run local tests and commit**
 
 Run: `go test ./lib/contract ./lib/util ./test/testnet-parity -run 'FT|TokenHTLC|ValidateFT' -count=1`
 

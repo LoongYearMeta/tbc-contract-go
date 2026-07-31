@@ -38,3 +38,13 @@ func TestLoadConfigRequiresRuntimeWIF(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestLoadConfigRejectsUnknownStage(t *testing.T) {
+	_, err := loadConfig(env(map[string]string{
+		"TBC_TESTNET_WIF":   "runtime-only",
+		"TBC_TESTNET_STAGE": "unknown-stage",
+	}))
+	if err == nil || !strings.Contains(err.Error(), "unknown testnet stage") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

@@ -23,7 +23,7 @@ type config struct {
 	Network   string
 	Broadcast bool
 	WIF       string
-	Stage     string
+	Stage     stageName
 	TokenA    string
 	TokenB    string
 	PoolID    string
@@ -34,11 +34,15 @@ func loadConfig(getenv func(string) string) (config, error) {
 	if network == "" {
 		network = "testnet"
 	}
+	stage, err := parseStage(getenv("TBC_TESTNET_STAGE"))
+	if err != nil {
+		return config{}, err
+	}
 	cfg := config{
 		Network:   network,
 		Broadcast: getenv("TBC_TESTNET_BROADCAST") == "1",
 		WIF:       getenv("TBC_TESTNET_WIF"),
-		Stage:     getenv("TBC_TESTNET_STAGE"),
+		Stage:     stage,
 		TokenA:    getenv("TBC_TESTNET_TOKEN_A"),
 		TokenB:    getenv("TBC_TESTNET_TOKEN_B"),
 		PoolID:    getenv("TBC_TESTNET_POOL_ID"),
@@ -129,6 +133,9 @@ func run(cfg config) error {
 			return fmt.Errorf("TBC_TESTNET_TOKEN_A is required for htlc stage")
 		}
 		return runFTAndHTLC(cfg, decoded, address.AddressString)
+	}
+	if cfg.Stage == stageFT {
+		return runFTStage(cfg, decoded, address.AddressString)
 	}
 	if cfg.Stage == "core-contracts" {
 		return runCoreContracts(cfg, decoded, address.AddressString)
