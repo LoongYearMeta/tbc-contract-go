@@ -1,13 +1,117 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"os"
 	"testing"
 
+	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
 	"github.com/LoongYearMeta/tbc-contract-go/lib/contract"
+	contractutil "github.com/LoongYearMeta/tbc-contract-go/lib/util"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bec"
 )
+
+func TestLiveGoStableCoinOrderBookMatchesAcceptedJS165Transaction(t *testing.T) {
+	if os.Getenv("TBC_LIVE_STABLE_ORDERBOOK_FIXTURE") != "1" {
+		t.Skip("set TBC_LIVE_STABLE_ORDERBOOK_FIXTURE=1 for the read-only testnet fixture")
+	}
+
+	const (
+		buyTxID      = "91f2ac4bc4a17b5c58b5bfa4f72b23f5d1ddf25e9b912b61876376547ab5c1c9"
+		sellTxID     = "4bae13fcf9884a4f262b20605516736e3e44c5f10542493f4ebcbd732d75d2a6"
+		feeTxID      = "77d3fffce347c75405827e1f2aad7e9074f5f9a7660cb45e8ae9fbd44a4622e4"
+		mintTxID     = "4ace51a9682a141e7ed4d358f30570630c33b9a2f9f1ccfa1b595bf8097dcac1"
+		acceptedTxID = "72c25b7bca31b67d20efc7e50d7276df95c65b84c73681f349c7efee1a5eb804"
+	)
+
+	fetch := func(txid string) *bt.Tx {
+		t.Helper()
+		tx, err := api.FetchTXRaw(txid, "testnet")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return tx
+	}
+	buy, sell, feeParent, mint, accepted := fetch(buyTxID), fetch(sellTxID), fetch(feeTxID), fetch(mintTxID), fetch(acceptedTxID)
+	matcher, _ := bec.PrivKeyFromBytes(bec.S256(), bytes.Repeat([]byte{43}, 32))
+	matcherAddress, err := orderBookAddress(matcher)
+	if err != nil {
+		t.Fatal(err)
+	}
+	buyOrder, err := orderBookUTXO(buy, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	buyFT, err := ftUTXOFromTX(buy, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sellOrder, err := orderBookUTXO(sell, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	feeUTXO, err := orderBookUTXO(feeParent, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prePre, err := contractutil.BuildFtPrePreTxData(buy, 1, []*bt.Tx{mint})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	raw, err := contract.NewOrderBook().MatchOrder(
+		matcher,
+		buyOrder, buy,
+		buyFT, buy, prePre,
+		sellOrder, sell,
+		[]*bt.UTXO{feeUTXO},
+		matcherAddress, matcherAddress,
+		true,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	matched, err := bt.NewTxFromString(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if matched.Version != accepted.Version || matched.LockTime != accepted.LockTime {
+		t.Fatal("Go StableCoin match header differs from the accepted JS/Rust transaction")
+	}
+	if len(matched.Inputs) != len(accepted.Inputs) || len(matched.Outputs) != len(accepted.Outputs) {
+		t.Fatal("Go StableCoin match shape differs from the accepted JS/Rust transaction")
+	}
+	for i := range matched.Inputs {
+		if matched.Inputs[i].PreviousTxIDStr() != accepted.Inputs[i].PreviousTxIDStr() ||
+			matched.Inputs[i].PreviousTxOutIndex != accepted.Inputs[i].PreviousTxOutIndex ||
+			matched.Inputs[i].SequenceNumber != accepted.Inputs[i].SequenceNumber {
+			t.Fatalf("Go StableCoin match input %d differs from accepted structure", i)
+		}
+	}
+	for i := range matched.Outputs {
+		if matched.Outputs[i].Satoshis != accepted.Outputs[i].Satoshis ||
+			matched.Outputs[i].LockingScript.ToHex() != accepted.Outputs[i].LockingScript.ToHex() {
+			t.Fatalf("Go StableCoin match output %d differs from accepted structure", i)
+		}
+	}
+	parents := map[string]*bt.Tx{
+		buyTxID: buy, sellTxID: sell, feeTxID: feeParent,
+	}
+	if err := validateInputScriptsFromParents(matched, func(txid string) (*bt.Tx, error) {
+		parent, ok := parents[txid]
+		if !ok {
+			return nil, fmt.Errorf("missing parent %s", txid)
+		}
+		return parent, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if matched.TxID() != acceptedTxID {
+		t.Fatalf("valid Go txid=%s want accepted JS/Rust txid=%s", matched.TxID(), acceptedTxID)
+	}
+}
 
 func TestValidateResidualSaleVolume(t *testing.T) {
 	before := &contract.OrderData{SaleVolume: 100_000}

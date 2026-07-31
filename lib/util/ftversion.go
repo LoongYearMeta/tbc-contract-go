@@ -31,8 +31,9 @@ func ClassifyFTScriptHex(codeHex string) (FTScriptInfo, error) {
 	return ClassifyFTScript(script)
 }
 
-// ClassifyFTScript identifies FT v1-v3 and StableCoin scripts. FT v2 and v3
-// are the same byte length, so their fill opcode must be inspected.
+// ClassifyFTScript identifies FT v1-v3 and StableCoin scripts. Both ordinary
+// FT and StableCoin code can carry the v3 fill marker, so every v2-family
+// script must be inspected instead of treating all 2012-byte code as v2.
 func ClassifyFTScript(script *bscript.Script) (FTScriptInfo, error) {
 	if script == nil {
 		return FTScriptInfo{}, fmt.Errorf("nil FT code script")
@@ -40,17 +41,16 @@ func ClassifyFTScript(script *bscript.Script) (FTScriptInfo, error) {
 	switch len(script.Bytes()) {
 	case 1564:
 		return FTScriptInfo{Version: FTVersion1}, nil
-	case 2012:
-		return FTScriptInfo{Version: FTVersion2, IsCoin: true}, nil
-	case 1884:
+	case 1884, 2012:
+		isCoin := len(script.Bytes()) == 2012
 		fill, err := FillCharLengthInFT(script)
 		if err != nil {
 			return FTScriptInfo{}, err
 		}
 		if fill == 1 || fill == 2 {
-			return FTScriptInfo{Version: FTVersion3}, nil
+			return FTScriptInfo{Version: FTVersion3, IsCoin: isCoin}, nil
 		}
-		return FTScriptInfo{Version: FTVersion2}, nil
+		return FTScriptInfo{Version: FTVersion2, IsCoin: isCoin}, nil
 	default:
 		return FTScriptInfo{}, fmt.Errorf("unsupported FT code length %d", len(script.Bytes()))
 	}

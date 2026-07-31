@@ -182,7 +182,7 @@ func validateCoinOutput(
 	if err != nil {
 		return fmt.Errorf("classify Coin output %d: %w", codeVout, err)
 	}
-	if info.Version != contractutil.FTVersion2 || !info.IsCoin {
+	if info.Version != contractutil.FTVersion3 || !info.IsCoin {
 		return fmt.Errorf(
 			"Coin output %d classified version=%d coin=%t",
 			codeVout,

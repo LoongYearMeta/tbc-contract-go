@@ -1,12 +1,55 @@
 package contract
 
 import (
+	"encoding/hex"
 	"math/big"
+	"strings"
 	"testing"
 
 	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 )
+
+func TestStableCoinCodeClassifiesItsJS165V3FillMarker(t *testing.T) {
+	fx, _ := stableFeeFixture(t)
+	code, err := GetCoinMintCode(
+		strings.Repeat("11", 20),
+		fx.sender,
+		strings.Repeat("22", 32),
+		91,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(code.Bytes()) != 2012 {
+		t.Fatalf("StableCoin code length=%d want=2012", len(code.Bytes()))
+	}
+
+	info, err := classifyOrderBookFTCode(code.ToHex())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info != (util.FTScriptInfo{Version: util.FTVersion3, IsCoin: true}) {
+		t.Fatalf("StableCoin classification=%+v want v3 coin", info)
+	}
+
+	current, pre, contractTX := ftSwapFixtureTransactions(t, 2)
+	preTxData, err := util.GetPreTxdata(pre, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	unlock, err := StaticGetFTUnlockSwap(
+		"aa", strings.Repeat("02", 33),
+		current, pre, "", contractTX,
+		1, 0, info.Version, info.IsCoin, false,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasSuffix(hex.EncodeToString(unlock.Bytes()), "0051"+preTxData) {
+		t.Fatal("StableCoin OrderBook unlock is missing the v3 index and coin markers")
+	}
+}
 
 func TestStableCoinTransferOutputLayoutMatchesJS165(t *testing.T) {
 	fx, stable := stableFeeFixture(t)

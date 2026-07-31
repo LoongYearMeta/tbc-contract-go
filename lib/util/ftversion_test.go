@@ -63,15 +63,22 @@ func TestClassifyFTScriptRecognizesV1AndCoin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	coin, err := ClassifyFTScript(syntheticFTScript(t, 2012, bscript.Op16))
+	coinV2, err := ClassifyFTScript(syntheticFTScript(t, 2012, bscript.Op16))
+	if err != nil {
+		t.Fatal(err)
+	}
+	coinV3, err := ClassifyFTScript(syntheticFTScript(t, 2012, bscript.OpDATA2))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if v1 != (FTScriptInfo{Version: FTVersion1}) {
 		t.Fatalf("classified v1 as %+v", v1)
 	}
-	if coin != (FTScriptInfo{Version: FTVersion2, IsCoin: true}) {
-		t.Fatalf("classified coin as %+v", coin)
+	if coinV2 != (FTScriptInfo{Version: FTVersion2, IsCoin: true}) {
+		t.Fatalf("classified v2 coin as %+v", coinV2)
+	}
+	if coinV3 != (FTScriptInfo{Version: FTVersion3, IsCoin: true}) {
+		t.Fatalf("classified v3 coin as %+v", coinV3)
 	}
 }
 

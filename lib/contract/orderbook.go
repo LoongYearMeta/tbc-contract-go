@@ -1085,6 +1085,9 @@ func (o *OrderBook) MatchOrder(
 	if err := tx.FromUTXOs(utxos...); err != nil {
 		return "", err
 	}
+	if isCoin {
+		tx.Inputs[1].SequenceNumber = 4294967294
+	}
 
 	// FT Seller output
 	ftSellerCode, err := BuildFTtransferCode(ftCodeScriptHex, sellData.HoldAddress)
