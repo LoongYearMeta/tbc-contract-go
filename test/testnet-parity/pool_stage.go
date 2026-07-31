@@ -1211,6 +1211,45 @@ func runPoolLockStage(cfg config, decoded *wif.WIF, address string) error {
 	if err != nil {
 		return err
 	}
+	mergeLPFee, err := fetchPoolFee(address, cfg.Network, 0.005)
+	if err != nil {
+		return err
+	}
+	mergeLPRaw, err := pool.MergeFTLP(
+		decoded.PrivKey,
+		mergeLPFee,
+		&lockTime,
+	)
+	if err != nil {
+		return fmt.Errorf("locked pool MergeFTLP: %w", err)
+	}
+	if mergeLPRaw == "" {
+		return fmt.Errorf("locked pool MergeFTLP had fewer than two FTLP UTXOs")
+	}
+	mergeLP, _, err := broadcastAndVerify(
+		"pool-lock-merge-ftlp",
+		mergeLPRaw,
+		cfg.Network,
+		"locked-ftlp-pair-multi-input",
+		func(tx *bt.Tx) error {
+			if len(tx.Inputs) < 3 {
+				return fmt.Errorf("locked FTLP merge has %d inputs want>=3", len(tx.Inputs))
+			}
+			_, err := validateFTLPPair(tx, 0, &lockTime)
+			return err
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if err := waitForFTLPTransaction(pool, address, mergeLP.TxID()); err != nil {
+		return err
+	}
+
+	pool, _, err = loadIndexedPool(poolID, cfg.Network)
+	if err != nil {
+		return err
+	}
 	unlockFee, err := fetchPoolFee(address, cfg.Network, 0.005)
 	if err != nil {
 		return err
@@ -1281,10 +1320,75 @@ func runPoolLockStage(cfg config, decoded *wif.WIF, address string) error {
 	if err != nil {
 		return err
 	}
+
+	pool, _, err = loadIndexedPool(poolID, cfg.Network)
+	if err != nil {
+		return err
+	}
+	if err := waitForFTLPTransaction(pool, address, consume.TxID()); err != nil {
+		return err
+	}
+	burnFee, err := fetchPoolFee(address, cfg.Network, 0.005)
+	if err != nil {
+		return err
+	}
+	burnRaw, err := pool.BurnFTLP(decoded.PrivKey, burnFee)
+	if err != nil {
+		return fmt.Errorf("locked pool BurnFTLP: %w", err)
+	}
+	if _, _, err := broadcastAndVerify(
+		"pool-lock-burn-ftlp",
+		burnRaw,
+		cfg.Network,
+		"locked-ftlp-burn-pair",
+		func(tx *bt.Tx) error {
+			_, err := validateFTLPPair(tx, 0, nil)
+			return err
+		},
+	); err != nil {
+		return err
+	}
+
+	pool, beforeMergeHeld, err := loadIndexedPool(poolID, cfg.Network)
+	if err != nil {
+		return err
+	}
+	mergeHeldFee, err := fetchPoolFee(address, cfg.Network, 0.01)
+	if err != nil {
+		return err
+	}
+	mergeHeldRaws, err := pool.MergeFTinPool(
+		decoded.PrivKey,
+		mergeHeldFee,
+		1,
+	)
+	if err != nil {
+		return fmt.Errorf("locked pool MergeFTinPool: %w", err)
+	}
+	if len(mergeHeldRaws) != 1 {
+		return fmt.Errorf(
+			"locked pool MergeFTinPool returned %d transactions, want=1",
+			len(mergeHeldRaws),
+		)
+	}
+	mergeHeld, err := broadcastPoolTransition(
+		"pool-lock-merge-held-ft",
+		mergeHeldRaws[0],
+		cfg.Network,
+		beforeMergeHeld,
+		poolTransitionMergeHeldFT,
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+	if _, err := waitForPoolState(poolID, mergeHeld.TxID(), cfg.Network); err != nil {
+		return err
+	}
 	return writePublicState(os.Stdout, publicState{
 		TokenID:  cfg.TokenA,
 		PoolID:   poolID,
-		LastTxID: consume.TxID(),
+		LastTxID: mergeHeld.TxID(),
 		LastVout: 0,
 	})
 }
