@@ -792,7 +792,7 @@ git commit -m "test: expand javascript 1.6.5 protocol parity"
 **Files:**
 - Modify only files implicated by a failing command.
 
-- [ ] **Step 1: Scan tracked files for test secrets**
+- [x] **Step 1: Scan tracked files for test secrets**
 
 Run:
 
@@ -803,7 +803,7 @@ git grep -nE '(^|[^A-Za-z0-9])[KL][1-9A-HJ-NP-Za-km-z]{50,51}([^A-Za-z0-9]|$)' -
 
 Expected: no matches.
 
-- [ ] **Step 2: Format and run the full unit suite**
+- [x] **Step 2: Format and run the full unit suite**
 
 Run:
 
@@ -815,7 +815,7 @@ go test ./... -count=1
 
 Expected: PASS.
 
-- [ ] **Step 3: Run race, vet, build, and regenerated fixture diff**
+- [x] **Step 3: Run race, vet, build, and regenerated fixture diff**
 
 Run:
 
@@ -831,7 +831,7 @@ rm "$fixture_tmp"
 
 Expected: every command succeeds and the fixture diff is empty.
 
-- [ ] **Step 4: Commit any verification-only corrections**
+- [x] **Step 4: Commit any verification-only corrections**
 
 ```bash
 git add test lib scripts

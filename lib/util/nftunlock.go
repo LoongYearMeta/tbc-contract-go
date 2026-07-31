@@ -376,4 +376,3 @@ func GetNFTPrePreTxdataV0(tx *bt.Tx) (string, error) {
 	w.Write(outputsData)
 	return hex.EncodeToString(w.Bytes()), nil
 }
-
