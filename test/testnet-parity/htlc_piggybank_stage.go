@@ -18,6 +18,11 @@ import (
 	"github.com/LoongYearMeta/tbc-lib-go/wif"
 )
 
+const (
+	baseHTLCStageFundingMinimumSatoshis  = uint64(250_000)
+	piggyBankStageFundingMinimumSatoshis = uint64(120_000)
+)
+
 type baseHTLCPlan struct {
 	Transactions   []plannedTransaction
 	Plain          *bt.Tx
@@ -54,6 +59,9 @@ func buildPlainSelfTransfer(
 		return "", err
 	}
 	if err := tx.ChangeToAddress(address, harnessFeeQuote80()); err != nil {
+		return "", err
+	}
+	if err := tx.AdjustImplicitFeeToTarget(80); err != nil {
 		return "", err
 	}
 	if err := tx.FillAllInputs(
@@ -334,7 +342,11 @@ func validatePiggyBankTransaction(
 }
 
 func runBaseHTLCStage(cfg config, decoded *wif.WIF, address string) error {
-	funding, err := api.FetchUTXO(address, 0.01, cfg.Network)
+	funding, err := api.FetchUTXO(
+		address,
+		float64(baseHTLCStageFundingMinimumSatoshis)/1_000_000,
+		cfg.Network,
+	)
 	if err != nil {
 		return fmt.Errorf("base HTLC funding: %w", err)
 	}
@@ -367,7 +379,11 @@ func runBaseHTLCStage(cfg config, decoded *wif.WIF, address string) error {
 }
 
 func runPiggyBankStage(cfg config, decoded *wif.WIF, address string) error {
-	funding, err := api.FetchUTXO(address, 0.01, cfg.Network)
+	funding, err := api.FetchUTXO(
+		address,
+		float64(piggyBankStageFundingMinimumSatoshis)/1_000_000,
+		cfg.Network,
+	)
 	if err != nil {
 		return fmt.Errorf("PiggyBank funding: %w", err)
 	}

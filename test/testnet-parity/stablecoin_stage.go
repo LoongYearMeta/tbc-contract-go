@@ -17,6 +17,8 @@ import (
 	"github.com/LoongYearMeta/tbc-lib-go/wif"
 )
 
+const stableCoinStageFundingMinimumSatoshis = uint64(300_000)
+
 const musigSignerScript = "test/testnet-parity/js-musig-sign.js"
 
 func runMuSigSigner(arguments ...string) ([]byte, error) {
@@ -746,7 +748,11 @@ func runStableCoinLifecycle(cfg config, decoded *wif.WIF, address string) error 
 	if err != nil {
 		return err
 	}
-	funding, err := api.FetchUTXO(address, 0.02, cfg.Network)
+	funding, err := api.FetchUTXO(
+		address,
+		float64(stableCoinStageFundingMinimumSatoshis)/1_000_000,
+		cfg.Network,
+	)
 	if err != nil {
 		return err
 	}

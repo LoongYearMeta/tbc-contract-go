@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -177,5 +178,71 @@ func TestBuildStableCoinLifecyclePlanCoversJS165Surface(t *testing.T) {
 	}
 	if plan.StableCoin.TotalSupply.Cmp(big.NewInt(150_000)) != 0 {
 		t.Fatalf("total supply=%s want=150000", plan.StableCoin.TotalSupply)
+	}
+}
+
+func TestStableCoinStageMinimumFundingAndFinalFees(t *testing.T) {
+	privateKey, address, _ := ftStageFixture(t)
+	parent, funding, aggregateKey := stableCoinStageFixture(t, privateKey)
+	parent.Outputs[0].Satoshis = stableCoinStageFundingMinimumSatoshis
+	funding, err := outputUTXO(parent, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const lockTime = uint32(1_800_000_000)
+	plan, err := buildStableCoinLifecyclePlan(
+		privateKey,
+		address,
+		funding,
+		parent,
+		aggregateKey,
+		finalizeAdminPreparedForStructure,
+		lockTime,
+	)
+	if err != nil {
+		t.Fatalf(
+			"minimum stage funding %d cannot build lifecycle: %v",
+			stableCoinStageFundingMinimumSatoshis,
+			err,
+		)
+	}
+	parents := map[string]*bt.Tx{parent.TxID(): parent}
+	for _, tx := range []*bt.Tx{
+		plan.CoinNFT,
+		plan.InitialMint,
+		plan.AdminMint,
+		plan.Transfer,
+		plan.Batch,
+		plan.Merge,
+		plan.Freeze,
+		plan.Unfreeze,
+	} {
+		parents[tx.TxID()] = tx
+	}
+	for _, item := range plan.Transactions {
+		tx, err := bt.NewTxFromString(item.Raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		paid, err := feeFromParents(tx, func(txid string) (*bt.Tx, error) {
+			parent, ok := parents[txid]
+			if !ok {
+				return nil, fmt.Errorf("missing parent %s", txid)
+			}
+			return parent, nil
+		})
+		if err != nil {
+			t.Fatalf("%s fee: %v", item.Label, err)
+		}
+		target := targetFee80(len(tx.Bytes()))
+		if paid < target {
+			t.Fatalf(
+				"%s fee=%d target=%d bytes=%d",
+				item.Label,
+				paid,
+				target,
+				len(tx.Bytes()),
+			)
+		}
 	}
 }

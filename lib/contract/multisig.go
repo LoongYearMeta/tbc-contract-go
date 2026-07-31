@@ -686,19 +686,34 @@ func P2PKHToMultiSigTransferFT(
 		return "", err
 	}
 
-	// Apply FT unlocking scripts (inputs 0 … len(ftutxos)-1)
-	for i := range ftutxos {
-		us, err := ft.GetFTunlock(privKey, tx, preTXs[i], prepreTxDatas[i], i, int(ftutxos[i].Vout), false)
-		if err != nil {
-			return "", fmt.Errorf("P2PKHToMultiSigTransferFT: FT unlock input %d: %w", i, err)
+	signAll := func() error {
+		// Apply FT unlocking scripts (inputs 0 … len(ftutxos)-1).
+		for i := range ftutxos {
+			us, err := ft.GetFTunlock(
+				privKey,
+				tx,
+				preTXs[i],
+				prepreTxDatas[i],
+				i,
+				int(ftutxos[i].Vout),
+				false,
+			)
+			if err != nil {
+				return fmt.Errorf(
+					"P2PKHToMultiSigTransferFT: FT unlock input %d: %w",
+					i,
+					err,
+				)
+			}
+			if err := tx.InsertInputUnlockingScript(uint32(i), us); err != nil {
+				return err
+			}
 		}
-		if err := tx.InsertInputUnlockingScript(uint32(i), us); err != nil {
-			return "", err
-		}
-	}
 
-	// Sign the TBC (P2PKH) input (last input)
-	if err := signP2PKHInput(tx, privKey, uint32(len(ftutxos))); err != nil {
+		// Sign the TBC (P2PKH) input (last input).
+		return signP2PKHInput(tx, privKey, uint32(len(ftutxos)))
+	}
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, signAll); err != nil {
 		return "", err
 	}
 

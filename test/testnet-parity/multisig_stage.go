@@ -17,6 +17,8 @@ import (
 	"github.com/LoongYearMeta/tbc-lib-go/wif"
 )
 
+const multiSigStageFundingMinimumSatoshis = uint64(200_000)
+
 type ephemeralMultiSigSet struct {
 	Required   int
 	Signers    []multiSigSigner
@@ -388,7 +390,11 @@ func validateMultiSigLifecycleTransaction(
 }
 
 func runMultiSigStage(cfg config, decoded *wif.WIF, address string) error {
-	funding, err := api.FetchUTXO(address, 0.03, cfg.Network)
+	funding, err := api.FetchUTXO(
+		address,
+		float64(multiSigStageFundingMinimumSatoshis)/1_000_000,
+		cfg.Network,
+	)
 	if err != nil {
 		return fmt.Errorf("MultiSig funding: %w", err)
 	}

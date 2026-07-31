@@ -1088,8 +1088,10 @@ func BuildCoinNftTX(feePrivateKey *bec.PrivateKey, adminPubHash20Hex string, utx
 	if err := tx.ChangeToAddress(feeAddr.AddressString, newFeeQuote80()); err != nil {
 		return nil, fmt.Errorf("coin NFT ChangeToAddress: %w", err)
 	}
-	if err := signP2PKHAtIdx(tx, feePrivateKey, 0); err != nil {
-		return nil, err
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, func() error {
+		return signP2PKHAtIdx(tx, feePrivateKey, 0)
+	}); err != nil {
+		return nil, fmt.Errorf("coin NFT finalize fee: %w", err)
 	}
 	return tx, nil
 }

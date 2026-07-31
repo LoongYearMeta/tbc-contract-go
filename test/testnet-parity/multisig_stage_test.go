@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/hex"
+	"fmt"
 	"sort"
 	"testing"
 
@@ -59,5 +61,71 @@ func TestBuildMultiSigLifecyclePlanCoversTBCAndFT(t *testing.T) {
 	}
 	if plan.MultiSigAddress == "" || plan.Token.ContractTxid == "" {
 		t.Fatal("missing public multisig address or FT contract id")
+	}
+}
+
+func TestMultiSigStageMinimumFundingBuildsCompleteLifecycle(t *testing.T) {
+	privateKey, address, funding := ftStageFixture(t)
+	funding.Satoshis = multiSigStageFundingMinimumSatoshis
+	if _, err := buildMultiSigLifecyclePlan(privateKey, address, funding); err != nil {
+		t.Fatalf(
+			"minimum stage funding %d cannot build lifecycle: %v",
+			multiSigStageFundingMinimumSatoshis,
+			err,
+		)
+	}
+}
+
+func TestMultiSigLifecyclePaysFinalSignedSizeFee(t *testing.T) {
+	privateKey, address, funding := ftStageFixture(t)
+	funding.Satoshis = multiSigStageFundingMinimumSatoshis
+	plan, err := buildMultiSigLifecyclePlan(privateKey, address, funding)
+	if err != nil {
+		t.Fatal(err)
+	}
+	externalParent := bt.NewTx()
+	externalParent.Outputs = make([]*bt.Output, int(funding.Vout)+1)
+	externalParent.Outputs[funding.Vout] = &bt.Output{
+		LockingScript: funding.LockingScript,
+		Satoshis:      funding.Satoshis,
+	}
+	parents := map[string]*bt.Tx{
+		hex.EncodeToString(funding.TxID): externalParent,
+	}
+	for _, tx := range []*bt.Tx{
+		plan.Source,
+		plan.Mint,
+		plan.Wallet,
+		plan.TBCSpend,
+		plan.FTDeposit,
+		plan.FTSpend,
+	} {
+		parents[tx.TxID()] = tx
+	}
+	for _, item := range plan.Transactions {
+		tx, err := bt.NewTxFromString(item.Raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		paid, err := feeFromParents(tx, func(txid string) (*bt.Tx, error) {
+			parent, ok := parents[txid]
+			if !ok {
+				return nil, fmt.Errorf("missing parent %s", txid)
+			}
+			return parent, nil
+		})
+		if err != nil {
+			t.Fatalf("%s fee: %v", item.Label, err)
+		}
+		target := targetFee80(len(tx.Bytes()))
+		if paid < target {
+			t.Fatalf(
+				"%s fee=%d target=%d bytes=%d",
+				item.Label,
+				paid,
+				target,
+				len(tx.Bytes()),
+			)
+		}
 	}
 }
