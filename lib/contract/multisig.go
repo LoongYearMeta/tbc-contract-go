@@ -50,10 +50,20 @@ type MultiSigTxRaw struct {
 // Hash160(concat(pubKeys...)).
 func multiSigGetHash(pubKeys []string) ([]byte, error) {
 	var combined []byte
-	for _, pk := range pubKeys {
+	for i, pk := range pubKeys {
 		b, err := hex.DecodeString(pk)
 		if err != nil {
-			return nil, fmt.Errorf("multiSigGetHash: invalid pubkey hex: %w", err)
+			return nil, fmt.Errorf(
+				"multiSigGetHash: public key %d is not valid hex: %w",
+				i,
+				err,
+			)
+		}
+		if len(b) != 33 || (b[0] != 0x02 && b[0] != 0x03) {
+			return nil, fmt.Errorf(
+				"multiSigGetHash: public key %d must be a 33-byte compressed key",
+				i,
+			)
 		}
 		combined = append(combined, b...)
 	}
@@ -69,6 +79,13 @@ func GetMultiSigAddress(pubKeys []string, signatureCount, publicKeyCount int) (s
 	}
 	if publicKeyCount < 3 || publicKeyCount > 10 {
 		return "", fmt.Errorf("invalid publicKeyCount")
+	}
+	if len(pubKeys) != publicKeyCount {
+		return "", fmt.Errorf(
+			"publicKeyCount=%d does not match %d supplied public keys",
+			publicKeyCount,
+			len(pubKeys),
+		)
 	}
 	if signatureCount > publicKeyCount {
 		return "", fmt.Errorf("signatureCount must be less than publicKeyCount")

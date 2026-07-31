@@ -577,16 +577,7 @@ func (o *OrderBook) CancelSellOrderWithSign(
 		}
 		return nil
 	}
-	if err := signAll(); err != nil {
-		return "", err
-	}
-
-	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
-	// byte length is deterministic across re-signs so this converges.
-	if err := adjustFeeFromActualSize(tx, 80); err != nil {
-		return "", err
-	}
-	if err := signAll(); err != nil {
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, signAll); err != nil {
 		return "", err
 	}
 	return hex.EncodeToString(tx.Bytes()), nil
@@ -900,14 +891,7 @@ func (o *OrderBook) CancelBuyOrderWithSign(
 		}
 		return nil
 	}
-	if err := signAll(); err != nil {
-		return "", err
-	}
-	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input.
-	if err := adjustFeeFromActualSize(tx, 80); err != nil {
-		return "", err
-	}
-	if err := signAll(); err != nil {
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, signAll); err != nil {
 		return "", err
 	}
 	return hex.EncodeToString(tx.Bytes()), nil

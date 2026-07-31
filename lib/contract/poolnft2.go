@@ -2055,16 +2055,7 @@ func (p *PoolNFT2) InitPoolNFT(
 		}
 		return nil
 	}
-	if err := signAll(); err != nil {
-		return "", err
-	}
-
-	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
-	// byte length is deterministic across re-signs so this converges.
-	if err := adjustFeeFromActualSize(tx, 80); err != nil {
-		return "", err
-	}
-	if err := signAll(); err != nil {
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, signAll); err != nil {
 		return "", err
 	}
 
@@ -2208,11 +2199,9 @@ const poolDustAmount uint64 = 42
 // unlock and a ~2 KB underestimate for a pool NFT unlock, and the resulting
 // fee fails the 80 sat/KB relay floor with `66: insufficient priority`.
 //
-// Caller must afterwards re-sign every input whose sighash includes the
-// trailing change output (i.e. all SIGHASH_ALL signatures), because we just
-// changed an output's satoshi value. Unlock script *byte length* is
-// deterministic across re-signs (signature length is fixed), so a single
-// redo converges and `tx.Bytes()` length stays stable.
+// This is a one-shot primitive retained for focused boundary tests. Production
+// builders must use finalizeSignedFee: changing the output changes every
+// SIGHASH_ALL signature, and DER signature length can change after re-signing.
 func adjustFeeFromActualSize(tx *bt.Tx, satPerKB uint64) error {
 	sizeBytes := len(tx.Bytes())
 	hi, lo := bits.Mul64(uint64(sizeBytes), satPerKB)
@@ -2508,18 +2497,7 @@ func (p *PoolNFT2) IncreaseLP(
 		tx.Inputs[1].UnlockingScript = ftUnlock
 		return signP2PKHAtIdx(tx, privKey, 2)
 	}
-	if err := signAll(); err != nil {
-		return "", err
-	}
-
-	// Second pass: now that the actual unlock-script bytes are known,
-	// recompute fee from `len(tx.Bytes())` (truth), update the trailing
-	// change output, and re-sign all SIGHASH_ALL inputs. Unlock byte length
-	// is deterministic across re-signs so this converges in one redo.
-	if err := adjustFeeFromActualSize(tx, 80); err != nil {
-		return "", err
-	}
-	if err := signAll(); err != nil {
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, signAll); err != nil {
 		return "", err
 	}
 
@@ -2859,16 +2837,7 @@ func (p *PoolNFT2) ConsumeLP(
 		}
 		return signP2PKHAtIdx(tx, privKey, uint32(feeIdx))
 	}
-	if err := signAll(); err != nil {
-		return nil, err
-	}
-
-	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
-	// byte length is deterministic across re-signs so this converges.
-	if err := adjustFeeFromActualSize(tx, 80); err != nil {
-		return nil, err
-	}
-	if err := signAll(); err != nil {
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, signAll); err != nil {
 		return nil, err
 	}
 
@@ -3106,16 +3075,7 @@ func (p *PoolNFT2) SwapToToken(
 		}
 		return signP2PKHAtIdx(tx, privKey, 1)
 	}
-	if err := signAll(); err != nil {
-		return "", err
-	}
-
-	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
-	// byte length is deterministic across re-signs so this converges.
-	if err := adjustFeeFromActualSize(tx, 80); err != nil {
-		return "", err
-	}
-	if err := signAll(); err != nil {
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, signAll); err != nil {
 		return "", err
 	}
 
@@ -3391,16 +3351,7 @@ func (p *PoolNFT2) swapToTBC(
 		tx.Inputs[1].UnlockingScript = ftUnlock
 		return signP2PKHAtIdx(tx, privKey, 2)
 	}
-	if err := signAll(); err != nil {
-		return "", err
-	}
-
-	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
-	// byte length is deterministic across re-signs so this converges.
-	if err := adjustFeeFromActualSize(tx, 80); err != nil {
-		return "", err
-	}
-	if err := signAll(); err != nil {
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, signAll); err != nil {
 		return "", err
 	}
 
@@ -3621,16 +3572,7 @@ func (p *PoolNFT2) UnlockFTLP(
 		}
 		return signP2PKHAtIdx(tx, privKey, uint32(count))
 	}
-	if err := signAll(); err != nil {
-		return "", err
-	}
-
-	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
-	// byte length is deterministic across re-signs so this converges.
-	if err := adjustFeeFromActualSize(tx, 80); err != nil {
-		return "", err
-	}
-	if err := signAll(); err != nil {
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, signAll); err != nil {
 		return "", err
 	}
 
@@ -3845,16 +3787,7 @@ func (p *PoolNFT2) MergeFTLP(
 		}
 		return signP2PKHAtIdx(tx, privKey, uint32(count))
 	}
-	if err := signAll(); err != nil {
-		return "", err
-	}
-
-	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
-	// byte length is deterministic across re-signs so this converges.
-	if err := adjustFeeFromActualSize(tx, 80); err != nil {
-		return "", err
-	}
-	if err := signAll(); err != nil {
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, signAll); err != nil {
 		return "", err
 	}
 
@@ -3965,16 +3898,7 @@ func (p *PoolNFT2) BurnFTLP(
 		}
 		return signP2PKHAtIdx(tx, privKey, uint32(count))
 	}
-	if err := signAll(); err != nil {
-		return "", err
-	}
-
-	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
-	// byte length is deterministic across re-signs so this converges.
-	if err := adjustFeeFromActualSize(tx, 80); err != nil {
-		return "", err
-	}
-	if err := signAll(); err != nil {
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, signAll); err != nil {
 		return "", err
 	}
 
@@ -4271,18 +4195,7 @@ func (p *PoolNFT2) mergeFTinPoolSingle(
 		// tx.sign(privateKey) signs all P2PKH inputs unconditionally.
 		return signP2PKHAtIdx(tx, privKey, uint32(len(ftutxos)+1))
 	}
-	if err := signAll(); err != nil {
-		return "", nil, err
-	}
-
-	// Second pass: real-bytes fee, re-sign every SIGHASH_ALL input. Unlock
-	// byte length is deterministic across re-signs so this converges.
-	// adjustFeeFromActualSize never drops the change output (only scales it),
-	// so the case-4 outputs[2..4] invariant is preserved.
-	if err := adjustFeeFromActualSize(tx, 80); err != nil {
-		return "", nil, err
-	}
-	if err := signAll(); err != nil {
+	if err := finalizeSignedFee(tx, len(tx.Outputs)-1, signAll); err != nil {
 		return "", nil, err
 	}
 
