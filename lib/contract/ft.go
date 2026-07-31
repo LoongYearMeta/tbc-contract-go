@@ -777,7 +777,7 @@ func (f *FT) GetFTunlockSwap(privKey *bec.PrivateKey, currentTX *bt.Tx, preTX *b
 }
 
 // GetFTUnlockSwap generates an FT contract unlock using an explicit FT
-// generation. FT v3 and later commit an additional contract-input index marker.
+// generation. FT v3 commits an additional contract-input index marker.
 func (f *FT) GetFTUnlockSwap(
 	privKey *bec.PrivateKey,
 	currentTX, preTX *bt.Tx,
@@ -877,8 +877,8 @@ func StaticGetFTUnlockSwap(
 	sigHex := fmt.Sprintf("%02x%s", len(sigBytes), hex.EncodeToString(sigBytes))
 	pubKeyHex := fmt.Sprintf("%02x%s", len(pubKeyBytes), hex.EncodeToString(pubKeyBytes))
 	marker := ""
-	if ftVersion >= util.FTVersion3 {
-		marker, err = ftContractInputIndexMarker(currentUnlockIndex, isContractTXs)
+	if ftVersion == util.FTVersion3 {
+		marker, err = ftV3InputIndexMarker(currentUnlockIndex, isContractTXs)
 		if err != nil {
 			return nil, err
 		}
@@ -1173,8 +1173,8 @@ func ftBuildUnlockSwap(
 	pubKey := privKey.PubKey().SerialiseCompressed()
 	pubKeyHex := fmt.Sprintf("%02x%s", len(pubKey), hex.EncodeToString(pubKey))
 	marker := ""
-	if ftVersion >= util.FTVersion3 {
-		marker, err = ftContractInputIndexMarker(currentUnlockIndex, isContractTXs)
+	if ftVersion == util.FTVersion3 {
+		marker, err = ftV3InputIndexMarker(currentUnlockIndex, isContractTXs)
 		if err != nil {
 			return nil, err
 		}
@@ -1187,13 +1187,13 @@ func ftBuildUnlockSwap(
 	return bscript.NewFromHexString(unlockHex)
 }
 
-func ftContractInputIndexMarker(currentUnlockIndex int, isContractTXs bool) (string, error) {
+func ftV3InputIndexMarker(currentUnlockIndex int, isContractTXs bool) (string, error) {
 	inputIndex := 0
 	if isContractTXs {
 		inputIndex = currentUnlockIndex - 1
 	}
 	if inputIndex < 0 || inputIndex > 5 {
-		return "", fmt.Errorf("FT contract input index %d outside 0..5", inputIndex)
+		return "", fmt.Errorf("FT v3 contract input index %d outside 0..5", inputIndex)
 	}
 	if inputIndex == 0 {
 		return "00", nil

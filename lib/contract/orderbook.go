@@ -29,7 +29,6 @@ const (
 	obOrderDataEncodedLen = 114
 
 	obFTv2Partial = 1856
-	obFTv4Partial = 1920
 	obCoinPartial = 1984
 
 	// Order code base hex templates (without taxAddress or orderData appended).
@@ -63,14 +62,6 @@ type OrderBook struct {
 	FtID            string // 32-byte hex txid of the FT contract
 	ContractVersion int
 	BuyCodeDust     uint64
-
-	// Token Order fields added in tbc-contract 1.6.5. The existing uint64
-	// fields above remain unchanged for source compatibility with TBC orders.
-	TokenSaleVolume *big.Int
-	TokenFeeRate    *big.Int
-	TokenUnitPrice  *big.Int
-	FtBPartialHash  string
-	FtBID           string
 }
 
 // OrderData carries the decoded order parameters from an order code script.
@@ -279,8 +270,8 @@ func PlaceHolderP2PKHOutput() (*bscript.Script, error) {
 
 // ---------------------------------------------------------------------------
 // ComputeFtPartialHash computes the FT partial hash from the code script hex.
-// isCoin = true → coin_partial_offset (1984). FT v4 uses 1920; older ordinary
-// FT generations use their historical boundaries.
+// isCoin = true → coin_partial_offset (1984). Ordinary FT generations use
+// their historical boundaries.
 func ComputeFtPartialHash(ftCodeScriptHex string, isCoin bool) (string, error) {
 	buf, err := hex.DecodeString(ftCodeScriptHex)
 	if err != nil {
@@ -293,8 +284,6 @@ func ComputeFtPartialHash(ftCodeScriptHex string, isCoin bool) (string, error) {
 	partialOffset := obFTv2Partial
 	if isCoin || info.IsCoin {
 		partialOffset = obCoinPartial
-	} else if info.Version == util.FTVersion4 {
-		partialOffset = obFTv4Partial
 	} else if info.Version == util.FTVersion1 {
 		partialOffset = 1536
 	}

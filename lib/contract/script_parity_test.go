@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"math/big"
 	"os"
 	"path/filepath"
 	"testing"
@@ -41,16 +40,6 @@ func renderAllReferenceScripts(t *testing.T) map[string]*bscript.Script {
 	codeHash := "2222222222222222222222222222222222222222222222222222222222222222"
 	adminPubHash := "3333333333333333333333333333333333333333"
 	pool := NewPoolNFT2(&PoolNFT2Config{Network: "testnet"})
-	orderBook := &OrderBook{
-		HoldAddress:     address,
-		TokenSaleVolume: big.NewInt(1000),
-		FtPartialHash:   "5555555555555555555555555555555555555555555555555555555555555555",
-		FtBPartialHash:  "6666666666666666666666666666666666666666666666666666666666666666",
-		TokenFeeRate:    big.NewInt(3),
-		TokenUnitPrice:  big.NewInt(4),
-		FtID:            "7777777777777777777777777777777777777777777777777777777777777777",
-		FtBID:           "8888888888888888888888888888888888888888888888888888888888888888",
-	}
 
 	rendered := make(map[string]*bscript.Script)
 	add := func(name string, build func() (*bscript.Script, error)) {
@@ -86,12 +75,6 @@ func renderAllReferenceScripts(t *testing.T) map[string]*bscript.Script {
 	add("stableCoinMint", func() (*bscript.Script, error) {
 		return GetCoinMintCode(adminPubHash, address, codeHash, tapeSize)
 	})
-	add("tokenSellOrder", func() (*bscript.Script, error) {
-		return orderBook.GetTokenSellOrderCode(address)
-	})
-	add("tokenBuyOrder", func() (*bscript.Script, error) {
-		return orderBook.GetTokenBuyOrderCode(address)
-	})
 	return rendered
 }
 
@@ -102,13 +85,6 @@ func TestRenderedScriptsMatchJS165(t *testing.T) {
 		t.Fatalf("rendered %d scripts, fixture has %d", len(rendered), len(fixtures))
 	}
 	for name, script := range rendered {
-		// FT v4 and TokenOrder v2 intentionally diverge from JS 1.6.5. The
-		// corresponding JS templates cannot authorize two independently
-		// created TokenOrders in one match transaction. Their repaired hashes
-		// are asserted by dedicated regression tests.
-		if name == "ftV3Mint" || name == "tokenSellOrder" || name == "tokenBuyOrder" {
-			continue
-		}
 		want, ok := fixtures[name]
 		if !ok {
 			t.Errorf("%s missing from fixture", name)
@@ -122,20 +98,5 @@ func TestRenderedScriptsMatchJS165(t *testing.T) {
 				name, len(script.Bytes()), gotSHA256, want.Length, want.SHA256,
 			)
 		}
-	}
-}
-
-func TestFTMintUsesMultiContractV4TemplateHash(t *testing.T) {
-	script := renderAllReferenceScripts(t)["ftV3Mint"]
-	gotHash := sha256.Sum256(script.Bytes())
-	const (
-		wantLength = 1948
-		wantSHA256 = "9ac672398760d2c7dc3a3ebba0a14a60d725f4d5fb6b2a826cfecc81b668b8e9"
-	)
-	if len(script.Bytes()) != wantLength || hex.EncodeToString(gotHash[:]) != wantSHA256 {
-		t.Fatalf(
-			"FT v4 template length/hash = %d/%s, want %d/%s",
-			len(script.Bytes()), hex.EncodeToString(gotHash[:]), wantLength, wantSHA256,
-		)
 	}
 }
