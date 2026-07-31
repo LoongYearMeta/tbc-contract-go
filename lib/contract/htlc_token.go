@@ -18,6 +18,7 @@ const (
 	htlcTokenCodeDust     = uint64(500)
 	htlcTokenContractDust = uint64(100)
 	htlcTokenFeePerKB     = 80
+	htlcTokenFTUnlockSize = 2100
 )
 
 func htlcTokenTargetFee(tx *bt.Tx, extraBytes int) int {
@@ -195,7 +196,11 @@ func DeployHTLCToken(
 		}
 		tx.LockTime = lockTimeMax
 	}
-	if err := htlcTokenAddChange(tx, sender, len(ftUTXOs)*2000); err != nil {
+	if err := htlcTokenAddChange(
+		tx,
+		sender,
+		len(ftUTXOs)*htlcTokenFTUnlockSize,
+	); err != nil {
 		return "", fmt.Errorf("DeployHTLCToken: change/fee: %w", err)
 	}
 	return tx.String(), nil
