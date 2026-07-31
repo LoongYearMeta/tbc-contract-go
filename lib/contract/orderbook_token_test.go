@@ -1,6 +1,7 @@
 package contract
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
@@ -18,6 +19,7 @@ import (
 	"github.com/LoongYearMeta/tbc-lib-go/bec"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
 	"github.com/LoongYearMeta/tbc-lib-go/script/interpreter"
+	interpreterdebug "github.com/LoongYearMeta/tbc-lib-go/script/interpreter/debug"
 )
 
 type orderBookJSFixture struct {
@@ -89,16 +91,18 @@ func TestTokenOrderDataRoundTrip(t *testing.T) {
 	}
 }
 
-func TestTokenOrderCodeMatchesJS165(t *testing.T) {
+func TestTokenOrderCodeUsesMatchableV2Template(t *testing.T) {
 	order := fixtureTokenOrderBook()
 	tests := []struct {
-		name    string
-		fixture string
-		build   func(string) ([]byte, error)
+		name       string
+		fixture    string
+		wantSHA256 string
+		build      func(string) ([]byte, error)
 	}{
 		{
-			name:    "sell",
-			fixture: "tokenSellOrder",
+			name:       "sell",
+			fixture:    "tokenSellOrder",
+			wantSHA256: "3f1c6cf4f9e201642fd21a8e8b83e62974987cf3a347e79721e72f7f8be43f77",
 			build: func(taxAddress string) ([]byte, error) {
 				script, err := order.GetTokenSellOrderCode(taxAddress)
 				if err != nil {
@@ -108,8 +112,9 @@ func TestTokenOrderCodeMatchesJS165(t *testing.T) {
 			},
 		},
 		{
-			name:    "buy",
-			fixture: "tokenBuyOrder",
+			name:       "buy",
+			fixture:    "tokenBuyOrder",
+			wantSHA256: "bdcd1cb02334633e39346997e19471f6ab6510dc407a865b036593f43d761665",
 			build: func(taxAddress string) ([]byte, error) {
 				script, err := order.GetTokenBuyOrderCode(taxAddress)
 				if err != nil {
@@ -131,8 +136,12 @@ func TestTokenOrderCodeMatchesJS165(t *testing.T) {
 				t.Fatalf("length = %d, want %d", len(got), want.Length)
 			}
 			sum := sha256.Sum256(got)
-			if gotHash := hex.EncodeToString(sum[:]); gotHash != want.SHA256 {
-				t.Fatalf("sha256 = %s, want %s", gotHash, want.SHA256)
+			gotHash := hex.EncodeToString(sum[:])
+			if gotHash == want.SHA256 {
+				t.Fatal("matchable v2 template unexpectedly equals the broken JS 1.6.5 template")
+			}
+			if gotHash != test.wantSHA256 {
+				t.Fatalf("sha256 = %s, want %s", gotHash, test.wantSHA256)
 			}
 		})
 	}
@@ -193,9 +202,9 @@ func TestTokenOrderUnlockUsesTwelveOutputSlots(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// JS getTokenOrderUnlock uses fixedOutputCount=12 instead of 10. Two
-	// missing slots add eight zero bytes to currentTxData.
-	if got, want := len(token), len(standard)+16; got != want {
+	// TokenOrder pads both the current and parent output serializations to
+	// twelve slots. The common OrderBook path pads each side to ten slots.
+	if got, want := len(token), len(standard)+32; got != want {
 		t.Fatalf("token unlock hex length = %d, want %d", got, want)
 	}
 }
@@ -282,6 +291,22 @@ func TestBuildTokenOrderRejectsInsufficientBalance(t *testing.T) {
 		[]*bt.Tx{fx.preTX},
 	)
 	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "insufficient") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestPrepareTokenOrderRejectsPreV4IndependentFTs(t *testing.T) {
+	order := fixtureTokenOrderBook()
+	v3 := contractSyntheticFTScript(t, bscript.OpDATA1)
+	v4 := bscript.NewFromBytes(bytes.Repeat([]byte{bscript.OpNOP}, 1948))
+
+	err := order.prepareTokenOrder(
+		"sell", order.HoldAddress, order.HoldAddress,
+		big.NewInt(1), big.NewInt(1_000_000), big.NewInt(0),
+		strings.Repeat("71", 32), strings.Repeat("72", 32),
+		v3.ToHex(), v4.ToHex(),
+	)
+	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "requires ft v4") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
@@ -443,15 +468,17 @@ func TestFillSigsCancelTokenSellOrderUsesOrderAndFTUnlocks(t *testing.T) {
 }
 
 type tokenOrderMatchFixture struct {
-	key      *bec.PrivateKey
-	address  string
-	buy      *bt.UTXO
-	buyTX    *bt.Tx
-	buyFT    *util.FtUTXO
-	sell     *bt.UTXO
-	sellTX   *bt.Tx
-	sellFT   *util.FtUTXO
-	feeUTXOs []*bt.UTXO
+	key          *bec.PrivateKey
+	taxAddress   string
+	buy          *bt.UTXO
+	buyTX        *bt.Tx
+	buyFT        *util.FtUTXO
+	buyFTPrePre  string
+	sell         *bt.UTXO
+	sellTX       *bt.Tx
+	sellFT       *util.FtUTXO
+	sellFTPrePre string
+	feeUTXOs     []*bt.UTXO
 }
 
 func newTokenOrderMatchFixture(t *testing.T) tokenOrderMatchFixture {
@@ -459,27 +486,98 @@ func newTokenOrderMatchFixture(t *testing.T) tokenOrderMatchFixture {
 }
 
 func newTokenOrderMatchFixtureWithVolumes(t *testing.T, buyVolume, sellVolume int64) tokenOrderMatchFixture {
+	return newTokenOrderMatchFixtureWithPrice(t, buyVolume, sellVolume, 2_000_000)
+}
+
+func newTokenOrderMatchFixtureWithPrice(
+	t *testing.T,
+	buyVolume, sellVolume, unitPrice int64,
+) tokenOrderMatchFixture {
 	t.Helper()
 	fx := newHTLCTokenFixture(t, 2_000)
-	const unitPrice = int64(2_000_000)
-	ftaID := strings.Repeat("71", 32)
-	ftbID := strings.Repeat("72", 32)
+	matcherKey := mustTestPrivateKey(t, 23)
+	matcherAddress, err := bscript.NewAddressFromPublicKey(matcherKey.PubKey(), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	taxKey := mustTestPrivateKey(t, 24)
+	taxAddress, err := bscript.NewAddressFromPublicKey(taxKey.PubKey(), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	newFTSource := func(owner string, balance *big.Int) (string, *bscript.Script, *bscript.Script, *bt.Tx, *util.FtUTXO) {
+		t.Helper()
+		amountHex, _ := BuildTapeAmount(balance, []*big.Int{balance})
+		tape, err := bscript.NewFromASM(fmt.Sprintf(
+			"OP_FALSE OP_RETURN %s 08 54 54 4654617065",
+			amountHex,
+		))
+		if err != nil {
+			t.Fatal(err)
+		}
+		source := bt.NewTx()
+		source.Version = 10
+		sourceScript, err := bscript.NewFromASM("OP_TRUE")
+		if err != nil {
+			t.Fatal(err)
+		}
+		source.AddOutput(&bt.Output{
+			LockingScript: sourceScript,
+			Satoshis:      10_000 + balance.Uint64(),
+		})
+		code, err := getFTmintCode(source.TxID(), 0, owner, tape.Len())
+		if err != nil {
+			t.Fatal(err)
+		}
+		preTX := bt.NewTx()
+		preTX.Version = 10
+		if err := preTX.From(
+			source.TxID(), 0, sourceScript.String(), source.Outputs[0].Satoshis,
+		); err != nil {
+			t.Fatal(err)
+		}
+		preTX.AddOutput(&bt.Output{LockingScript: code, Satoshis: 500})
+		preTX.AddOutput(&bt.Output{LockingScript: tape, Satoshis: 0})
+		preTXID, err := hex.DecodeString(preTX.TxID())
+		if err != nil {
+			t.Fatal(err)
+		}
+		return preTX.TxID(), code, tape, preTX, &util.FtUTXO{
+			TxID:          preTXID,
+			Vout:          0,
+			LockingScript: code,
+			Satoshis:      500,
+			FtBalance:     new(big.Int).Set(balance),
+		}
+	}
+	ftaID, ftaCode, _, ftaPreTX, ftaUTXO := newFTSource(fx.receiver, big.NewInt(sellVolume))
+	buyLockedAmount := new(big.Int).Mul(big.NewInt(buyVolume), big.NewInt(unitPrice))
+	buyLockedAmount.Div(buyLockedAmount, big.NewInt(1_000_000))
+	ftbID, ftbCode, _, ftbPreTX, ftbUTXO := newFTSource(fx.sender, buyLockedAmount)
+	ftaPrePre, err := util.GetPrePreTxdata(ftaPreTX, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ftbPrePre, err := util.GetPrePreTxdata(ftbPreTX, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	buyRaw, err := NewOrderBook().BuildTokenBuyOrderTX(
-		fx.sender, fx.sender,
+		fx.sender, taxAddress.AddressString,
 		big.NewInt(buyVolume), big.NewInt(unitPrice), big.NewInt(10_000),
-		ftaID, ftbID, fx.code.ToHex(), fx.code.ToHex(),
-		[]*bt.UTXO{fx.feeUTXO}, []*util.FtUTXO{fx.ftUTXO}, []*bt.Tx{fx.preTX},
+		ftaID, ftbID, ftaCode.ToHex(), ftbCode.ToHex(),
+		[]*bt.UTXO{fx.feeUTXO}, []*util.FtUTXO{ftbUTXO}, []*bt.Tx{ftbPreTX},
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	sellFee := feeUTXOForAddress(t, fx.sender, 0x75)
 	sellRaw, err := NewOrderBook().BuildTokenSellOrderTX(
-		fx.sender, fx.sender,
+		fx.receiver, taxAddress.AddressString,
 		big.NewInt(sellVolume), big.NewInt(unitPrice), big.NewInt(10_000),
-		ftaID, ftbID, fx.code.ToHex(), fx.code.ToHex(),
-		[]*bt.UTXO{sellFee}, []*util.FtUTXO{fx.ftUTXO}, []*bt.Tx{fx.preTX},
+		ftaID, ftbID, ftaCode.ToHex(), ftbCode.ToHex(),
+		[]*bt.UTXO{sellFee}, []*util.FtUTXO{ftaUTXO}, []*bt.Tx{ftaPreTX},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -490,8 +588,8 @@ func newTokenOrderMatchFixtureWithVolumes(t *testing.T, buyVolume, sellVolume in
 	sellID, _ := hex.DecodeString(sellTX.TxID())
 
 	return tokenOrderMatchFixture{
-		key:     fx.senderKey,
-		address: fx.sender,
+		key:        matcherKey,
+		taxAddress: taxAddress.AddressString,
 		buy: &bt.UTXO{
 			TxID: buyID, Vout: 0,
 			LockingScript: buyTX.Outputs[0].LockingScript,
@@ -502,8 +600,9 @@ func newTokenOrderMatchFixtureWithVolumes(t *testing.T, buyVolume, sellVolume in
 			TxID: buyID, Vout: 1,
 			LockingScript: buyTX.Outputs[1].LockingScript,
 			Satoshis:      buyTX.Outputs[1].Satoshis,
-			FtBalance:     new(big.Int).Mul(big.NewInt(buyVolume), big.NewInt(2)),
+			FtBalance:     new(big.Int).Set(buyLockedAmount),
 		},
+		buyFTPrePre: "57" + ftbPrePre,
 		sell: &bt.UTXO{
 			TxID: sellID, Vout: 0,
 			LockingScript: sellTX.Outputs[0].LockingScript,
@@ -516,10 +615,11 @@ func newTokenOrderMatchFixtureWithVolumes(t *testing.T, buyVolume, sellVolume in
 			Satoshis:      sellTX.Outputs[1].Satoshis,
 			FtBalance:     big.NewInt(sellVolume),
 		},
+		sellFTPrePre: "57" + ftaPrePre,
 		feeUTXOs: []*bt.UTXO{{
 			TxID:          bytesOf(0x76, 32),
 			Vout:          0,
-			LockingScript: fx.feeUTXO.LockingScript,
+			LockingScript: feeUTXOForAddress(t, matcherAddress.AddressString, 0x76).LockingScript,
 			Satoshis:      100_000,
 		}},
 	}
@@ -529,9 +629,9 @@ func TestMatchTokenOrderEqualFillHasNoResidualOrder(t *testing.T) {
 	fx := newTokenOrderMatchFixtureWithVolumes(t, 400, 400)
 	raw, err := NewOrderBook().MatchTokenOrder(
 		fx.key,
-		fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, "",
-		fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, "",
-		fx.feeUTXOs, fx.address, fx.address,
+		fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, fx.buyFTPrePre,
+		fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, fx.sellFTPrePre,
+		fx.feeUTXOs, fx.taxAddress, fx.taxAddress,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -546,9 +646,9 @@ func TestMatchTokenOrderCarriesForwardRemainingSell(t *testing.T) {
 	fx := newTokenOrderMatchFixtureWithVolumes(t, 400, 600)
 	raw, err := NewOrderBook().MatchTokenOrder(
 		fx.key,
-		fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, "",
-		fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, "",
-		fx.feeUTXOs, fx.address, fx.address,
+		fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, fx.buyFTPrePre,
+		fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, fx.sellFTPrePre,
+		fx.feeUTXOs, fx.taxAddress, fx.taxAddress,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -577,9 +677,9 @@ func TestMatchTokenOrderBuildsAtomicTwelveOutputSettlement(t *testing.T) {
 	fx := newTokenOrderMatchFixture(t)
 	raw, err := NewOrderBook().MatchTokenOrder(
 		fx.key,
-		fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, "",
-		fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, "",
-		fx.feeUTXOs, fx.address, fx.address,
+		fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, fx.buyFTPrePre,
+		fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, fx.sellFTPrePre,
+		fx.feeUTXOs, fx.taxAddress, fx.taxAddress,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -589,10 +689,10 @@ func TestMatchTokenOrderBuildsAtomicTwelveOutputSettlement(t *testing.T) {
 		t.Fatalf("match inputs/outputs = %d/%d, want 5/12", len(tx.Inputs), len(tx.Outputs))
 	}
 	wantBalances := map[int]int64{
-		1:  396, // Token A to buyer after 1% fee
-		3:  4,   // Token A fee
-		5:  792, // Token B to seller after 1% fee
-		7:  8,   // Token B fee
+		1:  792, // Token B to seller after 1% fee
+		3:  8,   // Token B fee
+		5:  396, // Token A to buyer after 1% fee
+		7:  4,   // Token A fee
 		11: 400, // remaining Token B locked to the residual buy order
 	}
 	for output, want := range wantBalances {
@@ -618,42 +718,109 @@ func TestMatchTokenOrderBuildsAtomicTwelveOutputSettlement(t *testing.T) {
 	}
 }
 
+func TestMatchTokenOrderPaysFeeForFinalSerializedSize(t *testing.T) {
+	fx := newTokenOrderMatchFixture(t)
+	raw, err := NewOrderBook().MatchTokenOrder(
+		fx.key,
+		fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, fx.buyFTPrePre,
+		fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, fx.sellFTPrePre,
+		fx.feeUTXOs, fx.taxAddress, fx.taxAddress,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx := mustTx(t, raw)
+
+	inputTotal := fx.buy.Satoshis + fx.buyFT.Satoshis +
+		fx.sell.Satoshis + fx.sellFT.Satoshis + fx.feeUTXOs[0].Satoshis
+	var outputTotal uint64
+	for _, output := range tx.Outputs {
+		outputTotal += output.Satoshis
+	}
+	if outputTotal > inputTotal {
+		t.Fatalf("outputs %d exceed inputs %d", outputTotal, inputTotal)
+	}
+	paid := inputTotal - outputTotal
+	target := uint64(obTargetFee(len(tx.Bytes())))
+	if paid < target {
+		t.Fatalf("final serialized fee = %d, want at least %d for %d bytes", paid, target, len(tx.Bytes()))
+	}
+}
+
+func TestMatchTokenOrderRejectsPartialFillThatStrandsPriceRounding(t *testing.T) {
+	fx := newTokenOrderMatchFixtureWithPrice(t, 5, 2, 600_000)
+	_, err := NewOrderBook().MatchTokenOrder(
+		fx.key,
+		fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, fx.buyFTPrePre,
+		fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, fx.sellFTPrePre,
+		fx.feeUTXOs, fx.taxAddress, fx.taxAddress,
+	)
+	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "rounding residue") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestMatchTokenOrderScriptsValidate(t *testing.T) {
 	tests := []struct {
 		name       string
 		buyVolume  int64
 		sellVolume int64
+		unitPrice  int64
 	}{
-		{name: "equal fill", buyVolume: 400, sellVolume: 400},
-		{name: "partial fill", buyVolume: 600, sellVolume: 400},
+		{name: "equal fill", buyVolume: 400, sellVolume: 400, unitPrice: 2_000_000},
+		{name: "partial fill", buyVolume: 600, sellVolume: 400, unitPrice: 2_000_000},
+		{name: "fractional equal fill", buyVolume: 5, sellVolume: 5, unitPrice: 600_000},
+		{name: "fractional compatible partial fill", buyVolume: 10, sellVolume: 5, unitPrice: 600_000},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			fx := newTokenOrderMatchFixtureWithVolumes(t, test.buyVolume, test.sellVolume)
+			fx := newTokenOrderMatchFixtureWithPrice(
+				t, test.buyVolume, test.sellVolume, test.unitPrice,
+			)
 			raw, err := NewOrderBook().MatchTokenOrder(
 				fx.key,
-				fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, "",
-				fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, "",
-				fx.feeUTXOs, fx.address, fx.address,
+				fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, fx.buyFTPrePre,
+				fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, fx.sellFTPrePre,
+				fx.feeUTXOs, fx.taxAddress, fx.taxAddress,
 			)
 			if err != nil {
 				t.Fatal(err)
 			}
 			tx := mustTx(t, raw)
-			previousOutputs := []*bt.Output{
-				{LockingScript: fx.buy.LockingScript, Satoshis: fx.buy.Satoshis},
-				{LockingScript: fx.buyFT.LockingScript, Satoshis: fx.buyFT.Satoshis},
-				{LockingScript: fx.sell.LockingScript, Satoshis: fx.sell.Satoshis},
-				{LockingScript: fx.sellFT.LockingScript, Satoshis: fx.sellFT.Satoshis},
+			contractInputs := []struct {
+				index    int
+				previous *bt.Output
+			}{
+				{index: 0, previous: &bt.Output{LockingScript: fx.sell.LockingScript, Satoshis: fx.sell.Satoshis}},
+				{index: 1, previous: &bt.Output{LockingScript: fx.sellFT.LockingScript, Satoshis: fx.sellFT.Satoshis}},
+				{index: 2, previous: &bt.Output{LockingScript: fx.buy.LockingScript, Satoshis: fx.buy.Satoshis}},
+				{index: 3, previous: &bt.Output{LockingScript: fx.buyFT.LockingScript, Satoshis: fx.buyFT.Satoshis}},
+				{index: 4, previous: &bt.Output{LockingScript: fx.feeUTXOs[0].LockingScript, Satoshis: fx.feeUTXOs[0].Satoshis}},
 			}
-			for inputIndex, previousOutput := range previousOutputs {
-				err := interpreter.NewEngine().Execute(
-					interpreter.WithTx(tx, inputIndex, previousOutput),
+			for _, input := range contractInputs {
+				var lastState *interpreter.State
+				debugger := interpreterdebug.NewDebugger()
+				debugger.AttachBeforeStep(func(state *interpreter.State) {
+					lastState = state
+				})
+				if err := interpreter.NewEngine().Execute(
+					interpreter.WithTx(tx, input.index, input.previous),
 					interpreter.WithAfterGenesis(),
 					interpreter.WithForkID(),
-				)
-				if err != nil {
-					t.Fatalf("contract input %d failed validation: %v", inputIndex, err)
+					interpreter.WithDebugger(debugger),
+				); err != nil {
+					if lastState != nil {
+						stack := lastState.DataStack
+						if len(stack) > 40 {
+							stack = stack[len(stack)-40:]
+						}
+						t.Fatalf(
+							"TokenOrder input %d failed validation at script=%d offset=%d opcode=%s stack=%x: %v",
+							input.index, lastState.ScriptIdx, lastState.OpcodeIdx,
+							lastState.Opcode().Name(), stack, err,
+						)
+					}
+					t.Fatalf("TokenOrder input %d failed validation: %v", input.index, err)
 				}
 			}
 		})
@@ -668,11 +835,43 @@ func TestMatchTokenOrderRejectsPairMismatch(t *testing.T) {
 
 	_, err := NewOrderBook().MatchTokenOrder(
 		fx.key,
-		fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, "",
-		fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, "",
-		fx.feeUTXOs, fx.address, fx.address,
+		fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, fx.buyFTPrePre,
+		fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, fx.sellFTPrePre,
+		fx.feeUTXOs, fx.taxAddress, fx.taxAddress,
 	)
 	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "pair mismatch") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestMatchTokenOrderRejectsLegacyJS165Script(t *testing.T) {
+	fx := newTokenOrderMatchFixture(t)
+	legacy := append([]byte(nil), fx.buy.LockingScript.Bytes()...)
+	legacy[111] = bscript.OpDROP
+	fx.buy.LockingScript = bscript.NewFromBytes(legacy)
+
+	_, err := NewOrderBook().MatchTokenOrder(
+		fx.key,
+		fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, fx.buyFTPrePre,
+		fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, fx.sellFTPrePre,
+		fx.feeUTXOs, fx.taxAddress, fx.taxAddress,
+	)
+	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "legacy tokenorder") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestMatchTokenOrderRejectsPreV4IndependentFTs(t *testing.T) {
+	fx := newTokenOrderMatchFixture(t)
+	fx.buyFT.LockingScript = contractSyntheticFTScript(t, bscript.OpDATA1)
+
+	_, err := NewOrderBook().MatchTokenOrder(
+		fx.key,
+		fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, fx.buyFTPrePre,
+		fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, fx.sellFTPrePre,
+		fx.feeUTXOs, fx.taxAddress, fx.taxAddress,
+	)
+	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "requires ft v4") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
@@ -722,9 +921,9 @@ func TestMatchTokenOrderRejectsInvalidSettlementInputs(t *testing.T) {
 			test.mutate(&fx)
 			_, err := NewOrderBook().MatchTokenOrder(
 				fx.key,
-				fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, "",
-				fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, "",
-				fx.feeUTXOs, fx.address, fx.address,
+				fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, fx.buyFTPrePre,
+				fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, fx.sellFTPrePre,
+				fx.feeUTXOs, fx.taxAddress, fx.taxAddress,
 			)
 			if err == nil || !strings.Contains(strings.ToLower(err.Error()), test.want) {
 				t.Fatalf("unexpected error: %v", err)

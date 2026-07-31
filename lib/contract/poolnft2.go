@@ -699,6 +699,7 @@ func getServiceFeeAddress(lpPlan int) (string, error) {
 const (
 	ftV1PartialOffset = 1536
 	ftV2PartialOffset = 1856
+	ftV4PartialOffset = 1920
 	coinPartialOffset = 1984
 )
 
@@ -717,6 +718,9 @@ func ftCodeSizeHex(isCoin bool, ftVersion int) string {
 	}
 	if ftVersion == 1 {
 		return "1c06"
+	}
+	if ftVersion == int(util.FTVersion4) {
+		return "9c07"
 	}
 	return "5c07"
 }
@@ -1032,6 +1036,15 @@ func toLegacyFtlpCodePre(source string) (string, error) {
 	)
 }
 
+func toMultiContractFtlpCodePre(source string) (string, error) {
+	return replaceFtlpCodePreFragment(
+		source,
+		"OP_HASH256 OP_6 OP_PUSH_META 0x01 0x20 OP_SPLIT",
+		"OP_HASH256 OP_OVER OP_16 OP_PICK OP_1SUB 0x01 0x28 OP_MUL OP_SPLIT OP_NIP 0x01 0x20 OP_SPLIT",
+		1,
+	)
+}
+
 func (p *PoolNFT2) getFtlpCode(poolNftCodeHash, address string, tapeSize int, isCoin bool, ftVersion int) (*bscript.Script, error) {
 	pkh, err := pubKeyHashFromAddress(address)
 	if err != nil {
@@ -1048,7 +1061,12 @@ func (p *PoolNFT2) getFtlpCode(poolNftCodeHash, address string, tapeSize int, is
 		"${codeHash}", poolNftCodeHash,
 		"${tapeSizeHex}", tapeSizeHex,
 	).Replace(poolNFT2FtlpCodeTemplate)
-	if ftVersion != 3 {
+	if ftVersion == int(util.FTVersion4) {
+		pre, err = toMultiContractFtlpCodePre(pre)
+		if err != nil {
+			return nil, fmt.Errorf("getFtlpCode v4 template: %w", err)
+		}
+	} else if ftVersion != 3 {
 		pre, err = toLegacyFtlpCodePre(pre)
 		if err != nil {
 			return nil, fmt.Errorf("getFtlpCode legacy template: %w", err)
@@ -1084,6 +1102,12 @@ func (p *PoolNFT2) getFtlpCode(poolNftCodeHash, address string, tapeSize int, is
 			paddingHex = strings.Repeat("ff", 577)
 			pushOpcode = "4d4102"
 		}
+	} else if ftVersion == int(util.FTVersion4) {
+		// The v4 parent selector adds seven script bytes. Another 57 padding
+		// bytes keep the mutable suffix at 28 bytes and the partial boundary
+		// aligned at 1920.
+		paddingHex = strings.Repeat("ff", 457)
+		pushOpcode = "4dc901"
 	} else if ftVersion == 3 {
 		// 400 bytes = 0x0190.
 		paddingHex = strings.Repeat("ff", 400)
@@ -1132,7 +1156,12 @@ func (p *PoolNFT2) getFtlpCodeWithLockTime(poolNftCodeHash, address string, tape
 		"${hash}", hashField,
 		"${tapeSizeHex}", tapeSizeHex,
 	).Replace(poolNFT2FtlpLockTimeCodeTemplate)
-	if ftVersion != 3 {
+	if ftVersion == int(util.FTVersion4) {
+		pre, err = toMultiContractFtlpCodePre(pre)
+		if err != nil {
+			return nil, fmt.Errorf("getFtlpCodeWithLockTime v4 template: %w", err)
+		}
+	} else if ftVersion != 3 {
 		pre, err = toLegacyFtlpCodePre(pre)
 		if err != nil {
 			return nil, fmt.Errorf("getFtlpCodeWithLockTime legacy template: %w", err)
@@ -1158,6 +1187,11 @@ func (p *PoolNFT2) getFtlpCodeWithLockTime(poolNftCodeHash, address string, tape
 			paddingHex = strings.Repeat("ff", 553)
 			pushOpcode = "4d2902"
 		}
+	} else if ftVersion == int(util.FTVersion4) {
+		// As above, seven functional bytes plus 57 padding bytes move the
+		// partial boundary from 1856 to 1920 without changing the suffix.
+		paddingHex = strings.Repeat("ff", 433)
+		pushOpcode = "4db101"
 	} else if ftVersion == 3 {
 		// 376 bytes = 0x0178.
 		paddingHex = strings.Repeat("ff", 376)
@@ -1577,6 +1611,8 @@ func (p *PoolNFT2) CreatePoolNFT(
 	offset := ftV2PartialOffset
 	if isCoin {
 		offset = coinPartialOffset
+	} else if ftVersion == int(util.FTVersion4) {
+		offset = ftV4PartialOffset
 	} else if ftVersion == 1 {
 		offset = ftV1PartialOffset
 	}
@@ -1750,6 +1786,8 @@ func (p *PoolNFT2) CreatePoolNFTWithLock(
 	offset := ftV2PartialOffset
 	if isCoin {
 		offset = coinPartialOffset
+	} else if ftVersion == int(util.FTVersion4) {
+		offset = ftV4PartialOffset
 	} else if ftVersion == 1 {
 		offset = ftV1PartialOffset
 	}

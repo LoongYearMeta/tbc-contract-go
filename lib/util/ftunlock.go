@@ -22,6 +22,8 @@ const (
 	ftV1PartialOffset = 1536
 	ftV2Length        = 1884
 	ftV2PartialOffset = 1856
+	ftV4Length        = 1948
+	ftV4PartialOffset = 1920
 	coinLength        = 2012
 	coinPartialOffset = 1984
 )
@@ -35,6 +37,9 @@ func partialOffsetGetPreTx(scriptLen int) int {
 	if scriptLen == coinLength {
 		return coinPartialOffset
 	}
+	if scriptLen == ftV4Length {
+		return ftV4PartialOffset
+	}
 	if scriptLen >= ftV2Length && scriptLen < coinLength {
 		return ftV2PartialOffset
 	}
@@ -47,6 +52,8 @@ func partialOffsetGetPrePre(scriptLen int) int {
 	switch scriptLen {
 	case ftV1Length:
 		return ftV1PartialOffset
+	case ftV4Length:
+		return ftV4PartialOffset
 	case coinLength:
 		return coinPartialOffset
 	default:

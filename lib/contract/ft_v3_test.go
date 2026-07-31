@@ -10,6 +10,7 @@ import (
 	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
+	"github.com/LoongYearMeta/tbc-lib-go/util/partialsha256"
 )
 
 func ftSwapFixtureTransactions(t *testing.T, inputCount int) (current, pre, contractTX *bt.Tx) {
@@ -139,6 +140,52 @@ func TestStaticGetFTUnlockSwapV3RejectsUnsupportedContractInputIndex(t *testing.
 	)
 	if err == nil || !strings.Contains(err.Error(), "outside 0..5") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestMintFTUsesMultiContractV4Script(t *testing.T) {
+	fx := newHTLCTokenFixture(t, 1_000)
+	ft, err := NewFT(&FtParams{
+		Name: "MultiContract", Symbol: "MC4", Amount: 1_000, Decimal: 2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	raws, err := ft.MintFT(fx.senderKey, fx.sender, fx.feeUTXO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mint := mustTx(t, raws[1])
+	info, err := util.ClassifyFTScript(mint.Outputs[0].LockingScript)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Version != util.FTVersion4 {
+		t.Fatalf("minted FT version = %d, want v4", info.Version)
+	}
+	if got := mint.Outputs[0].LockingScript.Len(); got != 1948 {
+		t.Fatalf("minted FT code length = %d, want 1948", got)
+	}
+}
+
+func TestComputeFtPartialHashUsesV4Boundary(t *testing.T) {
+	code, err := getFTmintCode(
+		strings.Repeat("11", 32),
+		0,
+		"1BitcoinEaterAddressDontSendf59kuE",
+		80,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const v4PartialOffset = 1920
+	want := partialsha256.CalculatePartialHash(code.Bytes()[:v4PartialOffset])
+	got, err := ComputeFtPartialHash(code.ToHex(), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != want {
+		t.Fatalf("v4 partial hash = %s, want %s", got, want)
 	}
 }
 

@@ -16,11 +16,29 @@ import (
 )
 
 type tokenOrderMatchBuild struct {
-	tx       *bt.Tx
-	buyData  *TokenOrderData
-	sellData *TokenOrderData
-	buyInfo  util.FTScriptInfo
-	sellInfo util.FTScriptInfo
+	tx                *bt.Tx
+	changeOutputIndex int
+	buyData           *TokenOrderData
+	sellData          *TokenOrderData
+	buyInfo           util.FTScriptInfo
+	sellInfo          util.FTScriptInfo
+}
+
+const tokenOrderLegacyOutputHashDropOffset = 111
+
+func rejectLegacyTokenOrderMatchScript(name string, utxo *bt.UTXO) error {
+	if utxo == nil || utxo.LockingScript == nil {
+		return nil
+	}
+	script := utxo.LockingScript.Bytes()
+	if len(script) == tokenOrderPrefixLength+tokenOrderDataLength &&
+		script[tokenOrderLegacyOutputHashDropOffset] == bscript.OpDROP {
+		return fmt.Errorf(
+			"%s uses a legacy TokenOrder JS 1.6.5 script that cannot be matched; cancel and recreate the order",
+			name,
+		)
+	}
+	return nil
 }
 
 func tokenOrderMin(left, right *big.Int) *big.Int {
@@ -86,6 +104,12 @@ func (o *OrderBook) buildMatchTokenOrder(
 	if len(feeUTXOs) == 0 {
 		return nil, fmt.Errorf("TBC fee UTXOs required")
 	}
+	if err := rejectLegacyTokenOrderMatchScript("buy order", buyUTXO); err != nil {
+		return nil, err
+	}
+	if err := rejectLegacyTokenOrderMatchScript("sell order", sellUTXO); err != nil {
+		return nil, err
+	}
 
 	buyData, err := GetTokenOrderData(buyUTXO.LockingScript.ToHex(), mainnet)
 	if err != nil {
@@ -125,6 +149,18 @@ func (o *OrderBook) buildMatchTokenOrder(
 	if buyFT.FtBalance == nil || buyFT.FtBalance.Cmp(tokenBPay) < 0 {
 		return nil, fmt.Errorf("buy order FT balance is insufficient")
 	}
+	expectedTokenBRemaining := tokenOrderMulDiv(
+		newBuyAmount, buyData.UnitPrice, precision,
+	)
+	actualTokenBRemaining := new(big.Int).Sub(
+		new(big.Int).Set(buyFT.FtBalance), tokenBPay,
+	)
+	if actualTokenBRemaining.Cmp(expectedTokenBRemaining) != 0 {
+		return nil, fmt.Errorf(
+			"partial fill creates Token B rounding residue: remaining balance %s, expected %s for remaining order volume %s",
+			actualTokenBRemaining, expectedTokenBRemaining, newBuyAmount,
+		)
+	}
 	buyInfo, err := util.ClassifyFTScript(buyFT.LockingScript)
 	if err != nil {
 		return nil, fmt.Errorf("classify buy FT: %w", err)
@@ -132,6 +168,12 @@ func (o *OrderBook) buildMatchTokenOrder(
 	sellInfo, err := util.ClassifyFTScript(sellFT.LockingScript)
 	if err != nil {
 		return nil, fmt.Errorf("classify sell FT: %w", err)
+	}
+	if err := requireMatchableTokenOrderFT("buy FT", buyInfo); err != nil {
+		return nil, err
+	}
+	if err := requireMatchableTokenOrderFT("sell FT", sellInfo); err != nil {
+		return nil, err
 	}
 	buyTape, err := htlcTokenTapeAt(buyFTPreTX, int(buyFT.Vout))
 	if err != nil {
@@ -143,31 +185,34 @@ func (o *OrderBook) buildMatchTokenOrder(
 	}
 
 	tokenABuyerHex, _ := BuildTapeAmountWithFtInputIndex(
-		tokenABuyer, []*big.Int{new(big.Int).Set(sellFT.FtBalance)}, 3,
+		tokenABuyer, []*big.Int{new(big.Int).Set(sellFT.FtBalance)}, 1,
 	)
 	tokenARemainingAfterBuyer := new(big.Int).Sub(new(big.Int).Set(sellFT.FtBalance), tokenABuyer)
 	tokenATaxHex, tokenAChangeHex := BuildTapeAmountWithFtInputIndex(
-		tokenATax, []*big.Int{tokenARemainingAfterBuyer}, 3,
+		tokenATax, []*big.Int{tokenARemainingAfterBuyer}, 1,
 	)
 	tokenBSellerHex, _ := BuildTapeAmountWithFtInputIndex(
-		tokenBSeller, []*big.Int{new(big.Int).Set(buyFT.FtBalance)}, 1,
+		tokenBSeller, []*big.Int{new(big.Int).Set(buyFT.FtBalance)}, 3,
 	)
 	tokenBRemainingAfterSeller := new(big.Int).Sub(new(big.Int).Set(buyFT.FtBalance), tokenBSeller)
 	tokenBTaxHex, tokenBChangeHex := BuildTapeAmountWithFtInputIndex(
-		tokenBTax, []*big.Int{tokenBRemainingAfterSeller}, 1,
+		tokenBTax, []*big.Int{tokenBRemainingAfterSeller}, 3,
 	)
 
 	tx := newFTTx()
-	if err := tx.FromUTXOs(buyUTXO); err != nil {
-		return nil, err
-	}
-	if err := tx.FromUTXOs(util.FtUTXOToUTXO(buyFT)); err != nil {
-		return nil, err
-	}
+	// FT covenants require each token's outputs in reverse FT-input order.
+	// TokenOrder requires Token B outputs before Token A outputs, so the
+	// sell/Token A pair must occupy inputs 0/1 and buy/Token B inputs 2/3.
 	if err := tx.FromUTXOs(sellUTXO); err != nil {
 		return nil, err
 	}
 	if err := tx.FromUTXOs(util.FtUTXOToUTXO(sellFT)); err != nil {
+		return nil, err
+	}
+	if err := tx.FromUTXOs(buyUTXO); err != nil {
+		return nil, err
+	}
+	if err := tx.FromUTXOs(util.FtUTXOToUTXO(buyFT)); err != nil {
 		return nil, err
 	}
 	if err := tx.FromUTXOs(feeUTXOs...); err != nil {
@@ -176,16 +221,16 @@ func (o *OrderBook) buildMatchTokenOrder(
 
 	sellCodeHex := sellFT.LockingScript.ToHex()
 	buyCodeHex := buyFT.LockingScript.ToHex()
-	if err := tokenOrderAddFTPair(tx, sellCodeHex, sellTape.ToHex(), tokenABuyerHex, buyData.HoldAddress, sellFT.Satoshis); err != nil {
-		return nil, err
-	}
-	if err := tokenOrderAddFTPair(tx, sellCodeHex, sellTape.ToHex(), tokenATaxHex, ftaFeeAddress, sellFT.Satoshis); err != nil {
-		return nil, err
-	}
 	if err := tokenOrderAddFTPair(tx, buyCodeHex, buyTape.ToHex(), tokenBSellerHex, sellData.HoldAddress, buyFT.Satoshis); err != nil {
 		return nil, err
 	}
 	if err := tokenOrderAddFTPair(tx, buyCodeHex, buyTape.ToHex(), tokenBTaxHex, ftbFeeAddress, buyFT.Satoshis); err != nil {
+		return nil, err
+	}
+	if err := tokenOrderAddFTPair(tx, sellCodeHex, sellTape.ToHex(), tokenABuyerHex, buyData.HoldAddress, sellFT.Satoshis); err != nil {
+		return nil, err
+	}
+	if err := tokenOrderAddFTPair(tx, sellCodeHex, sellTape.ToHex(), tokenATaxHex, ftaFeeAddress, sellFT.Satoshis); err != nil {
 		return nil, err
 	}
 
@@ -232,7 +277,7 @@ func (o *OrderBook) buildMatchTokenOrder(
 		}
 	}
 
-	allInputs := []*bt.UTXO{buyUTXO, util.FtUTXOToUTXO(buyFT), sellUTXO, util.FtUTXOToUTXO(sellFT)}
+	allInputs := []*bt.UTXO{sellUTXO, util.FtUTXOToUTXO(sellFT), buyUTXO, util.FtUTXOToUTXO(buyFT)}
 	allInputs = append(allInputs, feeUTXOs...)
 	inputTotal, err := tokenOrderCheckedSatoshis(allInputs...)
 	if err != nil {
@@ -253,7 +298,8 @@ func (o *OrderBook) buildMatchTokenOrder(
 	tx.Outputs[changeOutputIndex].Satoshis = change.Uint64()
 
 	return &tokenOrderMatchBuild{
-		tx: tx, buyData: buyData, sellData: sellData,
+		tx: tx, changeOutputIndex: changeOutputIndex,
+		buyData: buyData, sellData: sellData,
 		buyInfo: buyInfo, sellInfo: sellInfo,
 	}, nil
 }
@@ -294,63 +340,75 @@ func (o *OrderBook) MatchTokenOrder(
 		return "", err
 	}
 	tx := built.tx
-	if built.buyInfo.IsCoin {
+	if built.sellInfo.IsCoin {
 		tx.Inputs[1].SequenceNumber = 0xfffffffe
 	}
-	if built.sellInfo.IsCoin {
+	if built.buyInfo.IsCoin {
 		tx.Inputs[3].SequenceNumber = 0xfffffffe
 	}
 
-	buyOrderUnlockHex, err := GetTokenOrderUnlock(tx, buyPreTX, int(buyUTXO.Vout))
-	if err != nil {
-		return "", err
-	}
-	buyOrderUnlock, _ := bscript.NewFromHexString(buyOrderUnlockHex)
-	if err := tx.InsertInputUnlockingScript(0, buyOrderUnlock); err != nil {
-		return "", err
-	}
-	buyFTUnlock, err := (&FT{ContractTxid: built.buyData.FTBID}).GetFTUnlockSwap(
-		privateKey, tx, buyFTPreTX, buyFTPrePre, buyPreTX,
-		1, int(buyFT.Vout), built.buyInfo.Version, built.buyInfo.IsCoin, true,
-	)
-	if err != nil {
-		return "", fmt.Errorf("buy FT unlock: %w", err)
-	}
-	if err := tx.InsertInputUnlockingScript(1, buyFTUnlock); err != nil {
-		return "", err
-	}
-
-	sellOrderUnlockHex, err := GetTokenOrderUnlock(tx, sellPreTX, int(sellUTXO.Vout))
-	if err != nil {
-		return "", err
-	}
-	sellOrderUnlock, _ := bscript.NewFromHexString(sellOrderUnlockHex)
-	if err := tx.InsertInputUnlockingScript(2, sellOrderUnlock); err != nil {
-		return "", err
-	}
-	sellFTUnlock, err := (&FT{ContractTxid: built.sellData.FTAID}).GetFTUnlockSwap(
-		privateKey, tx, sellFTPreTX, sellFTPrePre, sellPreTX,
-		3, int(sellFT.Vout), built.sellInfo.Version, built.sellInfo.IsCoin, true,
-	)
-	if err != nil {
-		return "", fmt.Errorf("sell FT unlock: %w", err)
-	}
-	if err := tx.InsertInputUnlockingScript(3, sellFTUnlock); err != nil {
-		return "", err
-	}
-
-	ctx := context.Background()
-	for i := 4; i < len(tx.Inputs); i++ {
-		simple := &unlocker.Simple{PrivateKey: privateKey}
-		unlock, err := simple.UnlockingScript(ctx, tx, bt.UnlockerParams{
-			InputIdx: uint32(i), SigHashFlags: sighash.AllForkID,
-		})
+	sign := func() error {
+		sellOrderUnlockHex, err := GetTokenOrderUnlock(tx, sellPreTX, int(sellUTXO.Vout))
 		if err != nil {
-			return "", err
+			return err
 		}
-		if err := tx.InsertInputUnlockingScript(uint32(i), unlock); err != nil {
-			return "", err
+		sellOrderUnlock, err := bscript.NewFromHexString(sellOrderUnlockHex)
+		if err != nil {
+			return err
 		}
+		if err := tx.InsertInputUnlockingScript(0, sellOrderUnlock); err != nil {
+			return err
+		}
+		sellFTUnlock, err := (&FT{ContractTxid: built.sellData.FTAID}).GetFTUnlockSwap(
+			privateKey, tx, sellFTPreTX, sellFTPrePre, sellPreTX,
+			1, int(sellFT.Vout), built.sellInfo.Version, built.sellInfo.IsCoin, true,
+		)
+		if err != nil {
+			return fmt.Errorf("sell FT unlock: %w", err)
+		}
+		if err := tx.InsertInputUnlockingScript(1, sellFTUnlock); err != nil {
+			return err
+		}
+
+		buyOrderUnlockHex, err := GetTokenOrderUnlock(tx, buyPreTX, int(buyUTXO.Vout))
+		if err != nil {
+			return err
+		}
+		buyOrderUnlock, err := bscript.NewFromHexString(buyOrderUnlockHex)
+		if err != nil {
+			return err
+		}
+		if err := tx.InsertInputUnlockingScript(2, buyOrderUnlock); err != nil {
+			return err
+		}
+		buyFTUnlock, err := (&FT{ContractTxid: built.buyData.FTBID}).GetFTUnlockSwap(
+			privateKey, tx, buyFTPreTX, buyFTPrePre, buyPreTX,
+			3, int(buyFT.Vout), built.buyInfo.Version, built.buyInfo.IsCoin, true,
+		)
+		if err != nil {
+			return fmt.Errorf("buy FT unlock: %w", err)
+		}
+		if err := tx.InsertInputUnlockingScript(3, buyFTUnlock); err != nil {
+			return err
+		}
+
+		ctx := context.Background()
+		for i := 4; i < len(tx.Inputs); i++ {
+			simple := &unlocker.Simple{PrivateKey: privateKey}
+			unlock, err := simple.UnlockingScript(ctx, tx, bt.UnlockerParams{
+				InputIdx: uint32(i), SigHashFlags: sighash.AllForkID,
+			})
+			if err != nil {
+				return err
+			}
+			if err := tx.InsertInputUnlockingScript(uint32(i), unlock); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if err := finalizeSignedFee(tx, built.changeOutputIndex, sign); err != nil {
+		return "", fmt.Errorf("finalize token order match fee: %w", err)
 	}
 	return tx.String(), nil
 }

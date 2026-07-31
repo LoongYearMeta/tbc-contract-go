@@ -222,7 +222,7 @@ func UpdateTokenSaleVolume(codeHex string, newVolume *big.Int) (string, error) {
 // GetTokenOrderUnlock mirrors the Token Order use of the common OrderBook
 // current/pre-transaction serialization and selects match/cancel option 1.
 func GetTokenOrderUnlock(currentTX, preTX *bt.Tx, preTxVout int) (string, error) {
-	preTxData, err := util.GetPreTxdataOB(preTX, preTxVout, 1)
+	preTxData, err := util.GetTokenOrderPreTxdataOB(preTX, preTxVout, 1)
 	if err != nil {
 		return "", err
 	}
@@ -239,6 +239,16 @@ func tokenOrderPositiveUint64(value *big.Int, field string) error {
 	}
 	if value.Sign() <= 0 {
 		return fmt.Errorf("%s must be positive", field)
+	}
+	return nil
+}
+
+func requireMatchableTokenOrderFT(label string, info util.FTScriptInfo) error {
+	if !info.IsCoin && info.Version < util.FTVersion4 {
+		return fmt.Errorf(
+			"TokenOrder with independently created orders requires FT v4; %s is v%d",
+			label, info.Version,
+		)
 	}
 	return nil
 }
@@ -270,6 +280,12 @@ func (o *OrderBook) prepareTokenOrder(
 	ftbInfo, err := classifyOrderBookFTCode(ftbCode)
 	if err != nil {
 		return fmt.Errorf("classify FTB code: %w", err)
+	}
+	if err := requireMatchableTokenOrderFT("FTA", ftaInfo); err != nil {
+		return err
+	}
+	if err := requireMatchableTokenOrderFT("FTB", ftbInfo); err != nil {
+		return err
 	}
 	ftaPartial, err := ComputeFtPartialHash(ftaCode, ftaInfo.IsCoin)
 	if err != nil {

@@ -13,6 +13,10 @@ const (
 	FTVersion1 FTVersion = 1
 	FTVersion2 FTVersion = 2
 	FTVersion3 FTVersion = 3
+	// FTVersion4 selects the multi-contract swap template. Unlike v3, its
+	// covenant selects the authorizing contract input instead of assuming
+	// every FT is authorized by current input zero.
+	FTVersion4 FTVersion = 4
 )
 
 // FTScriptInfo describes the FT generation and whether the script is the
@@ -31,8 +35,8 @@ func ClassifyFTScriptHex(codeHex string) (FTScriptInfo, error) {
 	return ClassifyFTScript(script)
 }
 
-// ClassifyFTScript identifies FT v1, v2, v3, and StableCoin scripts. FT v2
-// and v3 are the same byte length, so their fill opcode must be inspected.
+// ClassifyFTScript identifies FT v1-v4 and StableCoin scripts. FT v2 and v3
+// are the same byte length, so their fill opcode must be inspected.
 func ClassifyFTScript(script *bscript.Script) (FTScriptInfo, error) {
 	if script == nil {
 		return FTScriptInfo{}, fmt.Errorf("nil FT code script")
@@ -51,6 +55,8 @@ func ClassifyFTScript(script *bscript.Script) (FTScriptInfo, error) {
 			return FTScriptInfo{Version: FTVersion3}, nil
 		}
 		return FTScriptInfo{Version: FTVersion2}, nil
+	case 1948:
+		return FTScriptInfo{Version: FTVersion4}, nil
 	default:
 		return FTScriptInfo{}, fmt.Errorf("unsupported FT code length %d", len(script.Bytes()))
 	}

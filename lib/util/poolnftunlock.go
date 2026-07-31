@@ -55,6 +55,8 @@ const (
 	poolFtV1PartialOffset = 1536
 	poolFtV2Length        = 1884
 	poolFtV2PartialOffset = 1856
+	poolFtV4Length        = 1948
+	poolFtV4PartialOffset = 1920
 	poolCoinLength        = 2012
 	poolCoinPartialOffset = 1984
 )
@@ -113,6 +115,9 @@ func poolPartialHashAndSuffix(script []byte) (phHex string, suffix []byte) {
 	case poolFtV2Length:
 		phHex = partialsha256.CalculatePartialHash(script[:poolFtV2PartialOffset])
 		suffix = script[poolFtV2PartialOffset:]
+	case poolFtV4Length:
+		phHex = partialsha256.CalculatePartialHash(script[:poolFtV4PartialOffset])
+		suffix = script[poolFtV4PartialOffset:]
 	case poolCoinLength:
 		phHex = partialsha256.CalculatePartialHash(script[:poolCoinPartialOffset])
 		suffix = script[poolCoinPartialOffset:]
@@ -125,7 +130,7 @@ func poolPartialHashAndSuffix(script []byte) (phHex string, suffix []byte) {
 
 // poolIsFTScript returns true if the locking script is an FT/coin code script.
 func poolIsFTScript(l int) bool {
-	return l == poolFtV1Length || l == poolFtV2Length || l == poolCoinLength
+	return l == poolFtV1Length || l == poolFtV2Length || l == poolFtV4Length || l == poolCoinLength
 }
 
 // --------------------------------------------------------------------------
@@ -538,6 +543,8 @@ func poolPartialOffsetForLength(scriptLen int) int {
 	switch scriptLen {
 	case poolFtV1Length:
 		return poolFtV1PartialOffset
+	case poolFtV4Length:
+		return poolFtV4PartialOffset
 	case poolCoinLength:
 		return poolCoinPartialOffset
 	default:
@@ -626,7 +633,8 @@ func poolWritePoolNFTHashOutput(buf []byte, satoshis uint64, lockScript []byte) 
 // (alias kept distinct from poolIsFTScript only to make call-sites obviously
 // mirror the TS predicate).
 func poolIsFTOrCoinScript(scriptLen int) bool {
-	return scriptLen == poolFtV1Length || scriptLen == poolFtV2Length || scriptLen == poolCoinLength
+	return scriptLen == poolFtV1Length || scriptLen == poolFtV2Length ||
+		scriptLen == poolFtV4Length || scriptLen == poolCoinLength
 }
 
 // poolP2PKHPubKeyHashHex extracts the 20-byte pubKeyHash from a P2PKH locking

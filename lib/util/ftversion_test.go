@@ -75,6 +75,47 @@ func TestClassifyFTScriptRecognizesV1AndCoin(t *testing.T) {
 	}
 }
 
+func TestClassifyFTScriptRecognizesMultiContractV4(t *testing.T) {
+	v4, err := ClassifyFTScript(syntheticFTScript(t, 1948, bscript.Op15))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v4 != (FTScriptInfo{Version: FTVersion4}) {
+		t.Fatalf("classified v4 as %+v", v4)
+	}
+}
+
+func TestFTV4PartialHashOffsetStaysSHA256BlockAligned(t *testing.T) {
+	const (
+		v4CodeLength    = 1948
+		v4PartialOffset = 1920
+	)
+	if got := partialOffsetGetPreTx(v4CodeLength); got != v4PartialOffset {
+		t.Fatalf("pre-tx partial offset = %d, want %d", got, v4PartialOffset)
+	}
+	if got := partialOffsetGetPrePre(v4CodeLength); got != v4PartialOffset {
+		t.Fatalf("pre-pre-tx partial offset = %d, want %d", got, v4PartialOffset)
+	}
+	if v4PartialOffset%64 != 0 {
+		t.Fatalf("v4 partial offset %d is not SHA-256 block aligned", v4PartialOffset)
+	}
+	if suffix := v4CodeLength - v4PartialOffset; suffix != 28 {
+		t.Fatalf("v4 mutable suffix = %d bytes, want 28", suffix)
+	}
+	if obFTV4CodeLength != v4CodeLength || obFTV4PartialOffset != v4PartialOffset {
+		t.Fatalf(
+			"orderbook v4 length/offset = %d/%d, want %d/%d",
+			obFTV4CodeLength, obFTV4PartialOffset, v4CodeLength, v4PartialOffset,
+		)
+	}
+	if got := poolPartialOffsetForLength(v4CodeLength); got != v4PartialOffset {
+		t.Fatalf("pool v4 partial offset = %d, want %d", got, v4PartialOffset)
+	}
+	if !poolIsFTScript(v4CodeLength) || !poolIsFTOrCoinScript(v4CodeLength) {
+		t.Fatal("pool serializers do not recognize FT v4 as an FT script")
+	}
+}
+
 func TestClassifyFTScriptHexRejectsUnsupportedLength(t *testing.T) {
 	_, err := ClassifyFTScriptHex(hex.EncodeToString(bytes.Repeat([]byte{bscript.OpNOP}, 100)))
 	if err == nil {
