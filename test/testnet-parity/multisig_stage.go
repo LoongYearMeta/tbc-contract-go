@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"os"
 	"sort"
+	"strings"
 
 	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
 	"github.com/LoongYearMeta/tbc-contract-go/lib/contract"
@@ -27,17 +28,22 @@ type ephemeralMultiSigSet struct {
 }
 
 type multiSigLifecyclePlan struct {
-	Transactions    []plannedTransaction
-	Signers         *ephemeralMultiSigSet
-	MultiSigAddress string
-	Token           *contract.FT
-	Source          *bt.Tx
-	Mint            *bt.Tx
-	Wallet          *bt.Tx
-	TBCSpend        *bt.Tx
-	FTDeposit       *bt.Tx
-	FTSpend         *bt.Tx
-	MainAddress     string
+	Transactions               []plannedTransaction
+	Signers                    *ephemeralMultiSigSet
+	DestinationSigners         *ephemeralMultiSigSet
+	MultiSigAddress            string
+	DestinationMultiSigAddress string
+	Token                      *contract.FT
+	Source                     *bt.Tx
+	Mint                       *bt.Tx
+	Wallet                     *bt.Tx
+	TBCDeposit                 *bt.Tx
+	TBCSpend                   *bt.Tx
+	TBCForward                 *bt.Tx
+	FTDeposit                  *bt.Tx
+	FTSpend                    *bt.Tx
+	FTForward                  *bt.Tx
+	MainAddress                string
 }
 
 func newEphemeralMultiSigSet(
@@ -93,6 +99,78 @@ func verifyEphemeralMultiSigSet(set *ephemeralMultiSigSet) (bool, error) {
 	return contract.VerifyMultiSigAddress(set.PublicKeys, set.Address)
 }
 
+func finishMultiSigTBCTransaction(
+	unsigned *contract.MultiSigTxRaw,
+	signers *ephemeralMultiSigSet,
+) (string, error) {
+	if unsigned == nil || signers == nil {
+		return "", fmt.Errorf("unsigned TBC transaction and signers are required")
+	}
+	signatures := make([][]string, len(unsigned.Amounts))
+	for signerIndex := 0; signerIndex < signers.Required; signerIndex++ {
+		perInput, err := contract.SignMultiSigTransactionSendTBC(
+			signers.Address,
+			unsigned,
+			signers.Signers[signerIndex].privateKey,
+		)
+		if err != nil {
+			return "", fmt.Errorf("MultiSig TBC signer %d: %w", signerIndex, err)
+		}
+		if len(perInput) != len(signatures) {
+			return "", fmt.Errorf(
+				"MultiSig TBC signer %d returned %d signatures for %d inputs",
+				signerIndex,
+				len(perInput),
+				len(signatures),
+			)
+		}
+		for inputIndex := range perInput {
+			signatures[inputIndex] = append(
+				signatures[inputIndex],
+				perInput[inputIndex],
+			)
+		}
+	}
+	return contract.FinishMultiSigTransactionSendTBC(
+		unsigned.TxRaw,
+		signatures,
+		signers.PublicKeys,
+	)
+}
+
+func finishMultiSigFTTransaction(
+	unsigned *contract.MultiSigTxRaw,
+	signers *ephemeralMultiSigSet,
+) (string, error) {
+	if unsigned == nil || signers == nil {
+		return "", fmt.Errorf("unsigned FT transaction and signers are required")
+	}
+	signatures := make([][]string, 1)
+	for signerIndex := 0; signerIndex < signers.Required; signerIndex++ {
+		perInput, err := contract.SignMultiSigTransactionTransferFT(
+			signers.Address,
+			unsigned,
+			signers.Signers[signerIndex].privateKey,
+		)
+		if err != nil {
+			return "", fmt.Errorf("MultiSig FT signer %d: %w", signerIndex, err)
+		}
+		if len(perInput) != 1 {
+			return "", fmt.Errorf(
+				"MultiSig FT signer %d returned %d signatures",
+				signerIndex,
+				len(perInput),
+			)
+		}
+		signatures[0] = append(signatures[0], perInput[0])
+	}
+	return contract.FinishMultiSigTransactionTransferFT(
+		unsigned.TxRaw,
+		signatures,
+		signers.PublicKeys,
+	)
+}
+
 func buildMultiSigLifecyclePlan(
 	privateKey *bec.PrivateKey,
 	address string,
@@ -101,6 +179,13 @@ func buildMultiSigLifecyclePlan(
 	signers, err := newEphemeralMultiSigSet(privateKey)
 	if err != nil {
 		return nil, err
+	}
+	destinationSigners, err := newEphemeralMultiSigSet(privateKey)
+	if err != nil {
+		return nil, err
+	}
+	if destinationSigners.Address == signers.Address {
+		return nil, fmt.Errorf("ephemeral multisig destination equals source")
 	}
 	token, err := contract.NewFT(&contract.FtParams{
 		Name: "GoMultiSigMatrix", Symbol: "GMS", Amount: 1_000_000, Decimal: 2,
@@ -143,6 +228,27 @@ func buildMultiSigLifecyclePlan(
 	if err != nil {
 		return nil, err
 	}
+	walletChange, err := changeUTXO(wallet)
+	if err != nil {
+		return nil, err
+	}
+	tbcDepositRaw, err := contract.P2PKHToMultiSigSendTBC(
+		address,
+		signers.Address,
+		20_000,
+		[]*bt.UTXO{walletChange},
+		privateKey,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("MultiSig TBC deposit build: %w", err)
+	}
+	tbcDeposit, err := parsePlannedTransaction(
+		"multisig-tbc-deposit",
+		tbcDepositRaw,
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	multiSigTBC, err := outputUTXO(wallet, 0)
 	if err != nil {
@@ -157,27 +263,38 @@ func buildMultiSigLifecyclePlan(
 	if err != nil {
 		return nil, fmt.Errorf("MultiSig TBC spend build: %w", err)
 	}
-	tbcSignatures := make([][]string, 1)
-	for signerIndex := 0; signerIndex < signers.Required; signerIndex++ {
-		signature, err := contract.SignMultiSigTransactionSendTBC(
-			signers.Address,
-			unsignedTBC,
-			signers.Signers[signerIndex].privateKey,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("MultiSig TBC signer %d: %w", signerIndex, err)
-		}
-		tbcSignatures[0] = append(tbcSignatures[0], signature[0])
-	}
-	tbcSpendRaw, err := contract.FinishMultiSigTransactionSendTBC(
-		unsignedTBC.TxRaw,
-		tbcSignatures,
-		signers.PublicKeys,
-	)
+	tbcSpendRaw, err := finishMultiSigTBCTransaction(unsignedTBC, signers)
 	if err != nil {
 		return nil, fmt.Errorf("MultiSig TBC finish: %w", err)
 	}
 	tbcSpend, err := parsePlannedTransaction("multisig-tbc-spend", tbcSpendRaw)
+	if err != nil {
+		return nil, err
+	}
+	tbcDepositMultiSig, err := outputUTXO(tbcDeposit, 0)
+	if err != nil {
+		return nil, err
+	}
+	unsignedTBCForward, err := contract.BuildMultiSigTransactionSendTBC(
+		signers.Address,
+		destinationSigners.Address,
+		10_000,
+		[]*bt.UTXO{tbcDepositMultiSig},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("MultiSig TBC forward build: %w", err)
+	}
+	tbcForwardRaw, err := finishMultiSigTBCTransaction(
+		unsignedTBCForward,
+		signers,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("MultiSig TBC forward finish: %w", err)
+	}
+	tbcForward, err := parsePlannedTransaction(
+		"multisig-tbc-forward",
+		tbcForwardRaw,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +303,7 @@ func buildMultiSigLifecyclePlan(
 	if err != nil {
 		return nil, err
 	}
-	depositFee, err := changeUTXO(wallet)
+	depositFee, err := changeUTXO(tbcDeposit)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +315,7 @@ func buildMultiSigLifecyclePlan(
 		address,
 		signers.Address,
 		token,
-		big.NewInt(20_000_000),
+		big.NewInt(30_000_000),
 		depositFee,
 		[]*contractutil.FtUTXO{mintedFT},
 		[]*bt.Tx{mint},
@@ -230,7 +347,7 @@ func buildMultiSigLifecyclePlan(
 		signers.Address,
 		address,
 		token,
-		big.NewInt(20_000_000),
+		big.NewInt(10_000_000),
 		ftFee,
 		[]*contractutil.FtUTXO{multiSigFT},
 		[]*bt.Tx{deposit},
@@ -241,27 +358,52 @@ func buildMultiSigLifecyclePlan(
 	if err != nil {
 		return nil, fmt.Errorf("MultiSig FT spend build: %w", err)
 	}
-	ftSignatures := make([][]string, 1)
-	for signerIndex := 0; signerIndex < signers.Required; signerIndex++ {
-		signature, err := contract.SignMultiSigTransactionTransferFT(
-			signers.Address,
-			unsignedFT,
-			signers.Signers[signerIndex].privateKey,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("MultiSig FT signer %d: %w", signerIndex, err)
-		}
-		ftSignatures[0] = append(ftSignatures[0], signature[0])
-	}
-	ftSpendRaw, err := contract.FinishMultiSigTransactionTransferFT(
-		unsignedFT.TxRaw,
-		ftSignatures,
-		signers.PublicKeys,
-	)
+	ftSpendRaw, err := finishMultiSigFTTransaction(unsignedFT, signers)
 	if err != nil {
 		return nil, fmt.Errorf("MultiSig FT finish: %w", err)
 	}
 	ftSpend, err := parsePlannedTransaction("multisig-ft-spend", ftSpendRaw)
+	if err != nil {
+		return nil, err
+	}
+	ftForwardFee, err := outputUTXO(ftSpend, 0)
+	if err != nil {
+		return nil, err
+	}
+	multiSigFTChange, err := ftUTXOFromTX(ftSpend, 3)
+	if err != nil {
+		return nil, err
+	}
+	ftSpendPrePre, err := localPrePre(deposit, 0)
+	if err != nil {
+		return nil, err
+	}
+	unsignedFTForward, err := contract.BuildMultiSigTransactionTransferFT(
+		signers.Address,
+		destinationSigners.Address,
+		token,
+		big.NewInt(10_000_000),
+		ftForwardFee,
+		[]*contractutil.FtUTXO{multiSigFTChange},
+		[]*bt.Tx{ftSpend},
+		[]string{ftSpendPrePre},
+		ftSpend,
+		signers.Signers[0].privateKey,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("MultiSig FT forward build: %w", err)
+	}
+	ftForwardRaw, err := finishMultiSigFTTransaction(
+		unsignedFTForward,
+		signers,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("MultiSig FT forward finish: %w", err)
+	}
+	ftForward, err := parsePlannedTransaction(
+		"multisig-ft-forward",
+		ftForwardRaw,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -271,20 +413,28 @@ func buildMultiSigLifecyclePlan(
 			{Label: "multisig-ft-source", Raw: mintRaws[0]},
 			{Label: "multisig-ft-mint", Raw: mintRaws[1]},
 			{Label: "multisig-wallet-create", Raw: walletRaw},
+			{Label: "multisig-tbc-deposit", Raw: tbcDepositRaw},
 			{Label: "multisig-tbc-spend", Raw: tbcSpendRaw},
+			{Label: "multisig-tbc-forward", Raw: tbcForwardRaw},
 			{Label: "multisig-ft-deposit", Raw: depositRaw},
 			{Label: "multisig-ft-spend", Raw: ftSpendRaw},
+			{Label: "multisig-ft-forward", Raw: ftForwardRaw},
 		},
-		Signers:         signers,
-		MultiSigAddress: signers.Address,
-		Token:           token,
-		Source:          source,
-		Mint:            mint,
-		Wallet:          wallet,
-		TBCSpend:        tbcSpend,
-		FTDeposit:       deposit,
-		FTSpend:         ftSpend,
-		MainAddress:     address,
+		Signers:                    signers,
+		DestinationSigners:         destinationSigners,
+		MultiSigAddress:            signers.Address,
+		DestinationMultiSigAddress: destinationSigners.Address,
+		Token:                      token,
+		Source:                     source,
+		Mint:                       mint,
+		Wallet:                     wallet,
+		TBCDeposit:                 tbcDeposit,
+		TBCSpend:                   tbcSpend,
+		TBCForward:                 tbcForward,
+		FTDeposit:                  deposit,
+		FTSpend:                    ftSpend,
+		FTForward:                  ftForward,
+		MainAddress:                address,
 	}, nil
 }
 
@@ -348,6 +498,33 @@ func validateMultiSigFTPair(
 	return nil
 }
 
+func validateMultiSigFTRecipient(
+	tx *bt.Tx,
+	codeVout int,
+	token *contract.FT,
+	multiSigAddress string,
+) error {
+	if tx == nil || token == nil || codeVout < 0 || codeVout >= len(tx.Outputs) {
+		return fmt.Errorf("multisig FT recipient output %d is missing", codeVout)
+	}
+	combineHash, err := contract.GetCombineHash(multiSigAddress)
+	if err != nil {
+		return err
+	}
+	recipientHash := strings.TrimSuffix(combineHash, "01")
+	if len(recipientHash) != 40 {
+		return fmt.Errorf("invalid multisig FT recipient hash %q", combineHash)
+	}
+	expected, err := contract.BuildFTtransferCode(token.CodeScript, recipientHash)
+	if err != nil {
+		return err
+	}
+	if !bytes.Equal(tx.Outputs[codeVout].LockingScript.Bytes(), expected.Bytes()) {
+		return fmt.Errorf("multisig FT recipient output %d has wrong owner", codeVout)
+	}
+	return nil
+}
+
 func validateMultiSigLifecycleTransaction(
 	label string,
 	tx *bt.Tx,
@@ -369,21 +546,76 @@ func validateMultiSigLifecycleTransaction(
 			return fmt.Errorf("multisig wallet Tape is invalid")
 		}
 		return nil
+	case "multisig-tbc-deposit":
+		return validateMultiSigLockOutput(tx, 0, plan.MultiSigAddress, 20_000)
 	case "multisig-tbc-spend":
 		if err := validateMultiSigLockOutput(tx, 0, plan.MultiSigAddress, 49_000); err != nil {
 			return err
 		}
 		return validatePaymentOutput(tx, plan.MainAddress, 50_000)
-	case "multisig-ft-deposit":
-		if err := validateMultiSigFTPair(tx, 0, 2_000, 20_000_000); err != nil {
+	case "multisig-tbc-forward":
+		if err := validateMultiSigLockOutput(tx, 0, plan.MultiSigAddress, 9_000); err != nil {
 			return err
 		}
-		return validateMultiSigFTPair(tx, 2, 2_000, 80_000_000)
+		return validateMultiSigLockOutput(
+			tx,
+			1,
+			plan.DestinationMultiSigAddress,
+			10_000,
+		)
+	case "multisig-ft-deposit":
+		if err := validateMultiSigFTPair(tx, 0, 2_000, 30_000_000); err != nil {
+			return err
+		}
+		if err := validateMultiSigFTRecipient(
+			tx,
+			0,
+			plan.Token,
+			plan.MultiSigAddress,
+		); err != nil {
+			return err
+		}
+		return validateMultiSigFTPair(tx, 2, 2_000, 70_000_000)
 	case "multisig-ft-spend":
 		if err := validateMultiSigLockOutput(tx, 0, plan.MultiSigAddress, 45_000); err != nil {
 			return err
 		}
-		return validateMultiSigFTPair(tx, 1, 2_000, 20_000_000)
+		if err := validateMultiSigFTPair(tx, 1, 2_000, 10_000_000); err != nil {
+			return err
+		}
+		if err := validateMultiSigFTPair(tx, 3, 2_000, 20_000_000); err != nil {
+			return err
+		}
+		return validateMultiSigFTRecipient(
+			tx,
+			3,
+			plan.Token,
+			plan.MultiSigAddress,
+		)
+	case "multisig-ft-forward":
+		if err := validateMultiSigLockOutput(tx, 0, plan.MultiSigAddress, 41_000); err != nil {
+			return err
+		}
+		if err := validateMultiSigFTPair(tx, 1, 2_000, 10_000_000); err != nil {
+			return err
+		}
+		if err := validateMultiSigFTRecipient(
+			tx,
+			1,
+			plan.Token,
+			plan.DestinationMultiSigAddress,
+		); err != nil {
+			return err
+		}
+		if err := validateMultiSigFTPair(tx, 3, 2_000, 10_000_000); err != nil {
+			return err
+		}
+		return validateMultiSigFTRecipient(
+			tx,
+			3,
+			plan.Token,
+			plan.MultiSigAddress,
+		)
 	default:
 		return fmt.Errorf("unknown multisig lifecycle label %q", label)
 	}

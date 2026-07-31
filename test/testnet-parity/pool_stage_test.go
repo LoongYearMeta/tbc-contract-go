@@ -72,6 +72,32 @@ func TestValidatePoolSwapDeltaUsesExactIntegers(t *testing.T) {
 	}
 }
 
+func TestValidateLockedLPCostOutputRequiresOneExactPayment(t *testing.T) {
+	const (
+		costAddress = "mwV3YgnowbJJB3LcyCuqiKpdivvNNFiK7M"
+		costAmount  = uint64(100)
+	)
+	script, err := bscript.NewP2PKHFromAddress(costAddress)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx := bt.NewTx()
+	tx.AddOutput(&bt.Output{LockingScript: script, Satoshis: costAmount})
+	if err := validateLockedLPCostOutput(tx, costAddress, costAmount); err != nil {
+		t.Fatal(err)
+	}
+
+	tx.AddOutput(&bt.Output{LockingScript: script, Satoshis: costAmount})
+	if err := validateLockedLPCostOutput(tx, costAddress, costAmount); err == nil {
+		t.Fatal("expected duplicate locked LP cost payment rejection")
+	}
+	tx.Outputs = tx.Outputs[:1]
+	tx.Outputs[0].Satoshis--
+	if err := validateLockedLPCostOutput(tx, costAddress, costAmount); err == nil {
+		t.Fatal("expected wrong locked LP cost amount rejection")
+	}
+}
+
 func TestDecodePoolAmountsFromTape(t *testing.T) {
 	pool := contract.NewPoolNFT2(nil)
 	pool.FtLpAmount = big.NewInt(123)

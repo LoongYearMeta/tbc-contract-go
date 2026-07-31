@@ -131,6 +131,36 @@ func validatePoolSwapDelta(
 	return nil
 }
 
+func validateLockedLPCostOutput(
+	tx *bt.Tx,
+	address string,
+	amount uint64,
+) error {
+	if tx == nil {
+		return fmt.Errorf("nil locked LP increase transaction")
+	}
+	wantScript, err := bscript.NewP2PKHFromAddress(address)
+	if err != nil {
+		return fmt.Errorf("locked LP cost address: %w", err)
+	}
+	matches := 0
+	for _, output := range tx.Outputs {
+		if output != nil && bytes.Equal(
+			output.LockingScript.Bytes(),
+			wantScript.Bytes(),
+		) && output.Satoshis == amount {
+			matches++
+		}
+	}
+	if matches != 1 {
+		return fmt.Errorf(
+			"exact locked LP cost outputs=%d want=1",
+			matches,
+		)
+	}
+	return nil
+}
+
 type poolTransitionKind uint8
 
 const (
@@ -1083,6 +1113,99 @@ func runPoolLockStage(cfg config, decoded *wif.WIF, address string) error {
 		return err
 	}
 	_ = init
+
+	var lockedLPCostAddress string
+	var lockedLPCostAmount uint64
+	if _, err := executeIndexedPoolOperation(
+		cfg,
+		poolID,
+		"pool-lock-increase-lp",
+		poolTransitionIncrease,
+		func(indexed *contract.PoolNFT2) (string, error) {
+			var err error
+			lockedLPCostAddress, err = contractutil.GetLpCostAddress(
+				indexed.PoolNftCode,
+			)
+			if err != nil {
+				return "", err
+			}
+			lockedLPCostAmount, err = contractutil.GetLpCostAmount(
+				indexed.PoolNftCode,
+			)
+			if err != nil {
+				return "", err
+			}
+			fee, err := fetchPoolFee(address, cfg.Network, 0.005)
+			if err != nil {
+				return "", err
+			}
+			return indexed.IncreaseLP(
+				decoded.PrivKey,
+				address,
+				fee,
+				"0.002",
+				lockTime,
+			)
+		},
+		func(tx *bt.Tx) error {
+			if _, err := validateFTLPPair(tx, 4, &lockTime); err != nil {
+				return err
+			}
+			return validateLockedLPCostOutput(
+				tx,
+				lockedLPCostAddress,
+				lockedLPCostAmount,
+			)
+		},
+	); err != nil {
+		return err
+	}
+
+	if _, err := executeIndexedPoolOperation(
+		cfg,
+		poolID,
+		"pool-lock-swap-tbc-to-ft",
+		poolTransitionSwapTBCToFT,
+		func(indexed *contract.PoolNFT2) (string, error) {
+			fee, err := fetchPoolFee(address, cfg.Network, 0.005)
+			if err != nil {
+				return "", err
+			}
+			return indexed.SwapToToken(
+				decoded.PrivKey,
+				address,
+				fee,
+				"0.001",
+				2,
+			)
+		},
+		nil,
+	); err != nil {
+		return err
+	}
+
+	if _, err := executeIndexedPoolOperation(
+		cfg,
+		poolID,
+		"pool-lock-swap-ft-to-tbc",
+		poolTransitionSwapFTToTBC,
+		func(indexed *contract.PoolNFT2) (string, error) {
+			fee, err := fetchPoolFee(address, cfg.Network, 0.005)
+			if err != nil {
+				return "", err
+			}
+			return indexed.SwapToTBC(
+				decoded.PrivKey,
+				address,
+				fee,
+				"10",
+				2,
+			)
+		},
+		nil,
+	); err != nil {
+		return err
+	}
 
 	pool, _, err = loadIndexedPool(poolID, cfg.Network)
 	if err != nil {

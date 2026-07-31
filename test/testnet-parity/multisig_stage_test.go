@@ -40,9 +40,12 @@ func TestBuildMultiSigLifecyclePlanCoversTBCAndFT(t *testing.T) {
 		"multisig-ft-source",
 		"multisig-ft-mint",
 		"multisig-wallet-create",
+		"multisig-tbc-deposit",
 		"multisig-tbc-spend",
+		"multisig-tbc-forward",
 		"multisig-ft-deposit",
 		"multisig-ft-spend",
+		"multisig-ft-forward",
 	}
 	if len(plan.Transactions) != len(wantLabels) {
 		t.Fatalf("transactions=%d want=%d", len(plan.Transactions), len(wantLabels))
@@ -59,7 +62,10 @@ func TestBuildMultiSigLifecyclePlanCoversTBCAndFT(t *testing.T) {
 			t.Fatalf("%s: %v", want, err)
 		}
 	}
-	if plan.MultiSigAddress == "" || plan.Token.ContractTxid == "" {
+	if plan.MultiSigAddress == "" ||
+		plan.DestinationMultiSigAddress == "" ||
+		plan.MultiSigAddress == plan.DestinationMultiSigAddress ||
+		plan.Token.ContractTxid == "" {
 		t.Fatal("missing public multisig address or FT contract id")
 	}
 }
@@ -96,9 +102,12 @@ func TestMultiSigLifecyclePaysFinalSignedSizeFee(t *testing.T) {
 		plan.Source,
 		plan.Mint,
 		plan.Wallet,
+		plan.TBCDeposit,
 		plan.TBCSpend,
+		plan.TBCForward,
 		plan.FTDeposit,
 		plan.FTSpend,
+		plan.FTForward,
 	} {
 		parents[tx.TxID()] = tx
 	}
@@ -106,6 +115,18 @@ func TestMultiSigLifecyclePaysFinalSignedSizeFee(t *testing.T) {
 		tx, err := bt.NewTxFromString(item.Raw)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if err := validateInputScriptsFromParents(
+			tx,
+			func(txid string) (*bt.Tx, error) {
+				parent, ok := parents[txid]
+				if !ok {
+					return nil, fmt.Errorf("missing parent %s", txid)
+				}
+				return parent, nil
+			},
+		); err != nil {
+			t.Fatalf("%s script: %v", item.Label, err)
 		}
 		paid, err := feeFromParents(tx, func(txid string) (*bt.Tx, error) {
 			parent, ok := parents[txid]
