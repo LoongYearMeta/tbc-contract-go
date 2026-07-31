@@ -17,6 +17,7 @@ import (
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bec"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
+	"github.com/LoongYearMeta/tbc-lib-go/script/interpreter"
 )
 
 type orderBookJSFixture struct {
@@ -614,6 +615,48 @@ func TestMatchTokenOrderBuildsAtomicTwelveOutputSettlement(t *testing.T) {
 		if input.UnlockingScript == nil || input.UnlockingScript.Len() == 0 {
 			t.Fatalf("input %d is unsigned", i)
 		}
+	}
+}
+
+func TestMatchTokenOrderScriptsValidate(t *testing.T) {
+	tests := []struct {
+		name       string
+		buyVolume  int64
+		sellVolume int64
+	}{
+		{name: "equal fill", buyVolume: 400, sellVolume: 400},
+		{name: "partial fill", buyVolume: 600, sellVolume: 400},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fx := newTokenOrderMatchFixtureWithVolumes(t, test.buyVolume, test.sellVolume)
+			raw, err := NewOrderBook().MatchTokenOrder(
+				fx.key,
+				fx.buy, fx.buyTX, fx.buyFT, fx.buyTX, "",
+				fx.sell, fx.sellTX, fx.sellFT, fx.sellTX, "",
+				fx.feeUTXOs, fx.address, fx.address,
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			tx := mustTx(t, raw)
+			previousOutputs := []*bt.Output{
+				{LockingScript: fx.buy.LockingScript, Satoshis: fx.buy.Satoshis},
+				{LockingScript: fx.buyFT.LockingScript, Satoshis: fx.buyFT.Satoshis},
+				{LockingScript: fx.sell.LockingScript, Satoshis: fx.sell.Satoshis},
+				{LockingScript: fx.sellFT.LockingScript, Satoshis: fx.sellFT.Satoshis},
+			}
+			for inputIndex, previousOutput := range previousOutputs {
+				err := interpreter.NewEngine().Execute(
+					interpreter.WithTx(tx, inputIndex, previousOutput),
+					interpreter.WithAfterGenesis(),
+					interpreter.WithForkID(),
+				)
+				if err != nil {
+					t.Fatalf("contract input %d failed validation: %v", inputIndex, err)
+				}
+			}
+		})
 	}
 }
 
