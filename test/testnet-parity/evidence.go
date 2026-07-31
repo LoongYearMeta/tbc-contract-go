@@ -11,6 +11,7 @@ import (
 
 	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
+	"github.com/LoongYearMeta/tbc-lib-go/script/interpreter"
 )
 
 const evidenceRefetchAttempts = 10
@@ -78,6 +79,37 @@ func feeFromParents(tx *bt.Tx, fetch func(string) (*bt.Tx, error)) (uint64, erro
 	return inputs - outputs, nil
 }
 
+func validateInputScriptsFromParents(
+	tx *bt.Tx,
+	fetch func(string) (*bt.Tx, error),
+) error {
+	if tx == nil {
+		return fmt.Errorf("nil transaction")
+	}
+	for index, input := range tx.Inputs {
+		parent, err := fetch(input.PreviousTxIDStr())
+		if err != nil {
+			return fmt.Errorf("input %d parent: %w", index, err)
+		}
+		vout := int(input.PreviousTxOutIndex)
+		if vout < 0 || vout >= len(parent.Outputs) {
+			return fmt.Errorf(
+				"input %d parent vout %d out of range",
+				index,
+				vout,
+			)
+		}
+		if err := interpreter.NewEngine().Execute(
+			interpreter.WithTx(tx, index, parent.Outputs[vout]),
+			interpreter.WithAfterGenesis(),
+			interpreter.WithForkID(),
+		); err != nil {
+			return fmt.Errorf("input %d: %w", index, err)
+		}
+	}
+	return nil
+}
+
 func fetchEvidenceTransaction(
 	deps evidenceDependencies,
 	txid string,
@@ -123,6 +155,18 @@ func collectBroadcastEvidence(
 		if err := validate(tx); err != nil {
 			return nil, txEvidence{}, fmt.Errorf("%s validate before broadcast: %w", label, err)
 		}
+	}
+	if err := validateInputScriptsFromParents(
+		tx,
+		func(parentTxID string) (*bt.Tx, error) {
+			return fetchEvidenceTransaction(deps, parentTxID, network)
+		},
+	); err != nil {
+		return nil, txEvidence{}, fmt.Errorf(
+			"%s script preflight: %w",
+			label,
+			err,
+		)
 	}
 	txid, err := deps.Broadcast(raw, network)
 	if err != nil {

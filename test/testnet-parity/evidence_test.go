@@ -177,3 +177,56 @@ func TestCollectBroadcastEvidenceValidatesBeforeBroadcast(t *testing.T) {
 		t.Fatalf("broadcast called %d times", broadcastCalls)
 	}
 }
+
+func TestCollectBroadcastEvidenceExecutesScriptsBeforeBroadcast(t *testing.T) {
+	lockingScript, err := bscript.NewFromHexString("00")
+	if err != nil {
+		t.Fatal(err)
+	}
+	parent := bt.NewTx()
+	parent.AddOutput(&bt.Output{
+		Satoshis:      1_000,
+		LockingScript: lockingScript,
+	})
+	parentUTXO, err := outputUTXO(parent, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	child := bt.NewTx()
+	if err := child.FromUTXOs(parentUTXO); err != nil {
+		t.Fatal(err)
+	}
+	child.AddOutput(&bt.Output{
+		Satoshis:      900,
+		LockingScript: bscript.NewFromBytes([]byte{0x51}),
+	})
+	broadcastCalls := 0
+	deps := evidenceDependencies{
+		Broadcast: func(string, string) (string, error) {
+			broadcastCalls++
+			return child.TxID(), nil
+		},
+		Fetch: func(txid, network string) (*bt.Tx, error) {
+			if txid == parent.TxID() && network == "testnet" {
+				return parent, nil
+			}
+			return nil, fmt.Errorf("unexpected fetch %s on %s", txid, network)
+		},
+		Sleep:  func() {},
+		Output: io.Discard,
+	}
+	_, _, err = collectBroadcastEvidence(
+		deps,
+		"script-invalid",
+		child.String(),
+		"testnet",
+		"must-fail-script",
+		nil,
+	)
+	if err == nil || !strings.Contains(err.Error(), "script preflight") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if broadcastCalls != 0 {
+		t.Fatalf("broadcast called %d times", broadcastCalls)
+	}
+}

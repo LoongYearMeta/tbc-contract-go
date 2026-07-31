@@ -31,6 +31,11 @@ const txid = "11".repeat(32);
 const codeHash = "22".repeat(32);
 const adminPubHash = "33".repeat(20);
 const compressedPublicKey = `02${"44".repeat(32)}`;
+const compressedPublicKeys = [
+  compressedPublicKey,
+  `03${"55".repeat(32)}`,
+  `02${"66".repeat(32)}`,
+];
 const tapeSize = 80;
 const transferBalance = 123456n;
 const transferInputBalance = 200000n;
@@ -120,6 +125,25 @@ const artifacts = {
       false,
     ),
     decoded: { version: "3", locked: "true", tokenID: txid },
+  },
+  poolV3Locked3: {
+    script: pool.getPoolNftCodeWithLock(
+      txid,
+      0,
+      2,
+      address,
+      0.0001,
+      compressedPublicKeys,
+      3,
+      "pool-lock",
+      false,
+    ),
+    decoded: {
+      version: "3",
+      locked: "true",
+      tokenID: txid,
+      publicKeys: "3",
+    },
   },
   ftlpV2: {
     script: pool.getFtlpCode(codeHash, address, tapeSize, false, 2),

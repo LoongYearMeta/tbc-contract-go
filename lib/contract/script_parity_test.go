@@ -48,6 +48,11 @@ func renderAllReferenceArtifacts(
 		tapeSize            = 80
 		compressedPublicKey = "024444444444444444444444444444444444444444444444444444444444444444"
 	)
+	compressedPublicKeys := []string{
+		compressedPublicKey,
+		"035555555555555555555555555555555555555555555555555555555555555555",
+		"026666666666666666666666666666666666666666666666666666666666666666",
+	}
 	txid := "1111111111111111111111111111111111111111111111111111111111111111"
 	codeHash := "2222222222222222222222222222222222222222222222222222222222222222"
 	adminPubHash := "3333333333333333333333333333333333333333"
@@ -126,6 +131,17 @@ func renderAllReferenceArtifacts(
 		return pool.getPoolNftCodeWithLock(
 			txid, 0, 2, address, 0.001,
 			[]string{compressedPublicKey}, 3, "parity", false,
+		)
+	})
+	add("poolV3Locked3", map[string]string{
+		"version":    "3",
+		"locked":     "true",
+		"tokenID":    txid,
+		"publicKeys": "3",
+	}, func() (*bscript.Script, error) {
+		return pool.getPoolNftCodeWithLock(
+			txid, 0, 2, address, 0.0001,
+			compressedPublicKeys, 3, "pool-lock", false,
 		)
 	})
 	add("ftlpV2", map[string]string{
@@ -298,6 +314,7 @@ func TestRenderedTransactionArtifactsMatchJS165(t *testing.T) {
 		"nftTape",
 		"poolV3",
 		"poolV3Locked",
+		"poolV3Locked3",
 		"ftlpV3",
 		"ftlpV3LockTime",
 		"sellOrder",

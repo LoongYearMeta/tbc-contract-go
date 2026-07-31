@@ -75,3 +75,14 @@ func TestUnlockedPoolCodeRejectsTagThatCrossesLockSizeBoundary(t *testing.T) {
 		t.Fatal("expected ambiguous unlocked pool tag to be rejected")
 	}
 }
+
+func TestBuildFtlpTapeWithLockTimePreservesFTTapeByteLength(t *testing.T) {
+	const ftTapeBytes = 81
+	tape, err := buildFtlpTapeWithLockTime(big.NewInt(1_000_000), ftTapeBytes, 1_750_000_000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := len(tape.Bytes()); got != ftTapeBytes {
+		t.Fatalf("locked FT-LP tape bytes=%d want=%d", got, ftTapeBytes)
+	}
+}

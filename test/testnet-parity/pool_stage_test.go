@@ -6,12 +6,15 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
+	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
 	"github.com/LoongYearMeta/tbc-contract-go/lib/contract"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
+	"github.com/LoongYearMeta/tbc-lib-go/wif"
 )
 
 func TestValidatePoolStateInputRequiresPreviousOutpoint(t *testing.T) {
@@ -340,5 +343,67 @@ func TestPoolCreationTransactionsPayFinalSignedSizeFee(t *testing.T) {
 				parents[tx.TxID()] = tx
 			}
 		})
+	}
+}
+
+func TestLiveLockedPoolInitScriptPreflight(t *testing.T) {
+	poolID := os.Getenv("TBC_TESTNET_LOCKED_POOL_DEBUG_ID")
+	sourceID := os.Getenv("TBC_TESTNET_LOCKED_POOL_SOURCE_DEBUG_ID")
+	wifText := os.Getenv("TBC_TESTNET_WIF")
+	if poolID == "" || sourceID == "" || wifText == "" {
+		t.Skip("live locked-pool debug inputs are not configured")
+	}
+	decoded, err := wif.DecodeWIF(wifText)
+	if err != nil {
+		t.Fatal(err)
+	}
+	address, err := bscript.NewAddressFromPublicKey(
+		decoded.PrivKey.PubKey(),
+		false,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := api.FetchTXRaw(sourceID, "testnet")
+	if err != nil {
+		t.Fatal(err)
+	}
+	funding, err := outputUTXO(source, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	height, err := api.FetchTBCLockTime("testnet")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pool := contract.NewPoolNFT2(&contract.PoolNFT2Config{
+		ContractTxID: poolID,
+		Network:      "testnet",
+	})
+	if err := pool.InitFromContractID(); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := pool.InitPoolNFT(
+		decoded.PrivKey,
+		address.AddressString,
+		funding,
+		"0.005",
+		"50",
+		height-1,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx, err := bt.NewTxFromString(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := validateInputScriptsFromParents(
+		tx,
+		func(txid string) (*bt.Tx, error) {
+			return api.FetchTXRaw(txid, "testnet")
+		},
+	); err != nil {
+		t.Fatal(err)
 	}
 }

@@ -2097,7 +2097,7 @@ func buildFtlpTape(amount *big.Int, isCoin bool, name, symbol string) (*bscript.
 // buildFtlpTapeWithLockTime builds the FT-LP tape script with lock time.
 // isCoin/name/symbol are not embedded in the with-lock-time tape (TS uses an
 // OP_0-padded layout); the caller owns them via the surrounding ftlp code.
-func buildFtlpTapeWithLockTime(amount *big.Int, tapeLen int, lockTime uint32) (*bscript.Script, error) {
+func buildFtlpTapeWithLockTime(amount *big.Int, tapeLenBytes int, lockTime uint32) (*bscript.Script, error) {
 	amtHex, err := bigIntToLE8Hex(amount)
 	if err != nil {
 		return nil, fmt.Errorf("buildFtlpTapeWithLockTime: %w", err)
@@ -2107,7 +2107,11 @@ func buildFtlpTapeWithLockTime(amount *big.Int, tapeLen int, lockTime uint32) (*
 	lockTimeBytes := make([]byte, 4)
 	binary.LittleEndian.PutUint32(lockTimeBytes, lockTime)
 	lockTimeHex := hex.EncodeToString(lockTimeBytes)
-	fillSize := tapeLen/2 - 62
+	// Callers normalize the FT tape hex length to bytes before reaching here.
+	// The fixed fields consume 62 bytes, so pad against the byte length
+	// directly. Dividing by two again shortened an 81-byte tape to 62 bytes
+	// and made the FT-LP partial hash disagree with the locked pool script.
+	fillSize := tapeLenBytes - 62
 	if fillSize < 0 {
 		fillSize = 0
 	}

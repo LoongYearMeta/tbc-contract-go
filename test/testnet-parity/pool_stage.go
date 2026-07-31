@@ -995,7 +995,7 @@ func runPoolLockStage(cfg config, decoded *wif.WIF, address string) error {
 	raws, err := pool.CreatePoolNFTWithLock(
 		decoded.PrivKey,
 		funding,
-		"go-js-1.6.5-pool-lock",
+		"pool-lock",
 		address,
 		0.0001,
 		signers.PublicKeys,
