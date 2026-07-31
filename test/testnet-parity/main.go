@@ -149,6 +149,15 @@ func run(cfg config) error {
 	if cfg.Stage == stagePiggyBank {
 		return runPiggyBankStage(cfg, decoded, address.AddressString)
 	}
+	if cfg.Stage == stagePoolCreate {
+		return runPoolCreateStage(cfg, decoded, address.AddressString)
+	}
+	if cfg.Stage == stagePoolTrade {
+		return runPoolTradeStage(cfg, decoded, address.AddressString)
+	}
+	if cfg.Stage == stagePoolLock {
+		return runPoolLockStage(cfg, decoded, address.AddressString)
+	}
 	if cfg.Stage == "core-contracts" {
 		return runCoreContracts(cfg, decoded, address.AddressString)
 	}

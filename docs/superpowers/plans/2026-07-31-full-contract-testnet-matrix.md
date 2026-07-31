@@ -571,7 +571,7 @@ git commit -m "test: cover complete stablecoin lifecycle"
 - Create: `test/testnet-parity/pool_stage_test.go`
 - Modify: `test/testnet-parity/main.go`
 
-- [ ] **Step 1: Write failing state-transition validation tests**
+- [x] **Step 1: Write failing state-transition validation tests**
 
 ```go
 func TestValidatePoolTransitionRequiresPreviousStateInput(t *testing.T) {
@@ -591,13 +591,13 @@ func TestPoolAmountDeltaUsesIntegers(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run the Pool tests and confirm failure**
+- [x] **Step 2: Run the Pool tests and confirm failure**
 
 Run: `go test ./test/testnet-parity -run 'Pool' -count=1`
 
 Expected: FAIL because the state validators do not exist.
 
-- [ ] **Step 3: Implement standard pool stages**
+- [x] **Step 3: Implement standard pool stages**
 
 Use a fresh released FT v3 and broadcast:
 
@@ -616,7 +616,7 @@ pool-merge-held-ft
 
 Create enough FTLP branches before merge/burn. Before each builder call, refetch the current Pool NFT state, FT/FTLP UTXOs, and ancestry; after broadcast, require the previous state outpoint is spent exactly once and a new Code/Hold/Tape Pool NFT state is produced.
 
-- [ ] **Step 4: Implement lock-variant stages**
+- [x] **Step 4: Implement lock-variant stages**
 
 Broadcast:
 
@@ -629,11 +629,11 @@ pool-consume-unlocked-ftlp
 
 Use an already-reached lock time to keep the suite deterministic. Require the locked pool script hash to match the configured public keys, require the FTLP Tape lock field before unlock, and require the standard unlocked FTLP code afterward.
 
-- [ ] **Step 5: Assert AMM and asset invariants**
+- [x] **Step 5: Assert AMM and asset invariants**
 
 All pool calculations use `big.Int` or checked `uint64`; no floating-point equality is permitted. Assert expected reserve direction, LP supply direction, foundation/service outputs, FT contract identity, and no unexplained asset loss.
 
-- [ ] **Step 6: Run tests and commit**
+- [x] **Step 6: Run tests and commit**
 
 Run: `go test ./lib/contract ./lib/util ./test/testnet-parity -run 'Pool|FTLP|Swap' -count=1`
 
