@@ -1207,6 +1207,7 @@ func runPoolLockStage(cfg config, decoded *wif.WIF, address string) error {
 		return err
 	}
 
+	zeroLockTime := uint32(0)
 	pool, _, err = loadIndexedPool(poolID, cfg.Network)
 	if err != nil {
 		return err
@@ -1235,7 +1236,7 @@ func runPoolLockStage(cfg config, decoded *wif.WIF, address string) error {
 			if len(tx.Inputs) < 3 {
 				return fmt.Errorf("locked FTLP merge has %d inputs want>=3", len(tx.Inputs))
 			}
-			_, err := validateFTLPPair(tx, 0, &lockTime)
+			_, err := validateFTLPPair(tx, 0, &zeroLockTime)
 			return err
 		},
 	)
@@ -1243,6 +1244,50 @@ func runPoolLockStage(cfg config, decoded *wif.WIF, address string) error {
 		return err
 	}
 	if err := waitForFTLPTransaction(pool, address, mergeLP.TxID()); err != nil {
+		return err
+	}
+	if _, err := executeIndexedPoolOperation(
+		cfg,
+		poolID,
+		"pool-lock-increase-lp-after-merge",
+		poolTransitionIncrease,
+		func(indexed *contract.PoolNFT2) (string, error) {
+			var err error
+			lockedLPCostAddress, err = contractutil.GetLpCostAddress(
+				indexed.PoolNftCode,
+			)
+			if err != nil {
+				return "", err
+			}
+			lockedLPCostAmount, err = contractutil.GetLpCostAmount(
+				indexed.PoolNftCode,
+			)
+			if err != nil {
+				return "", err
+			}
+			fee, err := fetchPoolFee(address, cfg.Network, 0.005)
+			if err != nil {
+				return "", err
+			}
+			return indexed.IncreaseLP(
+				decoded.PrivKey,
+				address,
+				fee,
+				"0.001",
+				lockTime,
+			)
+		},
+		func(tx *bt.Tx) error {
+			if _, err := validateFTLPPair(tx, 4, &lockTime); err != nil {
+				return err
+			}
+			return validateLockedLPCostOutput(
+				tx,
+				lockedLPCostAddress,
+				lockedLPCostAmount,
+			)
+		},
+	); err != nil {
 		return err
 	}
 
@@ -1261,7 +1306,6 @@ func runPoolLockStage(cfg config, decoded *wif.WIF, address string) error {
 	if unlockRaw == "" {
 		return fmt.Errorf("locked FTLP unexpectedly required no unlock")
 	}
-	zeroLockTime := uint32(0)
 	unlock, _, err := broadcastAndVerify(
 		"pool-unlock-ftlp",
 		unlockRaw,
