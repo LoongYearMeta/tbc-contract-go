@@ -528,8 +528,8 @@ func mintAndBroadcast(
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s parse mint: %w", label, err)
 	}
-	if len(mintTX.Outputs) == 0 {
-		return nil, nil, fmt.Errorf("%s mint has no outputs", label)
+	if len(mintTX.Outputs) < 2 {
+		return nil, nil, fmt.Errorf("%s mint has %d outputs, want FT code and tape", label, len(mintTX.Outputs))
 	}
 	if got := mintTX.Outputs[0].LockingScript.Len(); got != 1884 {
 		return nil, nil, fmt.Errorf("%s mint code length %d, want released FT v3 length 1884", label, got)
