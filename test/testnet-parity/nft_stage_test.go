@@ -70,6 +70,18 @@ func TestBuildNFTLifecyclePlanCoversAllReleasedOperations(t *testing.T) {
 	}
 }
 
+func TestNFTStageMinimumFundingBuildsCompleteLifecycle(t *testing.T) {
+	privateKey, address, funding := ftStageFixture(t)
+	funding.Satoshis = nftStageFundingMinimumSatoshis
+	if _, err := buildNFTLifecyclePlan(privateKey, address, funding); err != nil {
+		t.Fatalf(
+			"minimum stage funding %d cannot build lifecycle: %v",
+			nftStageFundingMinimumSatoshis,
+			err,
+		)
+	}
+}
+
 func TestValidateNFTLifecycleRejectsWrongCollectionIndexCode(t *testing.T) {
 	privateKey, address, funding := ftStageFixture(t)
 	plan, err := buildNFTLifecyclePlan(privateKey, address, funding)

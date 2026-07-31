@@ -15,6 +15,11 @@ import (
 	"github.com/LoongYearMeta/tbc-lib-go/wif"
 )
 
+const (
+	nftStageFundingMinimumSatoshis = uint64(300_000)
+	nftTempFundingSatoshis         = uint64(200_000)
+)
+
 type nftLifecyclePlan struct {
 	Transactions    []plannedTransaction
 	Collection      *bt.Tx
@@ -72,7 +77,7 @@ func buildNFTSupportFunding(
 	if err := tx.FromUTXOs(funding); err != nil {
 		return "", err
 	}
-	if err := tx.PayToAddress(toAddress, 200_000); err != nil {
+	if err := tx.PayToAddress(toAddress, nftTempFundingSatoshis); err != nil {
 		return "", err
 	}
 	if err := tx.ChangeToAddress(fromAddress, harnessFeeQuote80()); err != nil {
@@ -361,7 +366,7 @@ func validateNFTLifecycleTransaction(
 		}
 		return validateNFTHold(tx, plan.MainAddress)
 	case "nft-temp-funding":
-		return validatePaymentOutput(tx, plan.TempAddress, 200_000)
+		return validatePaymentOutput(tx, plan.TempAddress, nftTempFundingSatoshis)
 	case "nft-transfer":
 		if err := validateNFTOutputs(tx); err != nil {
 			return err
@@ -406,7 +411,11 @@ func validateNFTLifecycleTransaction(
 }
 
 func runNFTStage(cfg config, decoded *wif.WIF, address string) error {
-	funding, err := api.FetchUTXO(address, 0.02, cfg.Network)
+	funding, err := api.FetchUTXO(
+		address,
+		float64(nftStageFundingMinimumSatoshis)/1_000_000,
+		cfg.Network,
+	)
 	if err != nil {
 		return fmt.Errorf("NFT funding: %w", err)
 	}
