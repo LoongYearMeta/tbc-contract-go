@@ -26,13 +26,5 @@
   "stableCoinMint": {
     "length": 2012,
     "sha256": "7aadc8932ed1914133a017e9a16ea123bbf50fade201264e68f3245d840ce635"
-  },
-  "tokenSellOrder": {
-    "length": 1332,
-    "sha256": "6e0a557c6ee45558eef8931ed7b01a53cdd822b12da326b2bcfc4b6e001e381b"
-  },
-  "tokenBuyOrder": {
-    "length": 1332,
-    "sha256": "608a3ec09b0b57276adb199c5dd03d4d864631d22bd2b22c933efb8a877c487d"
   }
 }

@@ -15,27 +15,18 @@ import (
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
 	"github.com/LoongYearMeta/tbc-lib-go/crypto"
-	"github.com/LoongYearMeta/tbc-lib-go/script/interpreter"
-	interpreterdebug "github.com/LoongYearMeta/tbc-lib-go/script/interpreter/debug"
 	"github.com/LoongYearMeta/tbc-lib-go/unlocker"
 	"github.com/LoongYearMeta/tbc-lib-go/wif"
 )
 
 type config struct {
-	Network    string
-	Broadcast  bool
-	WIF        string
-	SellerWIF  string
-	MatcherWIF string
-	TaxAddress string
-	Stage      string
-	TokenA     string
-	TokenB     string
-	PoolID     string
-
-	OrderCreateTXID string
-	OrderSellTXID   string
-	OrderBuyTXID    string
+	Network   string
+	Broadcast bool
+	WIF       string
+	Stage     string
+	TokenA    string
+	TokenB    string
+	PoolID    string
 }
 
 func loadConfig(getenv func(string) string) (config, error) {
@@ -44,19 +35,13 @@ func loadConfig(getenv func(string) string) (config, error) {
 		network = "testnet"
 	}
 	cfg := config{
-		Network:         network,
-		Broadcast:       getenv("TBC_TESTNET_BROADCAST") == "1",
-		WIF:             getenv("TBC_TESTNET_WIF"),
-		SellerWIF:       getenv("TBC_TESTNET_SELLER_WIF"),
-		MatcherWIF:      getenv("TBC_TESTNET_MATCHER_WIF"),
-		TaxAddress:      getenv("TBC_TESTNET_TAX_ADDRESS"),
-		Stage:           getenv("TBC_TESTNET_STAGE"),
-		TokenA:          getenv("TBC_TESTNET_TOKEN_A"),
-		TokenB:          getenv("TBC_TESTNET_TOKEN_B"),
-		PoolID:          getenv("TBC_TESTNET_POOL_ID"),
-		OrderCreateTXID: getenv("TBC_TESTNET_ORDER_CREATE_TXID"),
-		OrderSellTXID:   getenv("TBC_TESTNET_ORDER_SELL_TXID"),
-		OrderBuyTXID:    getenv("TBC_TESTNET_ORDER_BUY_TXID"),
+		Network:   network,
+		Broadcast: getenv("TBC_TESTNET_BROADCAST") == "1",
+		WIF:       getenv("TBC_TESTNET_WIF"),
+		Stage:     getenv("TBC_TESTNET_STAGE"),
+		TokenA:    getenv("TBC_TESTNET_TOKEN_A"),
+		TokenB:    getenv("TBC_TESTNET_TOKEN_B"),
+		PoolID:    getenv("TBC_TESTNET_POOL_ID"),
 	}
 	if cfg.Network != "testnet" {
 		return config{}, fmt.Errorf("testnet-parity refuses non-testnet network")
@@ -65,22 +50,6 @@ func loadConfig(getenv func(string) string) (config, error) {
 		return config{}, fmt.Errorf("TBC_TESTNET_WIF is required")
 	}
 	return cfg, nil
-}
-
-func validateTokenOrderMatchV2Config(cfg config) error {
-	if cfg.TokenA == "" || cfg.TokenB == "" {
-		return fmt.Errorf("TBC_TESTNET_TOKEN_A and TBC_TESTNET_TOKEN_B are required for token-order-match-v2 stage")
-	}
-	if cfg.SellerWIF == "" {
-		return fmt.Errorf("TBC_TESTNET_SELLER_WIF is required for token-order-match-v2 stage")
-	}
-	if cfg.MatcherWIF == "" {
-		return fmt.Errorf("TBC_TESTNET_MATCHER_WIF is required for token-order-match-v2 stage")
-	}
-	if cfg.TaxAddress == "" {
-		return fmt.Errorf("TBC_TESTNET_TAX_ADDRESS is required for token-order-match-v2 stage")
-	}
-	return nil
 }
 
 func dryRunFundingTransaction(address string, utxos []*bt.UTXO, decoded *wif.WIF) error {
@@ -166,18 +135,6 @@ func run(cfg config) error {
 	}
 	if cfg.Stage == "stablecoin" {
 		return runStableCoinLifecycle(cfg, decoded, address.AddressString)
-	}
-	if cfg.Stage == "orders" {
-		if cfg.TokenA == "" || cfg.TokenB == "" {
-			return fmt.Errorf("TBC_TESTNET_TOKEN_A and TBC_TESTNET_TOKEN_B are required for orders stage")
-		}
-		return runTokenOrders(cfg, decoded, address.AddressString)
-	}
-	if cfg.Stage == "token-order-match-v2" {
-		if err := validateTokenOrderMatchV2Config(cfg); err != nil {
-			return err
-		}
-		return runTokenOrderMatchV2(cfg, decoded, address.AddressString)
 	}
 	if cfg.Stage == "pool-foundation" {
 		if cfg.TokenA == "" {
@@ -313,803 +270,6 @@ func runPoolConsume(cfg config, decoded *wif.WIF, address string) error {
 	return nil
 }
 
-type harnessOrderBookClient struct {
-	fallback contract.DefaultOrderBookAPI
-	ft       map[string][]*contractutil.FtUTXO
-	fee      []*bt.UTXO
-	txs      map[string]*bt.Tx
-	prePre   map[string]string
-}
-
-func (c *harnessOrderBookClient) FetchFtInfo(contractID, network string) (*api.FtInfoResponse, error) {
-	return c.fallback.FetchFtInfo(contractID, network)
-}
-
-func (c *harnessOrderBookClient) FetchFtUTXOs(
-	contractID, owner, code, network string,
-	amount *big.Int,
-) ([]*contractutil.FtUTXO, error) {
-	if inputs := c.ft[contractID]; len(inputs) > 0 {
-		return inputs, nil
-	}
-	return c.fallback.FetchFtUTXOs(contractID, owner, code, network, amount)
-}
-
-func (c *harnessOrderBookClient) FetchUTXOs(address, network string) ([]*bt.UTXO, error) {
-	if len(c.fee) > 0 {
-		return c.fee, nil
-	}
-	return c.fallback.FetchUTXOs(address, network)
-}
-
-func (c *harnessOrderBookClient) FetchTXRaw(txid, network string) (*bt.Tx, error) {
-	if tx := c.txs[txid]; tx != nil {
-		return tx, nil
-	}
-	return c.fallback.FetchTXRaw(txid, network)
-}
-
-func prePreKey(tx *bt.Tx, vout int) string {
-	if tx == nil {
-		return ""
-	}
-	return fmt.Sprintf("%s:%d", tx.TxID(), vout)
-}
-
-func (c *harnessOrderBookClient) FetchFtPrePreTxData(preTX *bt.Tx, vout int, network string) (string, error) {
-	if data, ok := c.prePre[prePreKey(preTX, vout)]; ok {
-		return data, nil
-	}
-	return c.fallback.FetchFtPrePreTxData(preTX, vout, network)
-}
-
-type liveFTInput struct {
-	utxo   *contractutil.FtUTXO
-	preTX  *bt.Tx
-	prePre string
-}
-
-func fetchLiveFTInput(contractID, address, network string, amount *big.Int) (*liveFTInput, error) {
-	info, err := api.FetchFtInfo(contractID, network)
-	if err != nil {
-		return nil, err
-	}
-	owned, err := contract.BuildFTtransferCode(info.CodeScript, address)
-	if err != nil {
-		return nil, err
-	}
-	input, err := api.FetchFtUTXO(contractID, address, owned.ToHex(), network, amount)
-	if err != nil {
-		return nil, err
-	}
-	parent, err := api.FetchTXRaw(hex.EncodeToString(input.TxID), network)
-	if err != nil {
-		return nil, err
-	}
-	prePre, err := api.FetchFtPrePreTxData(parent, int(input.Vout), network)
-	if err != nil {
-		return nil, err
-	}
-	return &liveFTInput{utxo: input, preTX: parent, prePre: prePre}, nil
-}
-
-func orderUTXOFromTX(tx *bt.Tx) (*bt.UTXO, error) {
-	return utxoFromTX(tx, 0)
-}
-
-func testnetAddressForWIF(encoded, role string) (*wif.WIF, string, error) {
-	decoded, err := wif.DecodeWIF(encoded)
-	if err != nil {
-		return nil, "", fmt.Errorf("decode %s testnet key: %w", role, err)
-	}
-	address, err := bscript.NewAddressFromPublicKey(decoded.PrivKey.PubKey(), false)
-	if err != nil {
-		return nil, "", fmt.Errorf("derive %s testnet address: %w", role, err)
-	}
-	return decoded, address.AddressString, nil
-}
-
-func testnetFeeTarget(size int) uint64 {
-	fee := uint64((size*80 + 999) / 1000)
-	if fee < 80 {
-		return 80
-	}
-	return fee
-}
-
-func reportTransactionFee(label string, tx *bt.Tx, inputs ...*bt.UTXO) error {
-	var inputTotal uint64
-	for i, input := range inputs {
-		if input == nil {
-			return fmt.Errorf("%s fee input %d is nil", label, i)
-		}
-		if ^uint64(0)-inputTotal < input.Satoshis {
-			return fmt.Errorf("%s fee input sum overflow", label)
-		}
-		inputTotal += input.Satoshis
-	}
-	var outputTotal uint64
-	for _, output := range tx.Outputs {
-		if ^uint64(0)-outputTotal < output.Satoshis {
-			return fmt.Errorf("%s fee output sum overflow", label)
-		}
-		outputTotal += output.Satoshis
-	}
-	if inputTotal < outputTotal {
-		return fmt.Errorf("%s outputs exceed inputs", label)
-	}
-	paid := inputTotal - outputTotal
-	target := testnetFeeTarget(len(tx.Bytes()))
-	fmt.Printf("%s bytes=%d paid_fee=%d target_fee=%d\n", label, len(tx.Bytes()), paid, target)
-	if paid < target {
-		return fmt.Errorf("%s fee below policy: paid=%d target=%d", label, paid, target)
-	}
-	return nil
-}
-
-func fundTokenOrderRoles(
-	cfg config,
-	buyer *wif.WIF,
-	buyerAddress, sellerAddress, matcherAddress string,
-) (*bt.Tx, *bt.UTXO, *bt.UTXO, *bt.UTXO, error) {
-	funding, err := api.FetchUTXO(buyerAddress, 0.01, cfg.Network)
-	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("fetch role funding UTXO: %w", err)
-	}
-	const roleFunding = uint64(20_000)
-	const fee = uint64(80)
-	required := 2*roleFunding + fee + 42
-	if funding.Satoshis < required {
-		return nil, nil, nil, nil, fmt.Errorf(
-			"role funding UTXO has %d satoshis, need at least %d",
-			funding.Satoshis, required,
-		)
-	}
-
-	tx := bt.NewTx()
-	tx.Version = 10
-	if err := tx.FromUTXOs(funding); err != nil {
-		return nil, nil, nil, nil, err
-	}
-	if err := tx.PayToAddress(sellerAddress, roleFunding); err != nil {
-		return nil, nil, nil, nil, err
-	}
-	if err := tx.PayToAddress(matcherAddress, roleFunding); err != nil {
-		return nil, nil, nil, nil, err
-	}
-	if err := tx.PayToAddress(buyerAddress, funding.Satoshis-2*roleFunding-fee); err != nil {
-		return nil, nil, nil, nil, err
-	}
-	if err := tx.FillAllInputs(context.Background(), &unlocker.Getter{PrivateKey: buyer.PrivKey}); err != nil {
-		return nil, nil, nil, nil, err
-	}
-	if err := reportTransactionFee("token-order-role-funding", tx, funding); err != nil {
-		return nil, nil, nil, nil, err
-	}
-	raw := hex.EncodeToString(tx.Bytes())
-	fundingTX, _, err := broadcastOne("token-order-role-funding", raw, cfg.Network)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	sellerFee, err := utxoFromTX(fundingTX, 0)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	matcherFee, err := utxoFromTX(fundingTX, 1)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	buyerFee, err := utxoFromTX(fundingTX, 2)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	return fundingTX, sellerFee, matcherFee, buyerFee, nil
-}
-
-func buildTokenOrderMatcherFunding(
-	cfg config,
-	buyer *wif.WIF,
-	buyerAddress, matcherAddress string,
-) (string, *bt.Tx, *bt.UTXO, error) {
-	funding, err := api.FetchUTXO(buyerAddress, 0.01, cfg.Network)
-	if err != nil {
-		return "", nil, nil, fmt.Errorf("fetch matcher funding UTXO: %w", err)
-	}
-	const matcherFunding = uint64(20_000)
-	const fee = uint64(80)
-	if funding.Satoshis < matcherFunding+fee+42 {
-		return "", nil, nil, fmt.Errorf(
-			"matcher funding UTXO has %d satoshis, need at least %d",
-			funding.Satoshis, matcherFunding+fee+42,
-		)
-	}
-	tx := bt.NewTx()
-	tx.Version = 10
-	if err := tx.FromUTXOs(funding); err != nil {
-		return "", nil, nil, err
-	}
-	if err := tx.PayToAddress(matcherAddress, matcherFunding); err != nil {
-		return "", nil, nil, err
-	}
-	if err := tx.PayToAddress(buyerAddress, funding.Satoshis-matcherFunding-fee); err != nil {
-		return "", nil, nil, err
-	}
-	if err := tx.FillAllInputs(context.Background(), &unlocker.Getter{PrivateKey: buyer.PrivKey}); err != nil {
-		return "", nil, nil, err
-	}
-	if err := reportTransactionFee("token-order-matcher-funding", tx, funding); err != nil {
-		return "", nil, nil, err
-	}
-	matcherFee, err := utxoFromTX(tx, 0)
-	if err != nil {
-		return "", nil, nil, err
-	}
-	return hex.EncodeToString(tx.Bytes()), tx, matcherFee, nil
-}
-
-func initializedLiveFT(contractID, network string) (*contract.FT, error) {
-	info, err := api.FetchFtInfo(contractID, network)
-	if err != nil {
-		return nil, err
-	}
-	token, err := contract.NewFT(contractID)
-	if err != nil {
-		return nil, err
-	}
-	token.Initialize(&contract.FtInfo{
-		ContractTxid: contractID,
-		Name:         info.Name,
-		Symbol:       info.Symbol,
-		Decimal:      info.Decimal,
-		TotalSupply:  info.TotalSupply,
-		CodeScript:   info.CodeScript,
-		TapeScript:   info.TapeScript,
-	})
-	return token, nil
-}
-
-func transferExactTokenOrderInput(
-	label, contractID, destination string,
-	amount *big.Int,
-	source *liveFTInput,
-	feeUTXO *bt.UTXO,
-	owner *wif.WIF,
-	network string,
-) (*bt.Tx, *contractutil.FtUTXO, *bt.UTXO, string, error) {
-	token, err := initializedLiveFT(contractID, network)
-	if err != nil {
-		return nil, nil, nil, "", fmt.Errorf("%s initialize token: %w", label, err)
-	}
-	raw, err := token.Transfer(
-		owner.PrivKey, destination, amount,
-		[]*contractutil.FtUTXO{source.utxo}, feeUTXO,
-		[]*bt.Tx{source.preTX}, []string{source.prePre}, 0,
-	)
-	if err != nil {
-		return nil, nil, nil, "", fmt.Errorf("%s build: %w", label, err)
-	}
-	tx, err := bt.NewTxFromString(raw)
-	if err != nil {
-		return nil, nil, nil, "", fmt.Errorf("%s parse: %w", label, err)
-	}
-	if err := reportTransactionFee(
-		label, tx, contractutil.FtUTXOToUTXO(source.utxo), feeUTXO,
-	); err != nil {
-		return nil, nil, nil, "", err
-	}
-	tx, _, err = broadcastOne(label, raw, network)
-	if err != nil {
-		return nil, nil, nil, "", err
-	}
-	exactFT, err := ftUTXOFromTX(tx, 0)
-	if err != nil {
-		return nil, nil, nil, "", err
-	}
-	if exactFT.FtBalance.Cmp(amount) != 0 {
-		return nil, nil, nil, "", fmt.Errorf(
-			"%s output balance is %s, want %s", label, exactFT.FtBalance, amount,
-		)
-	}
-	nextFee, err := utxoFromTX(tx, len(tx.Outputs)-1)
-	if err != nil {
-		return nil, nil, nil, "", err
-	}
-	prePre, err := localPrePre(source.preTX, int(source.utxo.Vout))
-	if err != nil {
-		return nil, nil, nil, "", err
-	}
-	return tx, exactFT, nextFee, prePre, nil
-}
-
-func runTokenOrderMatchV2(cfg config, buyer *wif.WIF, buyerAddress string) error {
-	seller, sellerAddress, err := testnetAddressForWIF(cfg.SellerWIF, "seller")
-	if err != nil {
-		return err
-	}
-	matcher, matcherAddress, err := testnetAddressForWIF(cfg.MatcherWIF, "matcher")
-	if err != nil {
-		return err
-	}
-	if _, err := bscript.NewAddressFromString(cfg.TaxAddress); err != nil {
-		return fmt.Errorf("invalid testnet tax address: %w", err)
-	}
-	if cfg.TaxAddress[0] != 'm' && cfg.TaxAddress[0] != 'n' {
-		return fmt.Errorf("tax address is not a testnet P2PKH address")
-	}
-	roleAddresses := []string{buyerAddress, sellerAddress, matcherAddress, cfg.TaxAddress}
-	for i := range roleAddresses {
-		for j := i + 1; j < len(roleAddresses); j++ {
-			if roleAddresses[i] == roleAddresses[j] {
-				return fmt.Errorf("token-order-match-v2 roles must use distinct addresses")
-			}
-		}
-	}
-	fmt.Printf(
-		"token-order-match-v2 buyer=%s seller=%s matcher=%s tax=%s\n",
-		buyerAddress, sellerAddress, matcherAddress, cfg.TaxAddress,
-	)
-
-	const orderAmount = int64(1_000_000)
-	amount := big.NewInt(orderAmount)
-	price := big.NewInt(1_000_000)
-	feeRate := big.NewInt(10_000)
-	sourceA, err := fetchLiveFTInput(cfg.TokenA, buyerAddress, cfg.Network, amount)
-	if err != nil {
-		return fmt.Errorf("fetch Token A split input: %w", err)
-	}
-	sourceB, err := fetchLiveFTInput(cfg.TokenB, buyerAddress, cfg.Network, amount)
-	if err != nil {
-		return fmt.Errorf("fetch Token B split input: %w", err)
-	}
-	_, sellerFee, matcherFee, buyerFee, err := fundTokenOrderRoles(
-		cfg, buyer, buyerAddress, sellerAddress, matcherAddress,
-	)
-	if err != nil {
-		return err
-	}
-
-	sellSourceTX, sellSourceFT, buyerFee, sellSourcePrePre, err :=
-		transferExactTokenOrderInput(
-			"token-order-v2-split-a", cfg.TokenA, sellerAddress, amount,
-			sourceA, buyerFee, buyer, cfg.Network,
-		)
-	if err != nil {
-		return err
-	}
-	buySourceTX, buySourceFT, buyerFee, buySourcePrePre, err :=
-		transferExactTokenOrderInput(
-			"token-order-v2-split-b", cfg.TokenB, buyerAddress, amount,
-			sourceB, buyerFee, buyer, cfg.Network,
-		)
-	if err != nil {
-		return err
-	}
-
-	sellClient := &harnessOrderBookClient{
-		ft:  map[string][]*contractutil.FtUTXO{cfg.TokenA: {sellSourceFT}},
-		fee: []*bt.UTXO{sellerFee},
-		txs: map[string]*bt.Tx{sellSourceTX.TxID(): sellSourceTX},
-		prePre: map[string]string{
-			prePreKey(sellSourceTX, 0): sellSourcePrePre,
-		},
-	}
-	sellRaw, err := contract.NewOnlineOrderBook(sellClient, cfg.Network).
-		MakeTokenSellOrderWithSign(
-			seller.PrivKey, cfg.TaxAddress, amount, price, feeRate, cfg.TokenA, cfg.TokenB,
-		)
-	if err != nil {
-		return fmt.Errorf("token-order-v2 sell build: %w", err)
-	}
-	sellTX, err := bt.NewTxFromString(sellRaw)
-	if err != nil {
-		return err
-	}
-	if err := reportTransactionFee(
-		"token-order-v2-sell", sellTX,
-		contractutil.FtUTXOToUTXO(sellSourceFT), sellerFee,
-	); err != nil {
-		return err
-	}
-	sellTX, _, err = broadcastOne("token-order-v2-sell", sellRaw, cfg.Network)
-	if err != nil {
-		return err
-	}
-
-	buyClient := &harnessOrderBookClient{
-		ft:  map[string][]*contractutil.FtUTXO{cfg.TokenB: {buySourceFT}},
-		fee: []*bt.UTXO{buyerFee},
-		txs: map[string]*bt.Tx{buySourceTX.TxID(): buySourceTX},
-		prePre: map[string]string{
-			prePreKey(buySourceTX, 0): buySourcePrePre,
-		},
-	}
-	buyRaw, err := contract.NewOnlineOrderBook(buyClient, cfg.Network).
-		MakeTokenBuyOrderWithSign(
-			buyer.PrivKey, cfg.TaxAddress, amount, price, feeRate, cfg.TokenA, cfg.TokenB,
-		)
-	if err != nil {
-		return fmt.Errorf("token-order-v2 buy build: %w", err)
-	}
-	buyTX, err := bt.NewTxFromString(buyRaw)
-	if err != nil {
-		return err
-	}
-	if err := reportTransactionFee(
-		"token-order-v2-buy", buyTX,
-		contractutil.FtUTXOToUTXO(buySourceFT), buyerFee,
-	); err != nil {
-		return err
-	}
-	buyTX, _, err = broadcastOne("token-order-v2-buy", buyRaw, cfg.Network)
-	if err != nil {
-		return err
-	}
-
-	sellLockedPrePre, err := localPrePre(sellSourceTX, 0)
-	if err != nil {
-		return err
-	}
-	buyLockedPrePre, err := localPrePre(buySourceTX, 0)
-	if err != nil {
-		return err
-	}
-	matchRaw, err := buildValidatedTokenOrderMatchWithInputs(
-		cfg, matcher, cfg.TaxAddress, sellTX, buyTX, matcherFee,
-		sellLockedPrePre, buyLockedPrePre,
-	)
-	if err != nil {
-		return err
-	}
-	if _, _, err := broadcastOne("token-order-v2-match", matchRaw, cfg.Network); err != nil {
-		return err
-	}
-	fmt.Println("token-order-match-v2 full five-input validation and broadcast pass")
-	return nil
-}
-
-func runTokenOrders(cfg config, decoded *wif.WIF, address string) error {
-	ftaID, ftbID := cfg.TokenA, cfg.TokenB
-	if cfg.OrderSellTXID != "" || cfg.OrderBuyTXID != "" {
-		if cfg.OrderSellTXID == "" || cfg.OrderBuyTXID == "" {
-			return fmt.Errorf("both TBC_TESTNET_ORDER_SELL_TXID and TBC_TESTNET_ORDER_BUY_TXID are required")
-		}
-		sellTX, err := api.FetchTXRaw(cfg.OrderSellTXID, cfg.Network)
-		if err != nil {
-			return fmt.Errorf("fetch existing token sell order: %w", err)
-		}
-		buyTX, err := api.FetchTXRaw(cfg.OrderBuyTXID, cfg.Network)
-		if err != nil {
-			return fmt.Errorf("fetch existing token buy order: %w", err)
-		}
-		fmt.Printf("token-order-match reuse sell_txid=%s buy_txid=%s\n", sellTX.TxID(), buyTX.TxID())
-		if cfg.MatcherWIF != "" {
-			return broadcastTokenOrderMatchWithFreshMatcher(
-				cfg, decoded, address, sellTX, buyTX,
-			)
-		}
-		return broadcastTokenOrderMatch(cfg, decoded, address, sellTX, buyTX)
-	}
-
-	initialB, err := fetchLiveFTInput(ftbID, address, cfg.Network, big.NewInt(2_000_000))
-	if err != nil {
-		return fmt.Errorf("fetch Token B input: %w", err)
-	}
-	const orderAmount = int64(1_000_000)
-	price := big.NewInt(1_000_000)
-	feeRate := big.NewInt(10_000)
-
-	var createTX *bt.Tx
-	if cfg.OrderCreateTXID != "" {
-		createTX, err = api.FetchTXRaw(cfg.OrderCreateTXID, cfg.Network)
-		if err != nil {
-			return fmt.Errorf("fetch existing token order create transaction: %w", err)
-		}
-		fmt.Printf("token-order-cancel-create reuse txid=%s\n", createTX.TxID())
-	} else {
-		initialA, fetchErr := fetchLiveFTInput(ftaID, address, cfg.Network, big.NewInt(3_000_000))
-		if fetchErr != nil {
-			return fmt.Errorf("fetch Token A input: %w", fetchErr)
-		}
-		initialFee, fetchErr := api.FetchUTXO(address, 0.01, cfg.Network)
-		if fetchErr != nil {
-			return fetchErr
-		}
-		createClient := &harnessOrderBookClient{
-			ft:  map[string][]*contractutil.FtUTXO{ftaID: {initialA.utxo}},
-			fee: []*bt.UTXO{initialFee},
-			txs: map[string]*bt.Tx{
-				hex.EncodeToString(initialA.utxo.TxID): initialA.preTX,
-			},
-			prePre: map[string]string{
-				prePreKey(initialA.preTX, int(initialA.utxo.Vout)): initialA.prePre,
-			},
-		}
-		createRaw, buildErr := contract.NewOnlineOrderBook(createClient, cfg.Network).
-			MakeTokenSellOrderWithSign(
-				decoded.PrivKey, address, big.NewInt(orderAmount), price, feeRate, ftaID, ftbID,
-			)
-		if buildErr != nil {
-			return fmt.Errorf("token order cancel-create build: %w", buildErr)
-		}
-		createTX, _, err = broadcastOne("token-order-cancel-create", createRaw, cfg.Network)
-		if err != nil {
-			return err
-		}
-	}
-	createOrder, err := orderUTXOFromTX(createTX)
-	if err != nil {
-		return err
-	}
-	createFee, err := utxoFromTX(createTX, len(createTX.Outputs)-1)
-	if err != nil {
-		return err
-	}
-	createLockedPrePre, err := api.FetchFtPrePreTxData(createTX, 1, cfg.Network)
-	if err != nil {
-		return fmt.Errorf("derive locked Token A pre-pre data: %w", err)
-	}
-
-	cancelClient := &harnessOrderBookClient{
-		fee: []*bt.UTXO{createFee},
-		txs: map[string]*bt.Tx{createTX.TxID(): createTX},
-		prePre: map[string]string{
-			prePreKey(createTX, 1): createLockedPrePre,
-		},
-	}
-	cancelRaw, err := contract.NewOnlineOrderBook(cancelClient, cfg.Network).
-		CancelTokenSellOrderWithSign(decoded.PrivKey, createOrder)
-	if err != nil {
-		return fmt.Errorf("token order cancel build: %w", err)
-	}
-	cancelTX, _, err := broadcastOne("token-order-cancel", cancelRaw, cfg.Network)
-	if err != nil {
-		return err
-	}
-	cancelFT, err := ftUTXOFromTX(cancelTX, 0)
-	if err != nil {
-		return err
-	}
-	cancelFee, err := utxoFromTX(cancelTX, len(cancelTX.Outputs)-1)
-	if err != nil {
-		return err
-	}
-	cancelFTPrePre, err := localPrePre(createTX, 1)
-	if err != nil {
-		return err
-	}
-
-	sellClient := &harnessOrderBookClient{
-		ft:  map[string][]*contractutil.FtUTXO{ftaID: {cancelFT}},
-		fee: []*bt.UTXO{cancelFee},
-		txs: map[string]*bt.Tx{cancelTX.TxID(): cancelTX},
-		prePre: map[string]string{
-			prePreKey(cancelTX, 0): cancelFTPrePre,
-		},
-	}
-	sellRaw, err := contract.NewOnlineOrderBook(sellClient, cfg.Network).
-		MakeTokenSellOrderWithSign(
-			decoded.PrivKey, address, big.NewInt(orderAmount), price, feeRate, ftaID, ftbID,
-		)
-	if err != nil {
-		return fmt.Errorf("token sell order build: %w", err)
-	}
-	sellTX, _, err := broadcastOne("token-order-sell", sellRaw, cfg.Network)
-	if err != nil {
-		return err
-	}
-	sellFee, err := utxoFromTX(sellTX, len(sellTX.Outputs)-1)
-	if err != nil {
-		return err
-	}
-
-	buyClient := &harnessOrderBookClient{
-		ft:  map[string][]*contractutil.FtUTXO{ftbID: {initialB.utxo}},
-		fee: []*bt.UTXO{sellFee},
-		txs: map[string]*bt.Tx{
-			hex.EncodeToString(initialB.utxo.TxID): initialB.preTX,
-		},
-		prePre: map[string]string{
-			prePreKey(initialB.preTX, int(initialB.utxo.Vout)): initialB.prePre,
-		},
-	}
-	buyRaw, err := contract.NewOnlineOrderBook(buyClient, cfg.Network).
-		MakeTokenBuyOrderWithSign(
-			decoded.PrivKey, address, big.NewInt(orderAmount), price, feeRate, ftaID, ftbID,
-		)
-	if err != nil {
-		return fmt.Errorf("token buy order build: %w", err)
-	}
-	buyTX, _, err := broadcastOne("token-order-buy", buyRaw, cfg.Network)
-	if err != nil {
-		return err
-	}
-	return broadcastTokenOrderMatch(cfg, decoded, address, sellTX, buyTX)
-}
-
-func broadcastTokenOrderMatchWithFreshMatcher(
-	cfg config,
-	buyer *wif.WIF,
-	buyerAddress string,
-	sellTX, buyTX *bt.Tx,
-) error {
-	if cfg.TaxAddress == "" {
-		return fmt.Errorf("TBC_TESTNET_TAX_ADDRESS is required with TBC_TESTNET_MATCHER_WIF")
-	}
-	matcher, matcherAddress, err := testnetAddressForWIF(cfg.MatcherWIF, "matcher")
-	if err != nil {
-		return err
-	}
-	if matcherAddress == buyerAddress || matcherAddress == cfg.TaxAddress {
-		return fmt.Errorf("matcher, buyer, and tax addresses must be distinct")
-	}
-	fundingRaw, _, matcherFee, err := buildTokenOrderMatcherFunding(
-		cfg, buyer, buyerAddress, matcherAddress,
-	)
-	if err != nil {
-		return err
-	}
-	sellLockedPrePre, err := api.FetchFtPrePreTxData(sellTX, 1, cfg.Network)
-	if err != nil {
-		return fmt.Errorf("derive locked Token A pre-pre data: %w", err)
-	}
-	buyLockedPrePre, err := api.FetchFtPrePreTxData(buyTX, 1, cfg.Network)
-	if err != nil {
-		return fmt.Errorf("derive locked Token B pre-pre data: %w", err)
-	}
-	matchRaw, err := buildValidatedTokenOrderMatchWithInputs(
-		cfg, matcher, cfg.TaxAddress, sellTX, buyTX, matcherFee,
-		sellLockedPrePre, buyLockedPrePre,
-	)
-	if err != nil {
-		return err
-	}
-	if _, _, err := broadcastOne("token-order-matcher-funding", fundingRaw, cfg.Network); err != nil {
-		return err
-	}
-	if _, _, err := broadcastOne("token-order-match", matchRaw, cfg.Network); err != nil {
-		return err
-	}
-	fmt.Println("token-order match with fresh matcher passes")
-	return nil
-}
-
-func broadcastTokenOrderMatch(
-	cfg config,
-	decoded *wif.WIF,
-	address string,
-	sellTX, buyTX *bt.Tx,
-) error {
-	matchRaw, err := buildValidatedTokenOrderMatch(cfg, decoded, address, sellTX, buyTX)
-	if err != nil {
-		return err
-	}
-	if _, _, err := broadcastOne("token-order-match", matchRaw, cfg.Network); err != nil {
-		return err
-	}
-	fmt.Println("token-order cancel and match scenarios pass")
-	return nil
-}
-
-func buildValidatedTokenOrderMatch(
-	cfg config,
-	decoded *wif.WIF,
-	address string,
-	sellTX, buyTX *bt.Tx,
-) (string, error) {
-	matchFee, err := utxoFromTX(buyTX, len(buyTX.Outputs)-1)
-	if err != nil {
-		return "", err
-	}
-	sellLockedPrePre, err := api.FetchFtPrePreTxData(sellTX, 1, cfg.Network)
-	if err != nil {
-		return "", fmt.Errorf("derive locked Token A pre-pre data: %w", err)
-	}
-	buyLockedPrePre, err := api.FetchFtPrePreTxData(buyTX, 1, cfg.Network)
-	if err != nil {
-		return "", fmt.Errorf("derive locked Token B pre-pre data: %w", err)
-	}
-	taxAddress := address
-	if cfg.TaxAddress != "" {
-		taxAddress = cfg.TaxAddress
-	}
-	return buildValidatedTokenOrderMatchWithInputs(
-		cfg, decoded, taxAddress, sellTX, buyTX, matchFee,
-		sellLockedPrePre, buyLockedPrePre,
-	)
-}
-
-func buildValidatedTokenOrderMatchWithInputs(
-	cfg config,
-	matcher *wif.WIF,
-	taxAddress string,
-	sellTX, buyTX *bt.Tx,
-	matchFee *bt.UTXO,
-	sellLockedPrePre, buyLockedPrePre string,
-) (string, error) {
-	sellOrder, err := orderUTXOFromTX(sellTX)
-	if err != nil {
-		return "", err
-	}
-	buyOrder, err := orderUTXOFromTX(buyTX)
-	if err != nil {
-		return "", err
-	}
-	sellFT, err := ftUTXOFromTX(sellTX, 1)
-	if err != nil {
-		return "", err
-	}
-	buyFT, err := ftUTXOFromTX(buyTX, 1)
-	if err != nil {
-		return "", err
-	}
-	matchClient := &harnessOrderBookClient{
-		fee: []*bt.UTXO{matchFee},
-		txs: map[string]*bt.Tx{
-			sellTX.TxID(): sellTX,
-			buyTX.TxID():  buyTX,
-		},
-		prePre: map[string]string{
-			prePreKey(sellTX, 1): sellLockedPrePre,
-			prePreKey(buyTX, 1):  buyLockedPrePre,
-		},
-	}
-	matchRaw, err := contract.NewOnlineOrderBook(matchClient, cfg.Network).
-		MatchTokenOrderWithSign(matcher.PrivKey, buyOrder, sellOrder, taxAddress, taxAddress)
-	if err != nil {
-		return "", fmt.Errorf("token order match build: %w", err)
-	}
-	matchTX, err := bt.NewTxFromString(matchRaw)
-	if err != nil {
-		return "", fmt.Errorf("parse token order match: %w", err)
-	}
-	previousOutputs := []*bt.Output{
-		{LockingScript: sellOrder.LockingScript, Satoshis: sellOrder.Satoshis},
-		{LockingScript: sellFT.LockingScript, Satoshis: sellFT.Satoshis},
-		{LockingScript: buyOrder.LockingScript, Satoshis: buyOrder.Satoshis},
-		{LockingScript: buyFT.LockingScript, Satoshis: buyFT.Satoshis},
-		{LockingScript: matchFee.LockingScript, Satoshis: matchFee.Satoshis},
-	}
-	for inputIndex, previousOutput := range previousOutputs {
-		unlockBytes := matchTX.Inputs[inputIndex].UnlockingScript.Bytes()
-		fmt.Printf("token-order-match input=%d unlock_bytes=%d unlock_sha256=%s\n",
-			inputIndex, len(unlockBytes), hex.EncodeToString(crypto.Sha256(unlockBytes)))
-		var lastState *interpreter.State
-		debugger := interpreterdebug.NewDebugger()
-		debugger.AttachBeforeStep(func(state *interpreter.State) {
-			lastState = state
-		})
-		if err := interpreter.NewEngine().Execute(
-			interpreter.WithTx(matchTX, inputIndex, previousOutput),
-			interpreter.WithAfterGenesis(),
-			interpreter.WithForkID(),
-			interpreter.WithDebugger(debugger),
-		); err != nil {
-			if lastState != nil {
-				fmt.Printf("token-order-match failure input=%d script=%d offset=%d opcode=%s stack_depth=%d\n",
-					inputIndex, lastState.ScriptIdx, lastState.OpcodeIdx,
-					lastState.Opcode().Name(), len(lastState.DataStack))
-				stack := lastState.DataStack
-				if len(stack) > 8 {
-					stack = stack[len(stack)-8:]
-				}
-				for i, item := range stack {
-					fmt.Printf("token-order-match failure_stack item=%d hex=%s\n",
-						i, hex.EncodeToString(item))
-				}
-			}
-			return "", fmt.Errorf("token order match local validation input %d: %w", inputIndex, err)
-		}
-	}
-	if err := reportTransactionFee(
-		"token-order-match", matchTX,
-		buyOrder, contractutil.FtUTXOToUTXO(buyFT),
-		sellOrder, contractutil.FtUTXOToUTXO(sellFT), matchFee,
-	); err != nil {
-		return "", err
-	}
-	return matchRaw, nil
-}
-
 func utxoFromTX(tx *bt.Tx, vout int) (*bt.UTXO, error) {
 	if tx == nil || vout < 0 || vout >= len(tx.Outputs) {
 		return nil, fmt.Errorf("output %d is out of range", vout)
@@ -1165,7 +325,14 @@ func broadcastOne(label, raw, network string) (*bt.Tx, string, error) {
 	if txid != tx.TxID() {
 		return nil, "", fmt.Errorf("%s returned txid mismatch", label)
 	}
-	fmt.Printf("%s txid=%s\n", label, txid)
+	refetched, err := api.FetchTXRaw(txid, network)
+	if err != nil {
+		return nil, "", fmt.Errorf("%s refetch: %w", label, err)
+	}
+	if refetched.TxID() != txid {
+		return nil, "", fmt.Errorf("%s refetched txid mismatch", label)
+	}
+	fmt.Printf("%s txid=%s refetched_txid=%s\n", label, txid, refetched.TxID())
 	return tx, txid, nil
 }
 
@@ -1361,6 +528,13 @@ func mintAndBroadcast(
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s parse mint: %w", label, err)
 	}
+	if len(mintTX.Outputs) < 2 {
+		return nil, nil, fmt.Errorf("%s mint has %d outputs, want FT code and tape", label, len(mintTX.Outputs))
+	}
+	if got := mintTX.Outputs[0].LockingScript.Len(); got != 1884 {
+		return nil, nil, fmt.Errorf("%s mint code length %d, want released FT v3 length 1884", label, got)
+	}
+	fmt.Printf("%s mint_code_bytes=%d\n", label, mintTX.Outputs[0].LockingScript.Len())
 	sourceID, err := api.BroadcastTXRaw(raws[0], network)
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s source broadcast: %w", label, err)
@@ -1368,7 +542,14 @@ func mintAndBroadcast(
 	if sourceID != sourceTX.TxID() {
 		return nil, nil, fmt.Errorf("%s source returned txid mismatch", label)
 	}
-	fmt.Printf("%s source_txid=%s\n", label, sourceID)
+	refetchedSource, err := api.FetchTXRaw(sourceID, network)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s source refetch: %w", label, err)
+	}
+	if refetchedSource.TxID() != sourceID {
+		return nil, nil, fmt.Errorf("%s source refetched txid mismatch", label)
+	}
+	fmt.Printf("%s source_txid=%s source_refetched_txid=%s\n", label, sourceID, refetchedSource.TxID())
 	mintID, err := api.BroadcastTXRaw(raws[1], network)
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s mint broadcast: %w", label, err)
@@ -1377,6 +558,14 @@ func mintAndBroadcast(
 	if mintID != mintTX.TxID() || token.ContractTxid != mintTX.TxID() {
 		return nil, nil, fmt.Errorf("%s returned txid mismatch", label)
 	}
+	refetchedMint, err := api.FetchTXRaw(mintID, network)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s mint refetch: %w", label, err)
+	}
+	if refetchedMint.TxID() != mintID {
+		return nil, nil, fmt.Errorf("%s mint refetched txid mismatch", label)
+	}
+	fmt.Printf("%s mint_refetched_txid=%s\n", label, refetchedMint.TxID())
 	return sourceTX, mintTX, nil
 }
 

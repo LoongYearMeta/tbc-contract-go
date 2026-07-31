@@ -17,18 +17,14 @@ import (
 
 // OB-specific length constants from orderbookunlock.ts.
 const (
-	obFTCodeLength            = 1884
-	obFTV4CodeLength          = 1948
-	obCoinCodeLength          = 2012
-	obBuyCodeLength           = 960 + 114  // 1074
-	obSellCodeLength          = 832 + 114  // 946
-	obTokenOrderLength        = 1152 + 180 // 1332
-	obFTPartialOffset         = 1856
-	obFTV4PartialOffset       = 1920
-	obCoinPartialOffset       = 1984
-	obBuyPartialOffset        = 960
-	obSellPartialOffset       = 832
-	obTokenOrderPartialOffset = 1152
+	obFTCodeLength      = 1884
+	obCoinCodeLength    = 2012
+	obBuyCodeLength     = 960 + 114 // 1074
+	obSellCodeLength    = 832 + 114 // 946
+	obFTPartialOffset   = 1856
+	obCoinPartialOffset = 1984
+	obBuyPartialOffset  = 960
+	obSellPartialOffset = 832
 )
 
 // obGetSize mirrors getSize(length) in orderbookunlock.ts.
@@ -72,15 +68,6 @@ func obAppendUint64LE(buf []byte, v uint64) []byte {
 // contractOutputNumber is how many consecutive outputs to treat as the contract group.
 func GetPreTxdataOB(tx *bt.Tx, vout int, contractOutputNumber int) (string, error) {
 	return getPreTxdataOBFixed(tx, vout, contractOutputNumber, 10)
-}
-
-// GetTokenOrderPreTxdataOB serializes a TokenOrder parent transaction using
-// the twelve physical output slots consumed by the TokenOrder locking script.
-func GetTokenOrderPreTxdataOB(tx *bt.Tx, vout int, contractOutputNumber int) (string, error) {
-	if len(tx.Outputs) > 12 {
-		return "", fmt.Errorf("GetTokenOrderPreTxdataOB: transaction has %d outputs, maximum is 12", len(tx.Outputs))
-	}
-	return getPreTxdataOBFixed(tx, vout, contractOutputNumber, 12)
 }
 
 func getPreTxdataOBFixed(
@@ -137,8 +124,6 @@ func getPreTxdataOBFixed(
 				partialOffset = obBuyPartialOffset
 			} else if scriptLen == obSellCodeLength {
 				partialOffset = obSellPartialOffset
-			} else if scriptLen == obTokenOrderLength {
-				partialOffset = obTokenOrderPartialOffset
 			}
 			partialHash = partialsha256.CalculatePartialHash(lockScript[:partialOffset])
 			suffixData = lockScript[partialOffset:]
@@ -199,14 +184,14 @@ func getPreTxdataOBFixed(
 // GetCurrentTxOutputsDataOB mirrors getCurrentTxOutputsData(tx) in
 // orderbookunlock.ts with its default fixedOutputCount of 10.
 func GetCurrentTxOutputsDataOB(tx *bt.Tx) (string, error) {
-	return GetCurrentTxOutputsDataOBFixed(tx, 10)
+	return getCurrentTxOutputsDataOBFixed(tx, 10)
 }
 
-// GetCurrentTxOutputsDataOBFixed mirrors
+// getCurrentTxOutputsDataOBFixed mirrors
 // getCurrentTxOutputsData(tx, fixedOutputCount) in orderbookunlock.ts.
-func GetCurrentTxOutputsDataOBFixed(tx *bt.Tx, fixedOutputCount int) (string, error) {
+func getCurrentTxOutputsDataOBFixed(tx *bt.Tx, fixedOutputCount int) (string, error) {
 	if fixedOutputCount < 0 {
-		return "", fmt.Errorf("GetCurrentTxOutputsDataOBFixed: fixed output count must be non-negative")
+		return "", fmt.Errorf("getCurrentTxOutputsDataOBFixed: fixed output count must be non-negative")
 	}
 	var buf []byte
 	i := 0
@@ -219,16 +204,12 @@ func GetCurrentTxOutputsDataOBFixed(tx *bt.Tx, fixedOutputCount int) (string, er
 		partialOffset := 0
 		if scriptLen == obFTCodeLength {
 			partialOffset = obFTPartialOffset
-		} else if scriptLen == obFTV4CodeLength {
-			partialOffset = obFTV4PartialOffset
 		} else if scriptLen == obCoinCodeLength {
 			partialOffset = obCoinPartialOffset
 		} else if scriptLen == obBuyCodeLength {
 			partialOffset = obBuyPartialOffset
 		} else if scriptLen == obSellCodeLength {
 			partialOffset = obSellPartialOffset
-		} else if scriptLen == obTokenOrderLength {
-			partialOffset = obTokenOrderPartialOffset
 		}
 
 		isSpecial := partialOffset > 0
@@ -266,7 +247,7 @@ func GetCurrentTxOutputsDataOBFixed(tx *bt.Tx, fixedOutputCount int) (string, er
 		buf = append(buf, sizeBytes...)
 
 		// FT / Coin code outputs are always followed by their tape as a pair.
-		if scriptLen == obFTCodeLength || scriptLen == obFTV4CodeLength || scriptLen == obCoinCodeLength {
+		if scriptLen == obFTCodeLength || scriptLen == obCoinCodeLength {
 			if i+1 < len(tx.Outputs) {
 				nextOut := tx.Outputs[i+1]
 				nextScript := nextOut.LockingScript.Bytes()

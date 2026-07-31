@@ -88,24 +88,3 @@ writeTemplate(
     "const ftlpCodePreTemplate =",
   ),
 );
-
-const orderBookSource = fs.readFileSync(
-  path.join(jsRoot, "lib/contract/orderBook.ts"),
-  "utf8",
-);
-writeTemplate(
-  "lib/contract/asm/orderbook_token_sell.hex",
-  extractTemplate(
-    orderBookSource,
-    "  getTokenSellOrderCode(taxAddress: string)",
-    "tbc.Script.fromHex(",
-  ),
-);
-writeTemplate(
-  "lib/contract/asm/orderbook_token_buy.hex",
-  extractTemplate(
-    orderBookSource,
-    "  getTokenBuyOrderCode(taxAddress: string)",
-    "tbc.Script.fromHex(",
-  ),
-);
