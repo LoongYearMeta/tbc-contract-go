@@ -158,6 +158,9 @@ func run(cfg config) error {
 	if cfg.Stage == stagePoolLock {
 		return runPoolLockStage(cfg, decoded, address.AddressString)
 	}
+	if cfg.Stage == stageOrderBook {
+		return runOrderBookStage(cfg, decoded, address.AddressString)
+	}
 	if cfg.Stage == "core-contracts" {
 		return runCoreContracts(cfg, decoded, address.AddressString)
 	}

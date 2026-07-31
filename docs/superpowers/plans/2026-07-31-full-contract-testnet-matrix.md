@@ -652,7 +652,7 @@ git commit -m "test: cover complete poolnft2 testnet matrix"
 - Create: `test/testnet-parity/orderbook_stage_test.go`
 - Modify: `test/testnet-parity/main.go`
 
-- [ ] **Step 1: Write failing decoded-order and residual-volume tests**
+- [x] **Step 1: Write failing decoded-order and residual-volume tests**
 
 ```go
 func TestValidateResidualSaleVolume(t *testing.T) {
@@ -670,13 +670,13 @@ func TestOrderBookUsesOrdinaryFTBranch(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run the OrderBook tests and confirm failure**
+- [x] **Step 2: Run the OrderBook tests and confirm failure**
 
 Run: `go test ./test/testnet-parity -run 'OrderBook|ResidualSale' -count=1`
 
 Expected: FAIL because `validateResidualSaleVolume` is absent.
 
-- [ ] **Step 3: Build and broadcast create/cancel cases**
+- [x] **Step 3: Build and broadcast create/cancel cases**
 
 Use fresh, independent FT branches and TBC UTXOs for:
 
@@ -689,7 +689,7 @@ orderbook-buy-cancel
 
 Exercise build/fill signing for one side and direct `WithSign` for the other, compare their local structural model, and broadcast only one transaction per outpoint.
 
-- [ ] **Step 4: Build and broadcast full and partial matches**
+- [x] **Step 4: Build and broadcast full and partial matches**
 
 Broadcast:
 
@@ -704,7 +704,7 @@ orderbook-partial-match
 
 Decode order scripts with `contract.GetOrderData`. Check fixed script lengths, token ID, owner, price, fee rate, locked FT/TBC amount, fee outputs, full-order closure, and partial-match residual sale volume. Query `/dex/txinfo/txid/{txid}` and require PLACE/CANCEL/TRADE classification when indexed.
 
-- [ ] **Step 5: Run tests and commit**
+- [x] **Step 5: Run tests and commit**
 
 Run: `go test ./lib/contract ./lib/util ./test/testnet-parity -run 'Order|DEX' -count=1`
 
