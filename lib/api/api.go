@@ -74,9 +74,17 @@ func isRetryableHTTPGetErr(err error) bool {
 		strings.Contains(msg, "unexpected eof")
 }
 
-// httpGetResponseWithRetry retries GET on transient transport errors. Caller
-// owns the returned *http.Response and MUST close its Body. POST broadcasts
-// MUST NOT use this — only idempotent GETs are safe to retry.
+func isRetryableHTTPGetStatus(status int) bool {
+	return status == http.StatusRequestTimeout ||
+		status == http.StatusTooEarly ||
+		status == http.StatusTooManyRequests ||
+		status >= http.StatusInternalServerError
+}
+
+// httpGetResponseWithRetry retries GET on transient transport errors and
+// transient HTTP statuses. Caller owns the returned *http.Response and MUST
+// close its Body. POST broadcasts MUST NOT use this — only idempotent GETs
+// are safe to retry.
 func httpGetResponseWithRetry(url string) (*http.Response, error) {
 	const maxAttempts = 4
 	var lastErr error
@@ -86,6 +94,17 @@ func httpGetResponseWithRetry(url string) (*http.Response, error) {
 		}
 		resp, err := defaultHTTPClient.Get(url)
 		if err == nil {
+			if isRetryableHTTPGetStatus(resp.StatusCode) &&
+				attempt < maxAttempts-1 {
+				_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4_096))
+				_ = resp.Body.Close()
+				lastErr = fmt.Errorf(
+					"GET %s returned transient HTTP status %d",
+					url,
+					resp.StatusCode,
+				)
+				continue
+			}
 			return resp, nil
 		}
 		lastErr = err
@@ -104,7 +123,25 @@ func httpGetWithRetry(url string) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	return io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode < http.StatusOK ||
+		resp.StatusCode >= http.StatusMultipleChoices {
+		const bodyPreviewLimit = 512
+		preview := body
+		if len(preview) > bodyPreviewLimit {
+			preview = preview[:bodyPreviewLimit]
+		}
+		return nil, fmt.Errorf(
+			"GET %s returned HTTP status %d: %s",
+			url,
+			resp.StatusCode,
+			strings.TrimSpace(string(preview)),
+		)
+	}
+	return body, nil
 }
 
 // apiCodeError returns an error if the response body's top-level `code`
