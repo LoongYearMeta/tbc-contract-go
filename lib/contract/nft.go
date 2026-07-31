@@ -423,9 +423,11 @@ func CreateCollection(address string, priv *bec.PrivateKey, data *CollectionData
 	if err := tx.ChangeToAddress(address, nftFeeQuote80()); err != nil {
 		return "", err
 	}
-	ctx := context.Background()
-	if err := tx.FillAllInputs(ctx, &unlocker.Getter{PrivateKey: priv}); err != nil {
-		return "", err
+	if err := nftApplyJSFeeAndSign(
+		tx,
+		&unlocker.Getter{PrivateKey: priv},
+	); err != nil {
+		return "", fmt.Errorf("CreateCollection: finalize fee: %w", err)
 	}
 	return hex.EncodeToString(tx.Bytes()), nil
 }
