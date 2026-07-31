@@ -1,6 +1,6 @@
 # Fee Safety Testnet Verification
 
-Date: 2026-07-30  
+Date: 2026-07-30, updated 2026-07-31
 Network: TBC testnet
 
 The runtime WIF was injected only into an interactive process, was not written
@@ -102,21 +102,66 @@ tests had missed:
    signature data to the script builder; the freeze/unfreeze rows above are the
    accepted retest.
 
-## Known OrderBook match blocker
+## Token-to-token OrderBook resolution
 
-Token OrderBook create, cancel, sell-order, and buy-order transactions were
-accepted and their fees are verified above. Token-to-token match is **not**
-reported as successful: the testnet node rejected it with
-`Invalid OP_SPLIT range`.
+The earlier `Invalid OP_SPLIT range` blocker was resolved. Two independent
+defects had been hidden behind the same live-node rejection:
 
-For parity diagnosis, Go and `tbc-contract` 1.6.5 produced match transactions
-with the same nine-output structure, the same 14,756-byte serialized size, and
-the same 1,354-byte input-0 unlocking script (SHA-256
-`d8d025ae6421635079d348f263d720b9794b3ec948b0a25487031de092585318`).
-Submitting the JavaScript-generated raw transaction produced the same node
-rejection. This is therefore an upstream contract/script compatibility blocker,
-not a Go-only fee or serialization discrepancy. It remains unresolved and is
-not counted among the 34 accepted broadcasts.
+1. The JavaScript 1.6.5 TokenOrder template discarded the computed settlement
+   output hash before comparing it. Repaired buy/sell templates now keep all 12
+   serializer slots and compare the computed hash.
+2. FT v3 hard-coded the contract parent at current input 0. In an atomic
+   Token A/Token B match, the second independently created order uses contract
+   input 2, so its FT covenant could never authenticate the correct parent.
+   FT v4 selects contract input 0 or 2 from the current FT input index while
+   preserving the partial-hash boundary used by dependent contracts.
+
+Existing FT v3 token IDs are immutable and cannot use the independent-order
+match path. The successful retest therefore minted two FT v4 test tokens and
+created fresh orders:
+
+Token A contract:
+`fdc2954f91e1ab7c052cbebc15b9277f7ece84a6ffec8e0420fd2061b3a6b79c`
+
+Token B contract:
+`68e0da0429e1747a5cf41812f0951b4daef9c2e68b6cb5c97448d1fb0d52463f`
+
+| Operation | Txid | Bytes | Paid sat | Target sat | Status |
+|---|---|---:|---:|---:|---|
+| Token A v4 mint source | `4276b84eb8140081bebd3ec72c693140fc6be5fbe06d5770799a48cdeac56c73` | 321 | 80 | 80 | accepted |
+| Token A v4 mint | `fdc2954f91e1ab7c052cbebc15b9277f7ece84a6ffec8e0420fd2061b3a6b79c` | 2233 | 179 | 179 | accepted |
+| Token B v4 mint source | `3016d6ddd0efa57de5245b90b291628948cc14260cce8d7298998ab5fb71a755` | 320 | 80 | 80 | accepted |
+| Token B v4 mint | `68e0da0429e1747a5cf41812f0951b4daef9c2e68b6cb5c97448d1fb0d52463f` | 2232 | 179 | 179 | accepted |
+| Buyer/seller/matcher role funding | `15999011b3f941e258bdbc5bbdfe7d420f6f5eb60a6fcad22d2195142386737d` | 260 | 80 | 80 | accepted |
+| Split Token A to seller | `d797b61e75ee1af9c2c6ab4890bfc136633b8500fdb69f64f56f78f9f087324b` | 5289 | 424 | 424 | accepted |
+| Split Token B to buyer | `164787d482d1c29bc68b92969a2bf128cbda6516e87cb94bf597d011adef46b9` | 5289 | 424 | 424 | accepted |
+| Create sell order | `fe73195de02618c9245ae084cba44f7452f49ebdb0c82280e2dd4a285939422e` | 4677 | 452 | 375 | accepted |
+| Create buy order | `a765471144735a3541a5d84174cb57e6811f31c078efe3bd47b03a2598f928cd` | 4678 | 452 | 375 | accepted |
+| Fresh matcher funding | `b626822bf1264eb1866fd23bf6afd7bea6836738ea07540ff0542b388f342a60` | 225 | 80 | 80 | accepted |
+| Atomic Token A/Token B match | `f2d303b2c1f600132e7eae9b672d54183c9737ff55b6a30f1d402c3eef72050a` | 14909 | 1193 | 1193 | accepted |
+
+Before the accepted match, the exact same raw transaction passed the script
+interpreter independently for all five inputs. After broadcast, it was fetched
+back from the testnet API and its five parent references, nine outputs, asset
+amounts, and fee were reconstructed. Outputs paid 990,000 Token B to the
+seller, 990,000 Token A to the buyer, and 10,000 of each token to the fee
+address.
+
+The first v4 match build was intentionally not broadcast because final signed
+size was 14,908 bytes but it paid only 1,165 satoshis instead of the required
+1,193. `MatchTokenOrder` now iteratively adjusts the fee change and rebuilds
+both TokenOrder unlocks, both FT unlocks, and all ordinary signatures until the
+actual serialized-size target is met. A regression test reproduces the
+underpayment on a 19,085-byte fixture.
+
+Post-broadcast review also added construction guards for two adjacent cases:
+ordinary FT v1-v3 is rejected before creating a new TokenOrder, and a
+fractional-price partial fill is rejected when per-fill integer rounding would
+leave more Token B than the residual order represents. Compatible fractional
+full and partial fills pass the same five-input interpreter suite. PoolNFT2's
+standard and lock-time FTLP templates were also extended to the FT v4
+1948-byte/1920-byte boundary so newly minted v4 tokens do not enter a legacy
+FTLP branch.
 
 ## Rust SDK comparison
 
@@ -133,5 +178,5 @@ satoshis, while the JavaScript-compatible Go library dust constant is 42
 satoshis and the node dust limit is tracked separately as 10 satoshis.
 
 The Rust OrderBook implementation represents the older TBC-to-FT order family,
-not the JavaScript 1.6.5 token-to-token matcher, so it cannot validate the
-blocked token-to-token match path.
+not the JavaScript Token A/Token B matcher. It therefore confirms the fee
+strategy but cannot validate the TokenOrder template or FT v4 covenant changes.
