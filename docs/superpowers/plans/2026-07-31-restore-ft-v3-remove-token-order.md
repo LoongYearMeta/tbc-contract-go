@@ -257,18 +257,10 @@ Remove TokenOrder and FT v4 constants plus `GetTokenOrderPreTxdataOB` from
 `lib/util/orderbookunlock.go`. Preserve the corrected general padding formula,
 but make the fixed-count implementation private:
 
-```diff
- func GetCurrentTxOutputsDataOB(tx *bt.Tx) (string, error) {
--	return GetCurrentTxOutputsDataOBFixed(tx, 10)
-+	return getCurrentTxOutputsDataOBFixed(tx, 10)
- }
- 
--func GetCurrentTxOutputsDataOBFixed(tx *bt.Tx, fixedOutputCount int) (string, error) {
-+func getCurrentTxOutputsDataOBFixed(tx *bt.Tx, fixedOutputCount int) (string, error) {
- 	if fixedOutputCount < 0 {
--		return "", fmt.Errorf("GetCurrentTxOutputsDataOBFixed: fixed output count must be non-negative")
-+		return "", fmt.Errorf("getCurrentTxOutputsDataOBFixed: fixed output count must be non-negative")
- 	}
+```text
+GetCurrentTxOutputsDataOBFixed -> getCurrentTxOutputsDataOBFixed
+"GetCurrentTxOutputsDataOBFixed: fixed output count must be non-negative"
+-> "getCurrentTxOutputsDataOBFixed: fixed output count must be non-negative"
 ```
 
 FT/coin pair detection must contain only `obFTCodeLength` and
