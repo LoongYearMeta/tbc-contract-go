@@ -499,7 +499,7 @@ git commit -m "test: cover multisig HTLC and piggybank lifecycles"
 - Create: `test/testnet-parity/stablecoin_stage_test.go`
 - Modify: `test/testnet-parity/js-musig-sign.js`
 
-- [ ] **Step 1: Write failing tests for 64-byte admin signatures and lock-time Tape**
+- [x] **Step 1: Write failing tests for 64-byte admin signatures and lock-time Tape**
 
 ```go
 func TestValidateAdminSignatures(t *testing.T) {
@@ -513,28 +513,28 @@ func TestValidateAdminSignatures(t *testing.T) {
 
 func TestStableCoinLockTimeRoundTrip(t *testing.T) {
 	tape := testCoinTape(t)
-	locked, err := contract.SetLockTimeInTape(tape, 12345)
+	locked, err := contract.SetLockTimeInTape(tape, 1800000000)
 	if err != nil {
 		t.Fatal(err)
 	}
 	got, err := contract.GetLockTimeFromTape(locked)
-	if err != nil || got != 12345 {
+	if err != nil || got != 1800000000 {
 		t.Fatalf("got=%d err=%v", got, err)
 	}
 }
 ```
 
-- [ ] **Step 2: Run the StableCoin tests and confirm failure**
+- [x] **Step 2: Run the StableCoin tests and confirm failure**
 
 Run: `go test ./test/testnet-parity -run 'StableCoin|AdminSignatures' -count=1`
 
 Expected: FAIL because `validateAdminSignatures` and the full stage are absent.
 
-- [ ] **Step 3: Extend the existing external MuSig2 flow**
+- [x] **Step 3: Extend the existing external MuSig2 flow**
 
 Keep the JavaScript signer process isolated and return only aggregate public key or 64-byte signatures over supplied sighashes. The Go stage must reject any count mismatch or non-64-byte signature before calling `AdminPrepared.Finalize`.
 
-- [ ] **Step 4: Build and broadcast the complete StableCoin chain**
+- [x] **Step 4: Build the complete StableCoin chain and wire strict broadcast/indexer validation**
 
 Broadcast:
 
@@ -551,7 +551,7 @@ stablecoin-unfreeze
 
 Use at least two Coin UTXOs in `MergeCoin`. Check the 2,012-byte Coin code, supply increase in the Coin NFT Tape, Coin amount conservation, two logical batch recipients, merge consolidation, and freeze/unfreeze lock-time changes. Query the stablecoin info/UTXO/decode endpoints after the raw transaction checks.
 
-- [ ] **Step 5: Run tests and commit**
+- [x] **Step 5: Run tests and commit**
 
 Run: `go test ./lib/contract ./test/testnet-parity -run 'StableCoin|Coin|Admin' -count=1`
 
