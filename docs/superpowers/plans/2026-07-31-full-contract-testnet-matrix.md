@@ -724,7 +724,7 @@ git commit -m "test: cover ordinary orderbook testnet lifecycle"
 - Modify: `lib/contract/testdata/js-1.6.5/script-hashes.json`
 - Modify: `lib/contract/script_parity_test.go`
 
-- [ ] **Step 1: Write failing Go parity assertions for missing fixture keys**
+- [x] **Step 1: Write failing Go parity assertions for missing fixture keys**
 
 ```go
 func TestRenderedTransactionArtifactsMatchJS165(t *testing.T) {
@@ -741,13 +741,13 @@ func TestRenderedTransactionArtifactsMatchJS165(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run parity tests and confirm failure**
+- [x] **Step 2: Run parity tests and confirm failure**
 
 Run: `go test ./lib/contract -run 'TestRendered.*JS165' -count=1`
 
 Expected: FAIL for fixture keys not yet generated.
 
-- [ ] **Step 3: Generate public deterministic fixtures from the sibling checkout**
+- [x] **Step 3: Generate public deterministic fixtures from the sibling checkout**
 
 Extend the Node script to emit, for each artifact:
 
@@ -770,11 +770,11 @@ node scripts/generate-js-parity-fixtures.js \
 
 Expected: fixture JSON is updated successfully and contains no WIF, raw signed transaction, or secret.
 
-- [ ] **Step 4: Implement corresponding Go artifact comparisons**
+- [x] **Step 4: Implement corresponding Go artifact comparisons**
 
 Render the same Code/Tape/order artifacts in Go and compare length, SHA-256, decoded amount/state fields, output ordering, fixed satoshi values, version, lock time, and sequence. Classify deliberate signed-raw differences in the final report rather than comparing signatures or txids.
 
-- [ ] **Step 5: Run tests and commit**
+- [x] **Step 5: Run tests and commit**
 
 Run: `go test ./lib/contract -run 'JS165|Parity' -count=1`
 

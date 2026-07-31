@@ -1,30 +1,114 @@
 {
   "ftV3Mint": {
     "length": 1884,
-    "sha256": "93a0613a9eb50f7c42059ebb517b8ad023fde2e3587cd86fe34ce3f5cb214f62"
+    "sha256": "93a0613a9eb50f7c42059ebb517b8ad023fde2e3587cd86fe34ce3f5cb214f62",
+    "decoded": {
+      "kind": "ordinary-ft-v3",
+      "destination": "1BitcoinEaterAddressDontSendf59kuE",
+      "codeBytes": "1884"
+    }
+  },
+  "ftTransferTape": {
+    "length": 70,
+    "sha256": "efefd3ac30831bd04fcfbbe6cec7e57ea0cce4aeec05ba76b0547b0fccd481fc",
+    "decoded": {
+      "balance": "123456",
+      "marker": "FTape"
+    }
+  },
+  "nftTape": {
+    "length": 143,
+    "sha256": "1c7b1c922adcba3c5e3b42a7bd1e55c29bbad1dfaa4cc16eb52637298c00dfd5",
+    "decoded": {
+      "nftName": "Parity NFT",
+      "symbol": "PNFT",
+      "file": "ipfs://parity"
+    }
   },
   "poolV3": {
     "length": 3291,
-    "sha256": "60ca473ea266a930a569c83f304350315d853151c051c3be2c7794c819f0a9c0"
+    "sha256": "60ca473ea266a930a569c83f304350315d853151c051c3be2c7794c819f0a9c0",
+    "decoded": {
+      "version": "3",
+      "locked": "false",
+      "tokenID": "1111111111111111111111111111111111111111111111111111111111111111"
+    }
   },
   "poolV3Locked": {
     "length": 3390,
-    "sha256": "18765d716e07b396e1c2a9a985d0dd84f52cefa72a99093206ed3911bec0c06f"
+    "sha256": "18765d716e07b396e1c2a9a985d0dd84f52cefa72a99093206ed3911bec0c06f",
+    "decoded": {
+      "version": "3",
+      "locked": "true",
+      "tokenID": "1111111111111111111111111111111111111111111111111111111111111111"
+    }
   },
   "ftlpV2": {
     "length": 1884,
-    "sha256": "fe6e284d6f538264aea336162153325b6203834a19ff9653631a4c5707862ffb"
+    "sha256": "fe6e284d6f538264aea336162153325b6203834a19ff9653631a4c5707862ffb",
+    "decoded": {
+      "version": "2",
+      "lockTime": "false"
+    }
   },
   "ftlpV3": {
     "length": 1884,
-    "sha256": "649570fa661c0f41ef5d918aaaa6aee673fdf4d897518d5e90be6af7191f70a4"
+    "sha256": "649570fa661c0f41ef5d918aaaa6aee673fdf4d897518d5e90be6af7191f70a4",
+    "decoded": {
+      "version": "3",
+      "lockTime": "false"
+    }
   },
   "ftlpV3LockTime": {
     "length": 1884,
-    "sha256": "728fe59e6c8b0527baf623f906f8eb0cc98065eeb13a392e910b091beb8dec18"
+    "sha256": "728fe59e6c8b0527baf623f906f8eb0cc98065eeb13a392e910b091beb8dec18",
+    "decoded": {
+      "version": "3",
+      "lockTime": "true"
+    }
+  },
+  "sellOrder": {
+    "length": 946,
+    "sha256": "2eeabde4bd833d160934aef544856124be24d27f8e2ac7aaf87df0e1555eb20e",
+    "decoded": {
+      "side": "sell",
+      "holder": "1BitcoinEaterAddressDontSendf59kuE",
+      "saleVolume": "123456",
+      "unitPrice": "2000000",
+      "feeRate": "10000",
+      "tokenID": "1111111111111111111111111111111111111111111111111111111111111111",
+      "partialHash": "2222222222222222222222222222222222222222222222222222222222222222"
+    }
+  },
+  "buyOrder": {
+    "length": 1074,
+    "sha256": "86cb2e19713f3792736232416a5d255243f92286e9071f0423afef9b95a647e7",
+    "decoded": {
+      "side": "buy",
+      "holder": "1BitcoinEaterAddressDontSendf59kuE",
+      "saleVolume": "123456",
+      "unitPrice": "2000000",
+      "feeRate": "10000",
+      "tokenID": "1111111111111111111111111111111111111111111111111111111111111111",
+      "partialHash": "2222222222222222222222222222222222222222222222222222222222222222"
+    }
   },
   "stableCoinMint": {
     "length": 2012,
-    "sha256": "7aadc8932ed1914133a017e9a16ea123bbf50fade201264e68f3245d840ce635"
+    "sha256": "7aadc8932ed1914133a017e9a16ea123bbf50fade201264e68f3245d840ce635",
+    "decoded": {
+      "kind": "stablecoin",
+      "destination": "1BitcoinEaterAddressDontSendf59kuE",
+      "codeBytes": "2012"
+    }
+  },
+  "stableCoinTape": {
+    "length": 79,
+    "sha256": "12daec7479527b3ab9c40a3e070c35f1c11bf78186529d7301216ecf6f560552",
+    "decoded": {
+      "balance": "123456",
+      "lockTime": "500000123",
+      "marker": "FTape"
+    }
   }
 }
