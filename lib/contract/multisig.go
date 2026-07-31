@@ -180,8 +180,8 @@ func GetMultiSigLockScript(address string) (string, error) {
 		sigCnt, prefix, hash, pkCnt), nil
 }
 
-// GetCombineHash returns Hash160(SHA256(lockScript)) + "01" for a multi-sig
-// address; used as the FT recipient hash.
+// GetCombineHash returns RIPEMD160(SHA256(SHA256(lockScript))) + "01" for a
+// multi-sig address; used as the FT recipient hash.
 // Mirrors MultiSig.getCombineHash.
 func GetCombineHash(address string) (string, error) {
 	asm, err := GetMultiSigLockScript(address)
@@ -192,7 +192,7 @@ func GetCombineHash(address string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("GetCombineHash: %w", err)
 	}
-	h := crypto.Hash160(s.Bytes())
+	h := crypto.Hash160(crypto.Sha256(s.Bytes()))
 	return hex.EncodeToString(h) + "01", nil
 }
 
@@ -205,14 +205,15 @@ func multiSigLockScript(address string) (*bscript.Script, error) {
 	return bscript.NewFromASM(asm)
 }
 
-// multiSigScriptHash returns Hash160(lockScript) for a multi-sig address
-// as a hex string.  Mirrors the inline hash computation in the TS code.
+// multiSigScriptHash returns RIPEMD160(SHA256(SHA256(lockScript))) for a
+// multi-sig address as a hex string. Mirrors the inline hash computation in
+// the TS code.
 func multiSigScriptHash(address string) (string, error) {
 	s, err := multiSigLockScript(address)
 	if err != nil {
 		return "", err
 	}
-	h := crypto.Hash160(s.Bytes())
+	h := crypto.Hash160(crypto.Sha256(s.Bytes()))
 	return hex.EncodeToString(h), nil
 }
 
