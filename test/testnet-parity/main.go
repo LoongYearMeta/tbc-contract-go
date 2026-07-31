@@ -137,6 +137,9 @@ func run(cfg config) error {
 	if cfg.Stage == stageFT {
 		return runFTStage(cfg, decoded, address.AddressString)
 	}
+	if cfg.Stage == stageNFT {
+		return runNFTStage(cfg, decoded, address.AddressString)
+	}
 	if cfg.Stage == "core-contracts" {
 		return runCoreContracts(cfg, decoded, address.AddressString)
 	}

@@ -361,7 +361,7 @@ git commit -m "test: cover full FT testnet lifecycle"
 - Create: `test/testnet-parity/nft_stage_test.go`
 - Modify: `test/testnet-parity/core_contracts.go`
 
-- [ ] **Step 1: Write failing Code/Hold/Tape and payment-output tests**
+- [x] **Step 1: Write failing Code/Hold/Tape and payment-output tests**
 
 ```go
 func TestValidateNFTOutputsRequiresCodeHoldTape(t *testing.T) {
@@ -381,13 +381,13 @@ func TestValidateNFTPaymentOutput(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run the NFT tests and confirm failure**
+- [x] **Step 2: Run the NFT tests and confirm failure**
 
 Run: `go test ./test/testnet-parity -run 'TestValidateNFT' -count=1`
 
 Expected: FAIL because the validators do not exist.
 
-- [ ] **Step 3: Implement and broadcast the NFT lifecycle**
+- [x] **Step 3: Implement and broadcast the NFT lifecycle**
 
 Create a collection with supply at least four, then broadcast:
 
@@ -402,11 +402,11 @@ nft-transfer-with-tbc
 
 Use the generated temporary recipient for the normal transfer and return ownership to the approved address with `TransferNFTWithTBC`. Refetch `/nft/nftinfo` where the indexer is available and also validate raw Code/Hold/Tape scripts so an index delay cannot mask a structural failure.
 
-- [ ] **Step 4: Assert collection/index continuity and metadata**
+- [x] **Step 4: Assert collection/index continuity and metadata**
 
 Decode Tape data before and after transfer and require identical name, symbol, attributes, and description. Require the collection ID and index to remain constant, the Hold script to change to the intended owner, and the TBC payment output to equal the requested satoshi amount.
 
-- [ ] **Step 5: Run tests and commit**
+- [x] **Step 5: Run tests and commit**
 
 Run: `go test ./lib/contract ./test/testnet-parity -run 'NFT|ValidateNFT' -count=1`
 
