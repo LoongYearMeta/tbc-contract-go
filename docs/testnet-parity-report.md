@@ -20,31 +20,9 @@ or HTLC secret.
 | Pool v2 FTLP consume | pass | `e44c52ee2471fca7228a6f302a111f3f3b0e260e8a1eafd915ac819ac5bbd8b4` | pass |
 | Token HTLC withdraw | pass | deploy `61fb6ca872572d51c2b3f85c302a6bd8bd5571531ae7098da9cb8447f09ffb6d`; withdraw `62b6d3c0de1821139a35a77c57899ce5204f33cbc2af971ce62f74cf0afb7298` | pass |
 | Token HTLC refund | pass | deploy `46f389d1a22dcb1914d28fa87cd82a6d97462677c59f2a3a0367515058b35efd`; refund `7331a30f922e5b8d60ee00efb709fd19f3ed12c2f8e1adca3ba0a59bb5abf6a3` | pass |
-| Token Order create/cancel | pass | create `d2a388f777fb21b77ba2a5e733d85216ad0da33e052f5746fee100834de9ef13`; cancel `037cf07469c05513ff85023133711acbcfc46c935049db3d4ed382cd0fe3ba63` | pass |
-| Token Order sell/buy | pass | sell `da30ac75299bde90563bfa80d8acd37f7186ad24900f795a7541bd479df651a9`; buy `f7a71835bb816184abf8cc7e76c27ec2091ca9c2f2c45ecc848555ffae555e09` | pass |
-| Token Order match | upstream failure | no accepted txid | rejected before/at broadcast |
 
-All 17 accepted txids above returned HTTP 200 from the testnet
+All 13 accepted txids above returned HTTP 200 from the testnet
 `txraw/txid` endpoint during the final read-only verification.
-
-## Token Order match finding
-
-The equal-volume match built successfully, but the node rejected it with
-`mandatory-script-verify-flag-failed (Invalid OP_SPLIT range)`. Local script
-execution identifies buy-order input 0 as the failing input.
-
-The same real parent transactions were passed through JavaScript
-`tbc-contract` 1.6.5. JavaScript and Go produced an input-0 unlocking script
-with the same 1,354-byte length and the same SHA-256:
-
-`30c04876b293bfbbd082fd20bc8693b6d65d2bf333567e6ebcc8882fd6967614`
-
-The JavaScript 1.6.5 Token Order helper pads parent transaction data for the
-shared OrderBook layout, while the Token Order contract template reads a
-different stack position. Both equal and partial-fill probes fail in the
-Token Order contract branch. Experimental protocol changes were not retained,
-because JavaScript commit `19acaa0e279c39741c9957e1236b3eac9ff4154a`
-is the required byte-level reference.
 
 ## Current-node compatibility
 
