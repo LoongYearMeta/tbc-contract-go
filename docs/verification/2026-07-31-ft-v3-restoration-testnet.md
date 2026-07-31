@@ -1,7 +1,9 @@
 # FT v3 Restoration Testnet Verification
 
-Date: 2026-07-31  
-Network: TBC testnet  
+Date: 2026-07-31
+
+Network: TBC testnet
+
 Test address: `miZGyNMbgfWNZdfQFYHKiL4ytJymC3nizd`
 
 The approved testnet key was supplied only through `TBC_TESTNET_WIF` at

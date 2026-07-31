@@ -20,7 +20,7 @@
 | [ft.md](../tbc-contract/docs/ft.md) | `lib/contract/ft.go`，场景见 [test-cases/ft.md](./test-cases/ft.md) |
 | [stableCoin.md](../tbc-contract/docs/stableCoin.md) | `lib/contract/stablecoin.go`、`lib/api/api_stablecoin.go`，场景见 [test-cases/stablecoin.md](./test-cases/stablecoin.md)。管理员路径返回 `*AdminPrepared`，由调用方在外部跑 BIP327 / MuSig2 仪式产出 64 字节 Schnorr 签名后回填；tbc-lib-go 不内置 Schnorr |
 | [nft.md](../tbc-contract/docs/nft.md) | `lib/contract/nft.go`，场景见 [test-cases/nft.md](./test-cases/nft.md) |
-| [orderBook.md](../tbc-contract/docs/orderBook.md) | `lib/contract/orderbook.go`、`orderbook_token*.go`（含 Token-for-Token 订单），场景见 [test-cases/orderbook.md](./test-cases/orderbook.md) |
+| [orderBook.md](../tbc-contract/docs/orderBook.md) | `lib/contract/orderbook.go`（已发布的 TBC-to-FT 普通订单），场景见 [test-cases/orderbook.md](./test-cases/orderbook.md) |
 | [multiSIg.md](../tbc-contract/docs/multiSIg.md) | `lib/contract/multisig.go`，场景见 [test-cases/multisig.md](./test-cases/multisig.md) |
 | [htlc.md](../tbc-contract/docs/htlc.md) | `lib/contract/htlc.go`、`htlc_token.go`，场景见 [test-cases/htlc.md](./test-cases/htlc.md) |
 | [poolNFT2.0.md](../tbc-contract/docs/poolNFT2.0.md) | `lib/contract/poolnft2.go`，场景见 [test-cases/poolnft2.md](./test-cases/poolnft2.md) |
