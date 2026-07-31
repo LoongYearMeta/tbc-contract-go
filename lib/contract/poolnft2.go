@@ -49,8 +49,9 @@ var poolNFT2LockCodePreTemplate string
 var poolNFT2LockCodeLastTemplate string
 
 const (
-	poolNFT2Version       = 2
-	poolNFT2DefaultFeeBPS = 35 // 万分之35
+	poolNFT2Version              = 2
+	poolNFT2DefaultFeeBPS        = 35 // 万分之35
+	poolNFT2UnlockedMaxCodeBytes = 3_300
 )
 
 // PoolNFT2 线性池实例状态（对齐 poolNFT2.0 类字段）。
@@ -744,7 +745,7 @@ func poolNFTSHA256thenHash160(poolNftCodeHex string) (string, error) {
 
 // isLockByCodeLen returns 1 if poolCode hex length > 6600 (mirrors TS isLock).
 func isLockByCodeLen(poolNftCodeHex string) int {
-	if len(poolNftCodeHex) > 6600 {
+	if len(poolNftCodeHex) > poolNFT2UnlockedMaxCodeBytes*2 {
 		return 1
 	}
 	return 0
@@ -828,7 +829,20 @@ func (p *PoolNFT2) getPoolNftCode(txid string, vout uint32, lpPlan, ftVersion in
 	// syntax that tbc-lib-js's `Script.fromString` accepts; the same
 	// strip pass already used by ft.go / nft.go / stablecoin.go is
 	// required for the pool templates too.
-	return bscript.NewFromASM(strip0xHexPushesInASM(collapseTbcMintASM(asm)))
+	script, err := bscript.NewFromASM(
+		strip0xHexPushesInASM(collapseTbcMintASM(asm)),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(script.Bytes()) > poolNFT2UnlockedMaxCodeBytes {
+		return nil, fmt.Errorf(
+			"unlocked Pool NFT code is %d bytes; tag makes it cross the %d-byte lock discriminator",
+			len(script.Bytes()),
+			poolNFT2UnlockedMaxCodeBytes,
+		)
+	}
+	return script, nil
 }
 
 // --------------------------------------------------------------------------

@@ -668,7 +668,7 @@ func runPoolCreateStage(cfg config, decoded *wif.WIF, address string) error {
 	poolRaws, err := pool.CreatePoolNFT(
 		decoded.PrivKey,
 		poolFunding,
-		"go-js-1.6.5-pool",
+		"go-pool",
 		35,
 		2,
 		false,

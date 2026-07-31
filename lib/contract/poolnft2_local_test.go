@@ -46,3 +46,32 @@ func TestSwapToTBCLocalRejectsInsufficientSuppliedFT(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestUnlockedPoolCodeRejectsTagThatCrossesLockSizeBoundary(t *testing.T) {
+	pool := NewPoolNFT2(nil)
+	txid := strings.Repeat("11", 32)
+	shortCode, err := pool.getPoolNftCode(
+		txid,
+		0,
+		2,
+		3,
+		"parity",
+		false,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(shortCode.Bytes()) > 3_300 {
+		t.Fatalf("short unlocked pool code bytes=%d want<=3300", len(shortCode.Bytes()))
+	}
+	if _, err := pool.getPoolNftCode(
+		txid,
+		0,
+		2,
+		3,
+		"0123456789abcdef",
+		false,
+	); err == nil {
+		t.Fatal("expected ambiguous unlocked pool tag to be rejected")
+	}
+}
