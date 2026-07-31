@@ -408,7 +408,8 @@ func buildOrderBookFunding(
 	privateKey *bec.PrivateKey,
 	funding *bt.UTXO,
 	sellerAddress string,
-	approvedAddress string,
+	buyerAddress string,
+	matcherAddress string,
 ) (string, error) {
 	tx := bt.NewTx()
 	tx.Version = 10
@@ -420,14 +421,14 @@ func buildOrderBookFunding(
 		Satoshis uint64
 	}{
 		{Address: sellerAddress, Satoshis: 60_000},
-		{Address: approvedAddress, Satoshis: 25_000},
-		{Address: approvedAddress, Satoshis: 25_000},
+		{Address: buyerAddress, Satoshis: 25_000},
+		{Address: matcherAddress, Satoshis: 25_000},
 	} {
 		if err := tx.PayToAddress(output.Address, output.Satoshis); err != nil {
 			return "", err
 		}
 	}
-	if err := tx.ChangeToAddress(approvedAddress, harnessFeeQuote80()); err != nil {
+	if err := tx.ChangeToAddress(buyerAddress, harnessFeeQuote80()); err != nil {
 		return "", err
 	}
 	if err := tx.AdjustImplicitFeeToTarget(80); err != nil {
@@ -726,6 +727,14 @@ func runOrderBookStage(
 	if err != nil {
 		return err
 	}
+	matcherKey, err := bec.NewPrivateKey(bec.S256())
+	if err != nil {
+		return err
+	}
+	matcherAddress, err := orderBookAddress(matcherKey)
+	if err != nil {
+		return err
+	}
 
 	funding, err := fetchOrderBookFunding(testnetAddress, cfg.Network)
 	if err != nil {
@@ -804,6 +813,7 @@ func runOrderBookStage(
 		sourceChange,
 		sellerAddress,
 		approvedAddress,
+		matcherAddress,
 	)
 	if err != nil {
 		return fmt.Errorf("build OrderBook participant funding: %w", err)
@@ -823,7 +833,7 @@ func runOrderBookStage(
 			if err := validateP2PKHOutput(tx, 1, approvedAddress, 25_000); err != nil {
 				return err
 			}
-			return validateP2PKHOutput(tx, 2, approvedAddress, 25_000)
+			return validateP2PKHOutput(tx, 2, matcherAddress, 25_000)
 		},
 	)
 	if err != nil {
@@ -1150,7 +1160,7 @@ func runOrderBookStage(
 		return err
 	}
 	fullMatchRaw, err := contract.NewOrderBook().MatchOrder(
-		decoded.PrivKey,
+		matcherKey,
 		fullBuyOrderUTXO,
 		fullBuy,
 		fullBuyFTUTXO,
@@ -1311,7 +1321,7 @@ func runOrderBookStage(
 		return err
 	}
 	partialMatchRaw, err := contract.NewOrderBook().MatchOrder(
-		decoded.PrivKey,
+		matcherKey,
 		partialBuyOrderUTXO,
 		partialBuy,
 		partialBuyFTUTXO,

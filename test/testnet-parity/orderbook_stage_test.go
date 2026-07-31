@@ -58,6 +58,14 @@ func TestOrderBookLifecyclePaysFinalSignedSizeFees(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	matcherKey, err := bec.NewPrivateKey(bec.S256())
+	if err != nil {
+		t.Fatal(err)
+	}
+	matcherAddress, err := orderBookAddress(matcherKey)
+	if err != nil {
+		t.Fatal(err)
+	}
 	token, err := contract.NewFT(&contract.FtParams{
 		Name: "Order Matrix", Symbol: "OMX", Amount: 1_000_000, Decimal: 2,
 	})
@@ -85,6 +93,7 @@ func TestOrderBookLifecyclePaysFinalSignedSizeFees(t *testing.T) {
 		sourceChange,
 		sellerAddress,
 		address,
+		matcherAddress,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -109,6 +118,18 @@ func TestOrderBookLifecyclePaysFinalSignedSizeFees(t *testing.T) {
 		})
 		if err != nil {
 			t.Fatalf("%s fee: %v", label, err)
+		}
+		if err := validateInputScriptsFromParents(
+			tx,
+			func(txid string) (*bt.Tx, error) {
+				parent, ok := parents[txid]
+				if !ok {
+					return nil, fmt.Errorf("missing parent %s", txid)
+				}
+				return parent, nil
+			},
+		); err != nil {
+			t.Fatalf("%s script: %v", label, err)
 		}
 		target := targetFee80(len(tx.Bytes()))
 		if paid < target {
@@ -318,7 +339,7 @@ func TestOrderBookLifecyclePaysFinalSignedSizeFees(t *testing.T) {
 		t.Fatal(err)
 	}
 	raw, err = contract.NewOrderBook().MatchOrder(
-		privateKey,
+		matcherKey,
 		fullBuyOrderUTXO,
 		fullBuy,
 		fullBuyFTUTXO,
@@ -409,7 +430,7 @@ func TestOrderBookLifecyclePaysFinalSignedSizeFees(t *testing.T) {
 		t.Fatal(err)
 	}
 	raw, err = contract.NewOrderBook().MatchOrder(
-		privateKey,
+		matcherKey,
 		partialBuyOrderUTXO,
 		partialBuy,
 		partialBuyFTUTXO,
