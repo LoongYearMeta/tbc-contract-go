@@ -2124,6 +2124,10 @@ func buildFtlpTapeWithLockTime(amount *big.Int, tapeLenBytes int, lockTime uint3
 	return s, nil
 }
 
+func buildFtlpBurnTapeWithLockTime(tapeLenBytes int) (*bscript.Script, error) {
+	return buildFtlpTapeWithLockTime(big.NewInt(0), tapeLenBytes, 0)
+}
+
 // bigIntToLE8Hex encodes big.Int as 8-byte little-endian hex. Errors on
 // nil / negative / >uint64 overflow so callers don't silently produce a
 // truncated tape entry.
@@ -2764,12 +2768,9 @@ func (p *PoolNFT2) ConsumeLP(
 	// FT-LP tape (zeroed amounts)
 	var ftlpBurnTape *bscript.Script
 	if p.WithLockTime {
-		if isCoin {
-			ftlpBurnTape, _ = bscript.NewFromASM(fmt.Sprintf("OP_FALSE OP_RETURN %s 00000000 %s4654617065",
-				strings.Repeat("0000000000000000", 6), strings.Repeat("OP_0 ", tapeLen/2-62)))
-		} else {
-			ftlpBurnTape, _ = bscript.NewFromASM(fmt.Sprintf("OP_FALSE OP_RETURN %s 00000000 %s4654617065",
-				strings.Repeat("0000000000000000", 6), strings.Repeat("OP_0 ", tapeLen/2-62)))
+		ftlpBurnTape, err = buildFtlpBurnTapeWithLockTime(tapeLen)
+		if err != nil {
+			return nil, fmt.Errorf("ConsumeLP build FT-LP burn tape: %w", err)
 		}
 	} else {
 		nameHex := hex.EncodeToString([]byte(ftaInfo.Name))

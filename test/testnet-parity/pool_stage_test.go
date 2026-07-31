@@ -407,3 +407,62 @@ func TestLiveLockedPoolInitScriptPreflight(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestLiveUnlockedPoolConsumeScriptPreflight(t *testing.T) {
+	poolID := os.Getenv("TBC_TESTNET_UNLOCKED_POOL_DEBUG_ID")
+	wifText := os.Getenv("TBC_TESTNET_WIF")
+	if poolID == "" || wifText == "" {
+		t.Skip("live unlocked-pool debug inputs are not configured")
+	}
+	decoded, err := wif.DecodeWIF(wifText)
+	if err != nil {
+		t.Fatal(err)
+	}
+	address, err := bscript.NewAddressFromPublicKey(
+		decoded.PrivKey.PubKey(),
+		false,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pool := contract.NewPoolNFT2(&contract.PoolNFT2Config{
+		ContractTxID: poolID,
+		Network:      "testnet",
+	})
+	if err := pool.InitFromContractID(); err != nil {
+		t.Fatal(err)
+	}
+	funding, err := api.FetchUTXO(
+		address.AddressString,
+		0.005,
+		"testnet",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raws, err := pool.ConsumeLP(
+		decoded.PrivKey,
+		address.AddressString,
+		funding,
+		"0.001",
+		nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(raws) != 1 {
+		t.Fatalf("ConsumeLP returned %d transactions, want=1", len(raws))
+	}
+	tx, err := bt.NewTxFromString(raws[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := validateInputScriptsFromParents(
+		tx,
+		func(txid string) (*bt.Tx, error) {
+			return api.FetchTXRaw(txid, "testnet")
+		},
+	); err != nil {
+		t.Fatal(err)
+	}
+}

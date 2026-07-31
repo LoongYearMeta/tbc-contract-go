@@ -86,3 +86,14 @@ func TestBuildFtlpTapeWithLockTimePreservesFTTapeByteLength(t *testing.T) {
 		t.Fatalf("locked FT-LP tape bytes=%d want=%d", got, ftTapeBytes)
 	}
 }
+
+func TestBuildFtlpBurnTapeWithLockTimePreservesFTTapeByteLength(t *testing.T) {
+	const ftTapeBytes = 81
+	tape, err := buildFtlpBurnTapeWithLockTime(ftTapeBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := len(tape.Bytes()); got != ftTapeBytes {
+		t.Fatalf("locked FT-LP burn tape bytes=%d want=%d", got, ftTapeBytes)
+	}
+}
