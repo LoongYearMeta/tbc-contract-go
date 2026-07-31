@@ -2,10 +2,13 @@ package main
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"math/big"
+	"os"
 	"testing"
 
+	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
 	"github.com/LoongYearMeta/tbc-contract-go/lib/contract"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bec"
@@ -176,6 +179,21 @@ func TestBuildStableCoinLifecyclePlanCoversJS165Surface(t *testing.T) {
 			plan.InitialMint.TxID(),
 		)
 	}
+	state, err := executeStableCoinLifecyclePlan(
+		plan,
+		func(item plannedTransaction, _ func(*bt.Tx) error) (*bt.Tx, error) {
+			return bt.NewTxFromString(item.Raw)
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.TokenID != plan.InitialMint.TxID() {
+		t.Fatalf("token id=%s want=%s", state.TokenID, plan.InitialMint.TxID())
+	}
+	if state.CoinID != plan.CoinNFT.TxID() {
+		t.Fatalf("coin id=%s want=%s", state.CoinID, plan.CoinNFT.TxID())
+	}
 	if plan.StableCoin.TotalSupply.Cmp(big.NewInt(150_000)) != 0 {
 		t.Fatalf("total supply=%s want=150000", plan.StableCoin.TotalSupply)
 	}
@@ -245,4 +263,57 @@ func TestStableCoinStageMinimumFundingAndFinalFees(t *testing.T) {
 			)
 		}
 	}
+}
+
+func TestLiveStableCoinIndexedState(t *testing.T) {
+	stableCoinID := os.Getenv("TBC_TESTNET_STABLECOIN_DEBUG_ID")
+	address := os.Getenv("TBC_TESTNET_STABLECOIN_DEBUG_ADDRESS")
+	lastTxID := os.Getenv("TBC_TESTNET_STABLECOIN_DEBUG_LAST_TXID")
+	if stableCoinID == "" || address == "" || lastTxID == "" {
+		t.Skip("live StableCoin debug inputs are not configured")
+	}
+	info, err := api.FetchCoinInfo(stableCoinID, "testnet")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.TotalSupply == nil ||
+		info.TotalSupply.Cmp(big.NewInt(150_000)) != 0 {
+		t.Fatalf("supply=%v want=150000", info.TotalSupply)
+	}
+	if info.Name != "GoFullMatrixStableCoin" ||
+		info.Symbol != "GSC" ||
+		info.Decimal != 2 {
+		t.Fatalf(
+			"metadata=%q/%q/%d",
+			info.Name,
+			info.Symbol,
+			info.Decimal,
+		)
+	}
+	balance, err := api.GetCoinBalance(stableCoinID, address, "testnet")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if balance.Cmp(big.NewInt(138_000)) != 0 {
+		t.Fatalf("balance=%s want=138000", balance)
+	}
+	utxos, err := api.FetchCoinUTXOList(
+		stableCoinID,
+		address,
+		info.CodeScript,
+		"testnet",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, utxo := range utxos {
+		if utxo != nil &&
+			hex.EncodeToString(utxo.TxID) == lastTxID &&
+			utxo.Vout == 0 &&
+			utxo.FtBalance != nil &&
+			utxo.FtBalance.Cmp(big.NewInt(138_000)) == 0 {
+			return
+		}
+	}
+	t.Fatalf("StableCoin UTXO %s:0 amount=138000 not found", lastTxID)
 }

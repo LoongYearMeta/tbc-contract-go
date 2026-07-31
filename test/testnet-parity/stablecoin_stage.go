@@ -639,7 +639,8 @@ func executeStableCoinLifecyclePlan(
 		return publicState{}, fmt.Errorf("nil StableCoin transaction acceptor")
 	}
 	state := publicState{
-		CoinID: plan.StableCoin.ContractTxid,
+		TokenID: plan.StableCoin.ContractTxid,
+		CoinID:  plan.CoinNFT.TxID(),
 	}
 	for _, item := range plan.Transactions {
 		label := item.Label
@@ -666,8 +667,8 @@ func verifyStableCoinIndexedStateOnce(
 	if plan == nil || plan.StableCoin == nil || plan.Unfreeze == nil {
 		return fmt.Errorf("StableCoin indexed-state verification requires a complete plan")
 	}
-	contractID := plan.StableCoin.ContractTxid
-	info, err := api.FetchCoinInfo(contractID, network)
+	stableCoinID := plan.CoinNFT.TxID()
+	info, err := api.FetchCoinInfo(stableCoinID, network)
 	if err != nil {
 		return fmt.Errorf("FetchCoinInfo: %w", err)
 	}
@@ -685,7 +686,7 @@ func verifyStableCoinIndexedStateOnce(
 		)
 	}
 
-	balance, err := api.GetCoinBalance(contractID, address, network)
+	balance, err := api.GetCoinBalance(stableCoinID, address, network)
 	if err != nil {
 		return fmt.Errorf("GetCoinBalance: %w", err)
 	}
@@ -694,7 +695,7 @@ func verifyStableCoinIndexedStateOnce(
 	}
 
 	utxos, err := api.FetchCoinUTXOList(
-		contractID,
+		stableCoinID,
 		address,
 		info.CodeScript,
 		network,
