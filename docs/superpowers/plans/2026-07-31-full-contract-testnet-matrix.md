@@ -426,7 +426,7 @@ git commit -m "test: cover full NFT testnet lifecycle"
 - Create: `test/testnet-parity/htlc_piggybank_stage.go`
 - Modify: `test/testnet-parity/core_contracts.go`
 
-- [ ] **Step 1: Write failing tests for ephemeral signer creation and secret-safe output**
+- [x] **Step 1: Write failing tests for ephemeral signer creation and secret-safe output**
 
 ```go
 func TestNewEphemeralMultiSigSetIsTwoOfThree(t *testing.T) {
@@ -443,13 +443,13 @@ func TestNewEphemeralMultiSigSetIsTwoOfThree(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run the focused tests and confirm failure**
+- [x] **Step 2: Run the focused tests and confirm failure**
 
 Run: `go test ./test/testnet-parity -run 'MultiSig|HTLC|PiggyBank' -count=1`
 
 Expected: FAIL because the split stage helpers do not exist.
 
-- [ ] **Step 3: Implement P2PKH and 2-of-3 MultiSig lifecycles**
+- [x] **Step 3: Implement P2PKH and 2-of-3 MultiSig lifecycles**
 
 Generate two `bec.NewPrivateKey` values in memory and combine them with the approved key. Broadcast:
 
@@ -463,7 +463,7 @@ multisig-ft-spend
 
 For both TBC and FT spends, call the exported build, per-signer sign, and finish methods. Require two signatures per multisig input, validate the multisig address against the sorted public keys, and return FT/TBC to the approved test address.
 
-- [ ] **Step 4: Implement base HTLC and PiggyBank lifecycles**
+- [x] **Step 4: Implement base HTLC and PiggyBank lifecycles**
 
 Broadcast:
 
@@ -478,7 +478,7 @@ piggybank-unfreeze
 
 Use a cryptographically random preimage in memory. Use an already-spendable block height for refund/unfreeze, and verify encoded lock time, input sequence, and transaction lock time. Locally compare direct-sign and build/fill transaction structure; broadcast one variant.
 
-- [ ] **Step 5: Run tests and commit**
+- [x] **Step 5: Run tests and commit**
 
 Run: `go test ./lib/contract ./test/testnet-parity -run 'MultiSig|HTLC|PiggyBank|Plain' -count=1`
 

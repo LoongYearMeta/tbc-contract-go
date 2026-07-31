@@ -140,6 +140,15 @@ func run(cfg config) error {
 	if cfg.Stage == stageNFT {
 		return runNFTStage(cfg, decoded, address.AddressString)
 	}
+	if cfg.Stage == stageMultiSig {
+		return runMultiSigStage(cfg, decoded, address.AddressString)
+	}
+	if cfg.Stage == stageBaseHTLC {
+		return runBaseHTLCStage(cfg, decoded, address.AddressString)
+	}
+	if cfg.Stage == stagePiggyBank {
+		return runPiggyBankStage(cfg, decoded, address.AddressString)
+	}
 	if cfg.Stage == "core-contracts" {
 		return runCoreContracts(cfg, decoded, address.AddressString)
 	}

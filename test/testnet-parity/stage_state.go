@@ -31,6 +31,7 @@ const (
 type publicState struct {
 	TokenID      string `json:"token_id,omitempty"`
 	TokenCode    string `json:"token_code_hash,omitempty"`
+	MultiSig     string `json:"multisig_address,omitempty"`
 	PoolID       string `json:"pool_id,omitempty"`
 	CollectionID string `json:"collection_id,omitempty"`
 	CoinID       string `json:"coin_id,omitempty"`
