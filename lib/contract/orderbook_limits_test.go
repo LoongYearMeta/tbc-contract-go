@@ -1,11 +1,46 @@
 package contract
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"strings"
 	"testing"
 )
+
+func TestOrderBookPublicCodeBuildersAcceptJS166FTCodeSize(t *testing.T) {
+	o := NewOrderBook()
+	o.HoldAddress = "1BitcoinEaterAddressDontSendf59kuE"
+	o.SaleVolume = 100
+	o.UnitPrice = 1_000_000
+	o.FeeRate = 10_000
+	o.FtID = strings.Repeat("11", 32)
+	o.FtPartialHash = strings.Repeat("22", 32)
+
+	sell, err := o.GetSellOrderCode(false, o.HoldAddress, "1c08")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantSell, err := o.buildOrderCodeScript("sell", false, o.HoldAddress, "1c08")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(sell.Bytes(), wantSell.Bytes()) {
+		t.Fatal("public sell-code builder ignored the FT v4 code size")
+	}
+
+	buy, err := o.GetBuyOrderCode(false, o.HoldAddress, "1c08")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantBuy, err := o.buildOrderCodeScript("buy", false, o.HoldAddress, "1c08")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(buy.Bytes(), wantBuy.Bytes()) {
+		t.Fatal("public buy-code builder ignored the FT v4 code size")
+	}
+}
 
 func TestOrderBookV4ScriptsMatchJS166(t *testing.T) {
 	o := NewOrderBook()

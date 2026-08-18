@@ -97,20 +97,32 @@ func obAddrPKH(address string) (string, error) {
 	return "14" + addr.PublicKeyHash, nil
 }
 
-// GetSellOrderCode mirrors getSellOrderCode(isCoin, taxAddress) in TS.
-func (o *OrderBook) GetSellOrderCode(isCoin bool, taxAddress string) (*bscript.Script, error) {
+// GetSellOrderCode mirrors getSellOrderCode(isCoin, taxAddress, ftCodeSize?) in TS.
+func (o *OrderBook) GetSellOrderCode(isCoin bool, taxAddress string, codeSize ...string) (*bscript.Script, error) {
 	ftCodeSize := "5c07"
 	if isCoin {
 		ftCodeSize = "dc07"
 	}
+	if len(codeSize) > 1 {
+		return nil, fmt.Errorf("GetSellOrderCode accepts at most one FT code size")
+	}
+	if len(codeSize) == 1 {
+		ftCodeSize = codeSize[0]
+	}
 	return o.buildOrderCodeScript("sell", isCoin, taxAddress, ftCodeSize)
 }
 
-// GetBuyOrderCode mirrors getBuyOrderCode(isCoin, taxAddress) in TS.
-func (o *OrderBook) GetBuyOrderCode(isCoin bool, taxAddress string) (*bscript.Script, error) {
+// GetBuyOrderCode mirrors getBuyOrderCode(isCoin, taxAddress, ftCodeSize?) in TS.
+func (o *OrderBook) GetBuyOrderCode(isCoin bool, taxAddress string, codeSize ...string) (*bscript.Script, error) {
 	ftCodeSize := "5c07"
 	if isCoin {
 		ftCodeSize = "dc07"
+	}
+	if len(codeSize) > 1 {
+		return nil, fmt.Errorf("GetBuyOrderCode accepts at most one FT code size")
+	}
+	if len(codeSize) == 1 {
+		ftCodeSize = codeSize[0]
 	}
 	return o.buildOrderCodeScript("buy", isCoin, taxAddress, ftCodeSize)
 }

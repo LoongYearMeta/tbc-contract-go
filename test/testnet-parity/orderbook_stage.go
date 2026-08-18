@@ -149,8 +149,13 @@ func validateOrderOutput(
 	expected.FtID = spec.TokenID
 	expected.FtPartialHash = spec.PartialHash
 	var expectedScript *bscript.Script
+	ftCodeSize := fmt.Sprintf(
+		"%02x%02x",
+		byte(contractutil.FTV4CodeLength&0xff),
+		byte(contractutil.FTV4CodeLength>>8),
+	)
 	if spec.Side == "sell" {
-		expectedScript, err = expected.GetSellOrderCode(false, spec.TaxAddress)
+		expectedScript, err = expected.GetSellOrderCode(false, spec.TaxAddress, ftCodeSize)
 		if output.Satoshis != spec.Volume {
 			return nil, fmt.Errorf(
 				"sell order satoshis=%d want=%d",
@@ -159,7 +164,7 @@ func validateOrderOutput(
 			)
 		}
 	} else {
-		expectedScript, err = expected.GetBuyOrderCode(false, spec.TaxAddress)
+		expectedScript, err = expected.GetBuyOrderCode(false, spec.TaxAddress, ftCodeSize)
 		if output.Satoshis != contract.NewOrderBook().BuyCodeDust {
 			return nil, fmt.Errorf(
 				"buy order satoshis=%d want=%d",
