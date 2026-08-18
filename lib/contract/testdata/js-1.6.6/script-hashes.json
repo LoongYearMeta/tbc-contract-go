@@ -1,0 +1,104 @@
+{
+  "ftV4Mint": {
+    "length": 2076,
+    "sha256": "7dc634fa07cc57279d6d47acbfb856df11b83c3d657fd1133012a20112713783",
+    "decoded": {
+      "kind": "ordinary-ft-v4",
+      "destination": "1BitcoinEaterAddressDontSendf59kuE",
+      "codeBytes": "2076"
+    }
+  },
+  "stableCoinV4Mint": {
+    "length": 2076,
+    "sha256": "b34097242163ff0ace1481ae27721c4ab21e3d989feac987ed09db74d4092673",
+    "decoded": {
+      "kind": "stablecoin-v4",
+      "destination": "1BitcoinEaterAddressDontSendf59kuE",
+      "codeBytes": "2076"
+    }
+  },
+  "nftV2Code": {
+    "length": 140,
+    "sha256": "9a67fc909512916f62ac4dd395d6d1b7c9b52a60e1a249eb60e48564d44ab8b9",
+    "decoded": {
+      "version": "2",
+      "marker": "3Code"
+    }
+  },
+  "nftV1Code": {
+    "length": 125,
+    "sha256": "ae25e943e5faed4a22a4f669479ecec5d0da6f10f75bee64c52c926a21dd5dd1",
+    "decoded": {
+      "version": "1",
+      "marker": "ac6a"
+    }
+  },
+  "poolPlan6V4": {
+    "length": 3753,
+    "sha256": "f6095435a6949e1c665859c9af32ba1413216188ca9a483ff402fba2eeae8425",
+    "decoded": {
+      "plan": "6",
+      "version": "4",
+      "locked": "false"
+    }
+  },
+  "poolPlan6V4Locked": {
+    "length": 3845,
+    "sha256": "984912199a81943000e0be768c7489f9be842b13582e42eacc0982daa7305d3d",
+    "decoded": {
+      "plan": "6",
+      "version": "4",
+      "locked": "true"
+    }
+  },
+  "ftlpV4": {
+    "length": 2076,
+    "sha256": "17a08d5424fa4a31cdef42c510b616afd35b3d26d91e6ae8c8390672c2a374a0",
+    "decoded": {
+      "version": "4",
+      "lockTime": "false"
+    }
+  },
+  "ftlpV4LockTime": {
+    "length": 2076,
+    "sha256": "32f18671ab373f35ea9085764569690092713ae40db4d6b30c06cf6e7e2292ad",
+    "decoded": {
+      "version": "4",
+      "lockTime": "true"
+    }
+  },
+  "sellOrderV4": {
+    "length": 946,
+    "sha256": "bc7de1b3d4d789d0b879568d21e0d25f96da9eff524e7dd5f9b964d0bedafdf8",
+    "decoded": {
+      "side": "sell",
+      "version": "4"
+    }
+  },
+  "buyOrderV4": {
+    "length": 1074,
+    "sha256": "9db9c7efe749124cdebeee95242b1b68e50c24a826ab98c5576832b894858325",
+    "decoded": {
+      "side": "buy",
+      "version": "4"
+    }
+  },
+  "tbc20Code": {
+    "length": 2396,
+    "sha256": "db131fd67c997562bd1859d387948032e695f8704871da81ed845e37c7b9c8ce",
+    "decoded": {
+      "version": "1",
+      "codeBytes": "2396",
+      "partialOffset": "2368"
+    }
+  },
+  "tbc20Tape": {
+    "length": 61,
+    "sha256": "18c09f618fb088babafa0c7382ffe554a832d753605e6c3bd949b9390f66fc67",
+    "decoded": {
+      "version": "1",
+      "tapeBytes": "61",
+      "balance": "123463"
+    }
+  }
+}

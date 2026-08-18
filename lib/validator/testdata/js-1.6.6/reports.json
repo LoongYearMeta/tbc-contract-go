@@ -1,0 +1,55 @@
+{
+  "invalidPolicy": {
+    "status": "INVALID",
+    "kind": "UNDETERMINED",
+    "assurances": [],
+    "issues": [
+      {
+        "code": "INVALID_POLICY",
+        "severity": "error",
+        "stage": "ROOT",
+        "message": "transaction must be a Transaction, Buffer, or hex string"
+      }
+    ],
+    "inputs": [],
+    "outputGroups": [],
+    "assets": [],
+    "matrix": [],
+    "ancestorEdges": [],
+    "resolvedTransactions": 0,
+    "parentsChecked": 0,
+    "ancestorsChecked": 0,
+    "originalUTXOBoundaries": 0
+  },
+  "invalidRoot": {
+    "status": "UNKNOWN",
+    "kind": "UNDETERMINED",
+    "assurances": [],
+    "issues": [
+      {
+        "code": "ROOT_RAW_INVALID",
+        "severity": "error",
+        "stage": "ROOT",
+        "message": "root raw invalid"
+      }
+    ],
+    "inputs": [],
+    "outputGroups": [],
+    "assets": [],
+    "matrix": [],
+    "ancestorEdges": [],
+    "source": {
+      "network": "testnet",
+      "api": "API.fetchTXraw",
+      "trustModel": "API_FETCH_TXRAW_FULLY_TRUSTED",
+      "rootTrustModel": "CALLER_ASSERTED_ON_CHAIN_AND_INPUT_SCRIPTS_VALID",
+      "queriedTxids": [],
+      "resolvedTxids": [],
+      "requiredSourceTxids": []
+    },
+    "resolvedTransactions": 0,
+    "parentsChecked": 0,
+    "ancestorsChecked": 0,
+    "originalUTXOBoundaries": 0
+  }
+}

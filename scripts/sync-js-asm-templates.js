@@ -14,14 +14,14 @@ const jsRoot = candidates.find((candidate) =>
 );
 if (!jsRoot) {
   throw new Error(
-    "tbc-contract 1.6.5 not found; set TBC_CONTRACT_JS_DIR to its checkout",
+    "tbc-contract 1.6.6 not found; set TBC_CONTRACT_JS_DIR to the extracted npm package",
   );
 }
 const pkg = JSON.parse(
   fs.readFileSync(path.join(jsRoot, "package.json"), "utf8"),
 );
-if (pkg.version !== "1.6.5") {
-  throw new Error(`expected tbc-contract 1.6.5, found ${pkg.version}`);
+if (pkg.version !== "1.6.6") {
+  throw new Error(`expected tbc-contract 1.6.6, found ${pkg.version}`);
 }
 
 function extractTemplate(source, marker, declaration) {
@@ -47,7 +47,7 @@ function writeTemplate(relativePath, template) {
 }
 
 const ftSource = fs.readFileSync(
-  path.join(jsRoot, "lib/contract/ft.ts"),
+  path.join(jsRoot, "lib/contract/ft.js"),
   "utf8",
 );
 writeTemplate(
@@ -56,7 +56,7 @@ writeTemplate(
 );
 
 const stableSource = fs.readFileSync(
-  path.join(jsRoot, "lib/contract/stableCoin.ts"),
+  path.join(jsRoot, "lib/contract/stableCoin.js"),
   "utf8",
 );
 writeTemplate(
@@ -69,7 +69,7 @@ writeTemplate(
 );
 
 const poolSource = fs.readFileSync(
-  path.join(jsRoot, "lib/contract/poolNFT2.0.ts"),
+  path.join(jsRoot, "lib/contract/poolNFT2.0.js"),
   "utf8",
 );
 writeTemplate(

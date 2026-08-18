@@ -34,6 +34,41 @@ func loadScriptHashFixtures(t *testing.T) map[string]scriptHashFixture {
 	return fixtures
 }
 
+func loadJS166Fixtures(t *testing.T) map[string]scriptHashFixture {
+	t.Helper()
+	body, err := os.ReadFile(filepath.Join("testdata", "js-1.6.6", "script-hashes.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fixtures map[string]scriptHashFixture
+	if err := json.Unmarshal(body, &fixtures); err != nil {
+		t.Fatal(err)
+	}
+	return fixtures
+}
+
+func TestRenderedScriptsMatchJS166(t *testing.T) {
+	fixtures := loadJS166Fixtures(t)
+	for _, name := range []string{
+		"ftV4Mint",
+		"stableCoinV4Mint",
+		"nftV2Code",
+		"nftV1Code",
+		"poolPlan6V4",
+		"poolPlan6V4Locked",
+		"ftlpV4",
+		"ftlpV4LockTime",
+		"sellOrderV4",
+		"buyOrderV4",
+		"tbc20Code",
+		"tbc20Tape",
+	} {
+		if _, ok := fixtures[name]; !ok {
+			t.Errorf("missing JavaScript 1.6.6 fixture %q", name)
+		}
+	}
+}
+
 type renderedParityArtifact struct {
 	Script  *bscript.Script
 	Decoded map[string]string

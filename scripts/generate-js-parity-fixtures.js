@@ -15,13 +15,13 @@ const jsRoot = candidates.find((candidate) =>
 );
 if (!jsRoot) {
   throw new Error(
-    "tbc-contract 1.6.5 not found; set TBC_CONTRACT_JS_DIR to its checkout",
+    "tbc-contract 1.6.6 not found; set TBC_CONTRACT_JS_DIR to the extracted npm package",
   );
 }
 
 const pkg = require(path.join(jsRoot, "package.json"));
-if (pkg.version !== "1.6.5") {
-  throw new Error(`expected tbc-contract 1.6.5, found ${pkg.version}`);
+if (pkg.version !== "1.6.6") {
+  throw new Error(`expected tbc-contract 1.6.6, found ${pkg.version}`);
 }
 const sdk = require(jsRoot);
 const tbc = require(path.join(jsRoot, "node_modules", "tbc-lib-js"));
@@ -31,200 +31,164 @@ const txid = "11".repeat(32);
 const codeHash = "22".repeat(32);
 const adminPubHash = "33".repeat(20);
 const compressedPublicKey = `02${"44".repeat(32)}`;
-const compressedPublicKeys = [
-  compressedPublicKey,
-  `03${"55".repeat(32)}`,
-  `02${"66".repeat(32)}`,
-];
 const tapeSize = 80;
-const transferBalance = 123456n;
-const transferInputBalance = 200000n;
-const lockTime = 500000123;
 
-const ft = new sdk.FT({
-  name: "Parity",
-  symbol: "PTY",
-  amount: 1,
-  decimal: 6,
-});
-const pool = new sdk.poolNFT2({ network: "testnet" });
-const zeroAmount = "00".repeat(48);
-const ftTapeTemplate = tbc.Script.fromASM(
-  `OP_FALSE OP_RETURN ${zeroAmount} 06 506172697479 505459 4654617065`,
-);
-const { amountHex } = sdk.FT.buildTapeAmount(transferBalance, [
-  transferInputBalance,
-]);
-const ftTransferTape = sdk.FT.buildFTtransferTape(
-  ftTapeTemplate.toHex(),
-  amountHex,
-);
-const nftData = {
-  nftName: "Parity NFT",
-  symbol: "PNFT",
-  description: "JavaScript 1.6.5 fixture",
-  attributes: "{\"level\":1}",
-  file: "ipfs://parity",
-};
-const nftTape = sdk.NFT.buildTapeScript(nftData);
-const stableCoinTapeTemplate = tbc.Script.fromASM(
-  `OP_FALSE OP_RETURN ${zeroAmount} 06 506172697479436f696e 50434e 00000000 4654617065`,
-);
-const stableCoinTransferTape = sdk.FT.buildFTtransferTape(
-  stableCoinTapeTemplate.toHex(),
-  amountHex,
-);
-const stableCoinTape = sdk.stableCoin.setLockTimeInTape(
-  stableCoinTransferTape,
-  lockTime,
-);
-
-const order = new sdk.orderBook();
-order.hold_address = address;
-order.sale_volume = 123456n;
-order.fee_rate = 10000n;
-order.unit_price = 2000000n;
-order.ft_a_contract_partialhash = codeHash;
-order.ft_a_contract_id = txid;
-
-const artifacts = {
-  ftV3Mint: {
-    script: ft.getFTmintCode(txid, 0, address, tapeSize),
-    decoded: {
-      kind: "ordinary-ft-v3",
-      destination: address,
-      codeBytes: "1884",
-    },
-  },
-  ftTransferTape: {
-    script: ftTransferTape,
-    decoded: { balance: transferBalance.toString(), marker: "FTape" },
-  },
-  nftTape: {
-    script: nftTape,
-    decoded: {
-      nftName: nftData.nftName,
-      symbol: nftData.symbol,
-      file: nftData.file,
-    },
-  },
-  poolV3: {
-    script: pool.getPoolNftCode(txid, 0, 2, 3, "parity", false),
-    decoded: { version: "3", locked: "false", tokenID: txid },
-  },
-  poolV3Locked: {
-    script: pool.getPoolNftCodeWithLock(
-      txid,
-      0,
-      2,
-      address,
-      0.001,
-      [compressedPublicKey],
-      3,
-      "parity",
-      false,
-    ),
-    decoded: { version: "3", locked: "true", tokenID: txid },
-  },
-  poolV3Locked3: {
-    script: pool.getPoolNftCodeWithLock(
-      txid,
-      0,
-      2,
-      address,
-      0.0001,
-      compressedPublicKeys,
-      3,
-      "pool-lock",
-      false,
-    ),
-    decoded: {
-      version: "3",
-      locked: "true",
-      tokenID: txid,
-      publicKeys: "3",
-    },
-  },
-  ftlpV2: {
-    script: pool.getFtlpCode(codeHash, address, tapeSize, false, 2),
-    decoded: { version: "2", lockTime: "false" },
-  },
-  ftlpV3: {
-    script: pool.getFtlpCode(codeHash, address, tapeSize, false, 3),
-    decoded: { version: "3", lockTime: "false" },
-  },
-  ftlpV3LockTime: {
-    script: pool.getFtlpCodeWithLockTime(
-      codeHash,
-      address,
-      tapeSize,
-      false,
-      3,
-    ),
-    decoded: { version: "3", lockTime: "true" },
-  },
-  sellOrder: {
-    script: order.getSellOrderCode(false, address),
-    decoded: {
-      side: "sell",
-      holder: address,
-      saleVolume: order.sale_volume.toString(),
-      unitPrice: order.unit_price.toString(),
-      feeRate: order.fee_rate.toString(),
-      tokenID: txid,
-      partialHash: codeHash,
-    },
-  },
-  buyOrder: {
-    script: order.getBuyOrderCode(false, address),
-    decoded: {
-      side: "buy",
-      holder: address,
-      saleVolume: order.sale_volume.toString(),
-      unitPrice: order.unit_price.toString(),
-      feeRate: order.fee_rate.toString(),
-      tokenID: txid,
-      partialHash: codeHash,
-    },
-  },
-  stableCoinMint: {
-    script: sdk.stableCoin.getCoinMintCode(
-      adminPubHash,
-      address,
-      codeHash,
-      tapeSize,
-    ),
-    decoded: {
-      kind: "stablecoin",
-      destination: address,
-      codeBytes: "2012",
-    },
-  },
-  stableCoinTape: {
-    script: stableCoinTape,
-    decoded: {
-      balance: transferBalance.toString(),
-      lockTime: sdk.stableCoin.getLockTimeFromTape(stableCoinTape).toString(),
-      marker: "FTape",
-    },
-  },
-};
-
-const fixtures = {};
-for (const [name, artifact] of Object.entries(artifacts)) {
-  const { script, decoded } = artifact;
+function fixture(script, decoded) {
   const bytes = script.toBuffer();
-  fixtures[name] = {
+  return {
     length: bytes.length,
     sha256: crypto.createHash("sha256").update(bytes).digest("hex"),
     decoded,
   };
 }
 
-const output = `${JSON.stringify(fixtures, null, 2)}\n`;
-const outputPath = process.argv[2];
-if (outputPath) {
-  fs.writeFileSync(outputPath, output, { mode: 0o644 });
-} else {
-  process.stdout.write(output);
+function asJSON(value) {
+  return `${JSON.stringify(value, null, 2)}\n`;
 }
+
+async function main() {
+  const ft = new sdk.FT({ name: "Parity", symbol: "PTY", amount: 1, decimal: 6 });
+  const pool = new sdk.poolNFT2({ network: "testnet" });
+  const order = new sdk.orderBook();
+  order.hold_address = address;
+  order.sale_volume = 123456n;
+  order.fee_rate = 10000n;
+  order.unit_price = 2000000n;
+  order.ft_a_contract_partialhash = codeHash;
+  order.ft_a_contract_id = txid;
+
+  const ftV4Mint = ft.getFTmintCode(txid, 0, address, tapeSize);
+  const stableCoinV4Mint = sdk.stableCoin.getCoinMintCode(
+    adminPubHash,
+    address,
+    codeHash,
+    tapeSize,
+  );
+  const nftV2Code = sdk.NFT.buildCodeScript(txid, 0);
+  const nftV1Code = sdk.NFT.buildCodeScript_v1(txid, 0);
+  const poolPlan6V4 = pool.getPoolNftCode(txid, 0, 6, 4, "parity", false);
+  const poolPlan6V4Locked = pool.getPoolNftCodeWithLock(
+    txid,
+    0,
+    6,
+    address,
+    0.001,
+    [compressedPublicKey],
+    4,
+    "parity",
+    false,
+  );
+  const ftlpV4 = pool.getFtlpCode(codeHash, address, tapeSize, false, 4);
+  const ftlpV4LockTime = pool.getFtlpCodeWithLockTime(
+    codeHash,
+    address,
+    tapeSize,
+    false,
+    4,
+  );
+  // getFTCodeSizeHex(2076) is the little-endian uint16 value 0x081c.
+  const sellOrderV4 = order.getSellOrderCode(false, address, "1c08");
+  const buyOrderV4 = order.getBuyOrderCode(false, address, "1c08");
+
+  const tbc20Tape = sdk.TBC20.buildTape(
+    [123456n, 7n, 0n, 0n, 0n, 0n],
+    sdk.TBC20.minTapeBytes,
+  );
+  const tbc20Code = sdk.TBC20.instantiateCode({
+    originalUTXO: { txId: txid, outputIndex: 3 },
+    tapeSize: sdk.TBC20.minTapeBytes,
+    controller: sdk.TBC20.addressController(address),
+  });
+  const parsedTape = sdk.TBC20.parseTape(tbc20Tape);
+
+  const scripts = {
+    ftV4Mint: fixture(ftV4Mint, {
+      kind: "ordinary-ft-v4",
+      destination: address,
+      codeBytes: String(ftV4Mint.toBuffer().length),
+    }),
+    stableCoinV4Mint: fixture(stableCoinV4Mint, {
+      kind: "stablecoin-v4",
+      destination: address,
+      codeBytes: String(stableCoinV4Mint.toBuffer().length),
+    }),
+    nftV2Code: fixture(nftV2Code, { version: "2", marker: "3Code" }),
+    nftV1Code: fixture(nftV1Code, { version: "1", marker: "ac6a" }),
+    poolPlan6V4: fixture(poolPlan6V4, {
+      plan: "6",
+      version: "4",
+      locked: "false",
+    }),
+    poolPlan6V4Locked: fixture(poolPlan6V4Locked, {
+      plan: "6",
+      version: "4",
+      locked: "true",
+    }),
+    ftlpV4: fixture(ftlpV4, { version: "4", lockTime: "false" }),
+    ftlpV4LockTime: fixture(ftlpV4LockTime, {
+      version: "4",
+      lockTime: "true",
+    }),
+    sellOrderV4: fixture(sellOrderV4, { side: "sell", version: "4" }),
+    buyOrderV4: fixture(buyOrderV4, { side: "buy", version: "4" }),
+    tbc20Code: fixture(tbc20Code, {
+      version: "1",
+      codeBytes: String(sdk.TBC20.codeBytes),
+      partialOffset: String(sdk.TBC20.partialOffset),
+    }),
+    tbc20Tape: fixture(tbc20Tape, {
+      version: "1",
+      tapeBytes: String(parsedTape.size),
+      balance: parsedTape.balance.toString(),
+    }),
+  };
+
+  const vectors = {
+    artifactSha256: sdk.TBC20.artifactSha256,
+    codeBytes: sdk.TBC20.codeBytes,
+    partialOffset: sdk.TBC20.partialOffset,
+    minTapeBytes: sdk.TBC20.minTapeBytes,
+    maxTapeBytes: sdk.TBC20.maxTapeBytes,
+    maxSlotAmount: sdk.TBC20.maxSlotAmount.toString(),
+    originalUTXOHex: sdk.TBC20.encodeOriginalUTXO({
+      txId: txid,
+      outputIndex: 3,
+    }).toString("hex"),
+    controllerHex: sdk.TBC20.addressController(address).toString("hex"),
+    codeHex: tbc20Code.toHex(),
+    codeIdentityHex: require(path.join(jsRoot, "lib/util/tbc20unlock.js"))
+      .getTBC20CodeIdentity(tbc20Code)
+      .toString("hex"),
+    tapeHex: tbc20Tape.toHex(),
+    tapeAmounts: parsedTape.amounts.map((amount) => amount.toString()),
+    tapeBalance: parsedTape.balance.toString(),
+  };
+
+  const invalidPolicy = await sdk.TokenValidator.validateOnChainTransaction({});
+  const invalidRoot = await sdk.TokenValidator.validateOnChainTransaction({
+    transaction: "zz",
+    network: "testnet",
+  });
+  const reports = {
+    invalidPolicy: invalidPolicy.toJSON(),
+    invalidRoot: invalidRoot.toJSON(),
+  };
+
+  const outputPath = process.argv[2];
+  if (outputPath) {
+    fs.writeFileSync(outputPath, asJSON(scripts), { mode: 0o644 });
+    return;
+  }
+  const contractDir = path.join(repoRoot, "lib/contract/testdata/js-1.6.6");
+  const validatorDir = path.join(repoRoot, "lib/validator/testdata/js-1.6.6");
+  fs.mkdirSync(contractDir, { recursive: true });
+  fs.mkdirSync(validatorDir, { recursive: true });
+  fs.writeFileSync(path.join(contractDir, "script-hashes.json"), asJSON(scripts), { mode: 0o644 });
+  fs.writeFileSync(path.join(contractDir, "tbc20-vectors.json"), asJSON(vectors), { mode: 0o644 });
+  fs.writeFileSync(path.join(validatorDir, "reports.json"), asJSON(reports), { mode: 0o644 });
+}
+
+main().catch((error) => {
+  process.stderr.write(`${error.stack || error}\n`);
+  process.exitCode = 1;
+});
