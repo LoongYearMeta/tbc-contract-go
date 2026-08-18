@@ -6,7 +6,7 @@ package contract
 //
 // Key design notes:
 //   - Pool amounts are *big.Int.
-//   - Service fee addresses mirror TS SERVICE_FEE_ADDRESS (lpPlan 1..5).
+//   - Service fee addresses mirror TS SERVICE_FEE_ADDRESS (lpPlan 1..6).
 //   - GetPoolNftUnlockOffLine mirrors TS getPoolNftUnlockOffLine (offline signing).
 //   - Swap/AddLP/RemoveLP/CreatePool methods require the full pool state to be
 //     initialized via InitFromContractID or set manually.
@@ -892,7 +892,7 @@ func poolGetSize(n int) []byte {
 // --------------------------------------------------------------------------
 
 // getPoolNftCode builds the pool NFT locking script.
-// txid/vout identify the source UTXO; lpPlan 1..5; ftVersion 1 or 2;
+// txid/vout identify the source UTXO; lpPlan 1..6; ftVersion 1..4;
 // tag is an arbitrary UTF-8 tag (default "NULL"); isCoin for stablecoin FT.
 //
 // The ASM template is the full TS poolNFT2.0.ts:4640 body (29 KB),

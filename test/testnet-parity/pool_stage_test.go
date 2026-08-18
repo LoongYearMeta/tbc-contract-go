@@ -299,8 +299,8 @@ func TestPoolCreationTransactionsPayFinalSignedSizeFee(t *testing.T) {
 					privateKey,
 					poolFunding,
 					"fee-test",
-					35,
-					2,
+					130,
+					6,
 					false,
 				)
 			},
@@ -319,8 +319,8 @@ func TestPoolCreationTransactionsPayFinalSignedSizeFee(t *testing.T) {
 							privateKey.PubKey().SerialiseCompressed(),
 						),
 					},
-					35,
-					2,
+					130,
+					6,
 					true,
 				)
 			},

@@ -699,8 +699,8 @@ func runPoolCreateStage(cfg config, decoded *wif.WIF, address string) error {
 		decoded.PrivKey,
 		poolFunding,
 		"go-pool",
-		35,
-		2,
+		130,
+		6,
 		false,
 	)
 	if err != nil {
@@ -1029,8 +1029,8 @@ func runPoolLockStage(cfg config, decoded *wif.WIF, address string) error {
 		address,
 		0.0001,
 		signers.PublicKeys,
-		35,
-		2,
+		130,
+		6,
 		true,
 	)
 	if err != nil {
