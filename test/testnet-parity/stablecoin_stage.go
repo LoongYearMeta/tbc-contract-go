@@ -182,7 +182,7 @@ func validateCoinOutput(
 	if err != nil {
 		return fmt.Errorf("classify Coin output %d: %w", codeVout, err)
 	}
-	if info.Version != contractutil.FTVersion3 || !info.IsCoin {
+	if info.Version != contractutil.FTVersion4 || !info.IsCoin {
 		return fmt.Errorf(
 			"Coin output %d classified version=%d coin=%t",
 			codeVout,
@@ -190,11 +190,12 @@ func validateCoinOutput(
 			info.IsCoin,
 		)
 	}
-	if len(code.LockingScript.Bytes()) != 2012 {
+	if len(code.LockingScript.Bytes()) != contractutil.FTV4CodeLength {
 		return fmt.Errorf(
-			"Coin output %d code length=%d want=2012",
+			"Coin output %d code length=%d want=%d",
 			codeVout,
 			len(code.LockingScript.Bytes()),
+			contractutil.FTV4CodeLength,
 		)
 	}
 	amount, err := contractutil.GetFtBalanceFromTape(tape.LockingScript.ToHex())

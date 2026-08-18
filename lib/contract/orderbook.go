@@ -277,15 +277,13 @@ func ComputeFtPartialHash(ftCodeScriptHex string, isCoin bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	info, err := classifyOrderBookFTCode(ftCodeScriptHex)
+	_, err = classifyOrderBookFTCode(ftCodeScriptHex)
 	if err != nil {
 		return "", err
 	}
-	partialOffset := obFTv2Partial
-	if isCoin || info.IsCoin {
-		partialOffset = obCoinPartial
-	} else if info.Version == util.FTVersion1 {
-		partialOffset = 1536
+	partialOffset, ok := util.FTPartialOffsetByLength(len(buf))
+	if !ok {
+		return "", fmt.Errorf("ComputeFtPartialHash: unsupported code length %d", len(buf))
 	}
 	if len(buf) < partialOffset {
 		return "", fmt.Errorf("ComputeFtPartialHash: script too short (%d < %d)", len(buf), partialOffset)

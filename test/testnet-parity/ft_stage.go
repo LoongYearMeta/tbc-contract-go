@@ -68,23 +68,23 @@ func validateFTV3Outputs(tx *bt.Tx, codeVout int) (*big.Int, error) {
 		return nil, fmt.Errorf("FT Tape output is not zero-satoshi safe data")
 	}
 	codeBytes := codeOutput.LockingScript.Bytes()
-	if len(codeBytes) != 1884 {
-		return nil, fmt.Errorf("FT code length=%d want=1884", len(codeBytes))
+	if len(codeBytes) != contractutil.FTV4CodeLength {
+		return nil, fmt.Errorf("FT code length=%d want=%d", len(codeBytes), contractutil.FTV4CodeLength)
 	}
 	info, err := contractutil.ClassifyFTScript(codeOutput.LockingScript)
 	if err != nil {
 		return nil, err
 	}
-	if info.Version != contractutil.FTVersion3 || info.IsCoin {
-		return nil, fmt.Errorf("FT code classified version=%d coin=%t, want ordinary v3", info.Version, info.IsCoin)
+	if info.Version != contractutil.FTVersion4 || info.IsCoin {
+		return nil, fmt.Errorf("FT code classified version=%d coin=%t, want ordinary v4", info.Version, info.IsCoin)
 	}
 	partialHash, err := contract.ComputeFtPartialHash(codeOutput.LockingScript.ToHex(), false)
 	if err != nil {
 		return nil, err
 	}
-	wantPartialHash := partialsha256.CalculatePartialHash(codeBytes[:ftV3PartialOffset])
+	wantPartialHash := partialsha256.CalculatePartialHash(codeBytes[:contractutil.FTV4PartialOffset])
 	if partialHash != wantPartialHash {
-		return nil, fmt.Errorf("FT v3 partial hash mismatch")
+		return nil, fmt.Errorf("FT v4 partial hash mismatch")
 	}
 	balance, err := contractutil.GetFtBalanceFromTape(tapeOutput.LockingScript.ToHex())
 	if err != nil {

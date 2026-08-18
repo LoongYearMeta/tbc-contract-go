@@ -143,10 +143,10 @@ func TestStaticGetFTUnlockSwapV3RejectsUnsupportedContractInputIndex(t *testing.
 	}
 }
 
-func TestMintFTUsesReleasedV3Script(t *testing.T) {
+func TestMintFTUsesReleasedV4Script(t *testing.T) {
 	fx := newHTLCTokenFixture(t, 1_000)
 	ft, err := NewFT(&FtParams{
-		Name: "Released", Symbol: "FT3", Amount: 1_000, Decimal: 2,
+		Name: "Released", Symbol: "FT4", Amount: 1_000, Decimal: 2,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -160,15 +160,15 @@ func TestMintFTUsesReleasedV3Script(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.Version != util.FTVersion3 {
-		t.Fatalf("minted FT version = %d, want v3", info.Version)
+	if info.Version != util.FTVersion4 {
+		t.Fatalf("minted FT version = %d, want v4", info.Version)
 	}
-	if got := mint.Outputs[0].LockingScript.Len(); got != 1884 {
-		t.Fatalf("minted FT code length = %d, want 1884", got)
+	if got := mint.Outputs[0].LockingScript.Len(); got != util.FTV4CodeLength {
+		t.Fatalf("minted FT code length = %d, want %d", got, util.FTV4CodeLength)
 	}
 }
 
-func TestComputeFtPartialHashUsesV3Boundary(t *testing.T) {
+func TestComputeFtPartialHashUsesV4Boundary(t *testing.T) {
 	code, err := getFTmintCode(
 		strings.Repeat("11", 32),
 		0,
@@ -178,14 +178,13 @@ func TestComputeFtPartialHashUsesV3Boundary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	const v3PartialOffset = 1856
-	want := partialsha256.CalculatePartialHash(code.Bytes()[:v3PartialOffset])
+	want := partialsha256.CalculatePartialHash(code.Bytes()[:util.FTV4PartialOffset])
 	got, err := ComputeFtPartialHash(code.ToHex(), false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got != want {
-		t.Fatalf("FT v3 partial hash = %s, want %s", got, want)
+		t.Fatalf("FT v4 partial hash = %s, want %s", got, want)
 	}
 }
 

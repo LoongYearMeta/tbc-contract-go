@@ -877,7 +877,7 @@ func StaticGetFTUnlockSwap(
 	sigHex := fmt.Sprintf("%02x%s", len(sigBytes), hex.EncodeToString(sigBytes))
 	pubKeyHex := fmt.Sprintf("%02x%s", len(pubKeyBytes), hex.EncodeToString(pubKeyBytes))
 	marker := ""
-	if ftVersion == util.FTVersion3 {
+	if ftVersion > util.FTVersion2 {
 		marker, err = ftV3InputIndexMarker(currentUnlockIndex, isContractTXs)
 		if err != nil {
 			return nil, err
@@ -1173,7 +1173,7 @@ func ftBuildUnlockSwap(
 	pubKey := privKey.PubKey().SerialiseCompressed()
 	pubKeyHex := fmt.Sprintf("%02x%s", len(pubKey), hex.EncodeToString(pubKey))
 	marker := ""
-	if ftVersion == util.FTVersion3 {
+	if ftVersion > util.FTVersion2 {
 		marker, err = ftV3InputIndexMarker(currentUnlockIndex, isContractTXs)
 		if err != nil {
 			return nil, err

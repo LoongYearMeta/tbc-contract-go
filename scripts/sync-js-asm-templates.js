@@ -43,7 +43,11 @@ function extractTemplate(source, marker, declaration) {
 
 function writeTemplate(relativePath, template) {
   const output = path.join(repoRoot, relativePath);
-  fs.writeFileSync(output, `${template}\n`, { mode: 0o644 });
+  const normalized = template.replace(
+    /\$\{"ff"\.repeat\(0x([0-9a-f]+)\)\}/gi,
+    (_, count) => "ff".repeat(Number.parseInt(count, 16)),
+  );
+  fs.writeFileSync(output, `${normalized}\n`, { mode: 0o644 });
 }
 
 const ftSource = fs.readFileSync(
@@ -52,7 +56,7 @@ const ftSource = fs.readFileSync(
 );
 writeTemplate(
   "lib/contract/asm/ft_mint.asm",
-  extractTemplate(ftSource, "getFTmintCode(txid: string", "new tbc.Script("),
+  extractTemplate(ftSource, "getFTmintCode(txid, vout, address, tapeSize)", "new tbc.Script("),
 );
 
 const stableSource = fs.readFileSync(
@@ -63,7 +67,7 @@ writeTemplate(
   "lib/contract/asm/stablecoin_mint.asm",
   extractTemplate(
     stableSource,
-    "  static getCoinMintCode(\n",
+    "static getCoinMintCode(adminPubHashHex, receiveAddress, codeHash, tapeSize)",
     "new tbc.Script(",
   ),
 );
@@ -76,7 +80,7 @@ writeTemplate(
   "lib/contract/asm/poolnft2_ftlp_code.asm",
   extractTemplate(
     poolSource,
-    "  getFtlpCode(\n    poolNftCodeHash:",
+    "    getFtlpCode(poolNftCodeHash, address, tapeSize, isCoin, ftVersion) {",
     "const ftlpCodePreTemplate =",
   ),
 );
@@ -84,7 +88,7 @@ writeTemplate(
   "lib/contract/asm/poolnft2_ftlp_locktime_code.asm",
   extractTemplate(
     poolSource,
-    "  getFtlpCodeWithLockTime(\n",
+    "    getFtlpCodeWithLockTime(poolNftCodeHash, address, tapeSize, isCoin, ftVersion) {",
     "const ftlpCodePreTemplate =",
   ),
 );

@@ -76,16 +76,16 @@ func validateOrderBookFTCode(script *bscript.Script) error {
 	if script == nil {
 		return fmt.Errorf("nil OrderBook FT code")
 	}
-	if script.Len() != 1884 {
-		return fmt.Errorf("OrderBook FT code length=%d want=1884", script.Len())
+	if script.Len() != contractutil.FTV4CodeLength {
+		return fmt.Errorf("OrderBook FT code length=%d want=%d", script.Len(), contractutil.FTV4CodeLength)
 	}
 	info, err := contractutil.ClassifyFTScript(script)
 	if err != nil {
 		return fmt.Errorf("classify OrderBook FT code: %w", err)
 	}
-	if info.Version != contractutil.FTVersion3 || info.IsCoin {
+	if info.Version != contractutil.FTVersion4 || info.IsCoin {
 		return fmt.Errorf(
-			"OrderBook FT code version=%d coin=%t want ordinary v3",
+			"OrderBook FT code version=%d coin=%t want ordinary v4",
 			info.Version,
 			info.IsCoin,
 		)

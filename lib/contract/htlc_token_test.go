@@ -132,7 +132,7 @@ func TestDeployHTLCTokenOutputLayout(t *testing.T) {
 	if tx.Outputs[0].Satoshis != 100 || tx.Outputs[1].Satoshis != 500 || tx.Outputs[2].Satoshis != 0 {
 		t.Fatalf("unexpected locked output values")
 	}
-	if len(tx.Outputs[1].LockingScript.Bytes()) != 1884 {
+	if len(tx.Outputs[1].LockingScript.Bytes()) != util.FTV4CodeLength {
 		t.Fatalf("locked FT code length = %d", len(tx.Outputs[1].LockingScript.Bytes()))
 	}
 	lockedBalance, err := util.GetFtBalanceFromTape(hex.EncodeToString(tx.Outputs[2].LockingScript.Bytes()))
