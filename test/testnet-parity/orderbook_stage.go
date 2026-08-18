@@ -800,10 +800,6 @@ func runOrderBookStage(
 	); err != nil {
 		return err
 	}
-	if _, err := waitForFTV4Info(token.ContractTxid, cfg.Network); err != nil {
-		return err
-	}
-
 	sourceChange, err := outputUTXO(source, 2)
 	if err != nil {
 		return err

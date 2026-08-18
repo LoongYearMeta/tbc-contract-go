@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"time"
@@ -632,6 +634,39 @@ func poolCreationFunding(source, mint *bt.Tx) (*bt.UTXO, error) {
 	return outputUTXO(source, 2)
 }
 
+func buildPoolCreationWithLocalFTInfo(
+	token *contract.FT,
+	build func(*contract.PoolNFT2) ([]string, error),
+) ([]string, error) {
+	if token == nil || token.ContractTxid == "" || token.CodeScript == "" || token.TapeScript == "" {
+		return nil, fmt.Errorf("complete local FT information is required")
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		if request.URL.Path != "/ft/info/contract/"+token.ContractTxid {
+			http.NotFound(response, request)
+			return
+		}
+		response.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprintf(
+			response,
+			`{"code":"200","data":{"code_script":%q,"tape_script":%q,`+
+				`"amount":%q,"decimal":%d,"name":%q,"symbol":%q}}`,
+			token.CodeScript,
+			token.TapeScript,
+			token.TotalSupply.String(),
+			token.Decimal,
+			token.Name,
+			token.Symbol,
+		)
+	}))
+	defer server.Close()
+	pool := contract.NewPoolNFT2(&contract.PoolNFT2Config{Network: server.URL + "/"})
+	if err := pool.InitCreate(token.ContractTxid); err != nil {
+		return nil, err
+	}
+	return build(pool)
+}
+
 func runPoolCreateStage(cfg config, decoded *wif.WIF, address string) error {
 	funding, err := api.FetchUTXO(
 		address,
@@ -683,26 +718,20 @@ func runPoolCreateStage(cfg config, decoded *wif.WIF, address string) error {
 			return err
 		}
 	}
-	if _, err := waitForFTV4Info(token.ContractTxid, cfg.Network); err != nil {
-		return err
-	}
-
 	poolFunding, err := poolCreationFunding(source, mint)
 	if err != nil {
 		return err
 	}
-	pool := contract.NewPoolNFT2(&contract.PoolNFT2Config{Network: cfg.Network})
-	if err := pool.InitCreate(token.ContractTxid); err != nil {
-		return err
-	}
-	poolRaws, err := pool.CreatePoolNFT(
-		decoded.PrivKey,
-		poolFunding,
-		"go-pool",
-		130,
-		6,
-		false,
-	)
+	poolRaws, err := buildPoolCreationWithLocalFTInfo(token, func(pool *contract.PoolNFT2) ([]string, error) {
+		return pool.CreatePoolNFT(
+			decoded.PrivKey,
+			poolFunding,
+			"go-pool",
+			130,
+			6,
+			false,
+		)
+	})
 	if err != nil {
 		return fmt.Errorf("Pool NFT create: %w", err)
 	}
@@ -1003,8 +1032,18 @@ func runPoolLockStage(cfg config, decoded *wif.WIF, address string) error {
 	if cfg.TokenA == "" {
 		return fmt.Errorf("TBC_TESTNET_TOKEN_A is required for pool-lock")
 	}
-	if _, err := waitForFTV4Info(cfg.TokenA, cfg.Network); err != nil {
-		return err
+	ftMint, err := api.FetchTXRaw(cfg.TokenA, cfg.Network)
+	if err != nil {
+		return fmt.Errorf("fetch pool-lock FT mint: %w", err)
+	}
+	if len(ftMint.Outputs) < 2 {
+		return fmt.Errorf("pool-lock FT mint has incomplete Code/Tape outputs")
+	}
+	info := &contract.FT{
+		ContractTxid: cfg.TokenA,
+		CodeScript:   ftMint.Outputs[0].LockingScript.ToHex(),
+		TapeScript:   ftMint.Outputs[1].LockingScript.ToHex(),
+		TotalSupply:  big.NewInt(0),
 	}
 	funding, err := api.FetchUTXO(
 		address,
@@ -1018,21 +1057,19 @@ func runPoolLockStage(cfg config, decoded *wif.WIF, address string) error {
 	if err != nil {
 		return err
 	}
-	pool := contract.NewPoolNFT2(&contract.PoolNFT2Config{Network: cfg.Network})
-	if err := pool.InitCreate(cfg.TokenA); err != nil {
-		return err
-	}
-	raws, err := pool.CreatePoolNFTWithLock(
-		decoded.PrivKey,
-		funding,
-		"pool-lock",
-		address,
-		0.0001,
-		signers.PublicKeys,
-		130,
-		6,
-		true,
-	)
+	raws, err := buildPoolCreationWithLocalFTInfo(info, func(pool *contract.PoolNFT2) ([]string, error) {
+		return pool.CreatePoolNFTWithLock(
+			decoded.PrivKey,
+			funding,
+			"pool-lock",
+			address,
+			0.0001,
+			signers.PublicKeys,
+			130,
+			6,
+			true,
+		)
+	})
 	if err != nil {
 		return fmt.Errorf("locked Pool NFT create: %w", err)
 	}
@@ -1208,7 +1245,7 @@ func runPoolLockStage(cfg config, decoded *wif.WIF, address string) error {
 	}
 
 	zeroLockTime := uint32(0)
-	pool, _, err = loadIndexedPool(poolID, cfg.Network)
+	pool, _, err := loadIndexedPool(poolID, cfg.Network)
 	if err != nil {
 		return err
 	}
