@@ -35,6 +35,48 @@ func classifyMultiSigFTCode(script *bscript.Script) (int, error) {
 	return int(info.Version), nil
 }
 
+func applyMultiSigStableCoinInputLockTimes(tx *bt.Tx, ftutxos []*util.FtUTXO, preTXs []*bt.Tx, inputIndexOffset int) (bool, error) {
+	if len(ftutxos) == 0 {
+		return false, nil
+	}
+	firstInfo, err := util.ClassifyFTScript(ftutxos[0].LockingScript)
+	if err != nil {
+		return false, err
+	}
+	for i, ftutxo := range ftutxos {
+		info, err := util.ClassifyFTScript(ftutxo.LockingScript)
+		if err != nil {
+			return false, fmt.Errorf("classify FT input %d: %w", i, err)
+		}
+		if info.IsCoin != firstInfo.IsCoin {
+			return false, fmt.Errorf("Mixed FT and StableCoin inputs are not supported")
+		}
+	}
+	if !firstInfo.IsCoin {
+		return false, nil
+	}
+	lockTimeMax := tx.LockTime
+	for i, ftutxo := range ftutxos {
+		if i >= len(preTXs) || preTXs[i] == nil || int(ftutxo.Vout)+1 >= len(preTXs[i].Outputs) {
+			return false, fmt.Errorf("Missing StableCoin Tape output for FT input %d", i)
+		}
+		inputIndex := i + inputIndexOffset
+		if inputIndex < 0 || inputIndex >= len(tx.Inputs) {
+			return false, fmt.Errorf("StableCoin input %d is out of range", inputIndex)
+		}
+		lockTime, err := GetLockTimeFromTape(preTXs[i].Outputs[int(ftutxo.Vout)+1].LockingScript)
+		if err != nil {
+			return false, fmt.Errorf("StableCoin input %d lockTime: %w", i, err)
+		}
+		tx.Inputs[inputIndex].SequenceNumber = 4294967294
+		if lockTime > lockTimeMax {
+			lockTimeMax = lockTime
+		}
+	}
+	tx.LockTime = lockTimeMax
+	return true, nil
+}
+
 // MultiSigTxRaw holds a partially-built multi-sig tx together with the input
 // satoshi amounts needed to re-attach locking scripts for signing.
 type MultiSigTxRaw struct {
@@ -659,6 +701,10 @@ func P2PKHToMultiSigTransferFT(
 	if err := tx.FromUTXOs(utxo); err != nil {
 		return "", err
 	}
+	isCoin, err := applyMultiSigStableCoinInputLockTimes(tx, ftutxos, preTXs, 0)
+	if err != nil {
+		return "", fmt.Errorf("P2PKHToMultiSigTransferFT: %w", err)
+	}
 
 	// Optional TBC output to multi-sig recipient
 	if tbcAmountSat > 0 {
@@ -714,7 +760,7 @@ func P2PKHToMultiSigTransferFT(
 				prepreTxDatas[i],
 				i,
 				int(ftutxos[i].Vout),
-				false,
+				isCoin,
 			)
 			if err != nil {
 				return fmt.Errorf(
@@ -804,6 +850,10 @@ func BuildMultiSigTransactionTransferFT(
 	if err := tx.FromUTXOs(util.FtUTXOsToUTXOs(ftutxos)...); err != nil {
 		return nil, err
 	}
+	isCoin, err := applyMultiSigStableCoinInputLockTimes(tx, ftutxos, preTXs, 1)
+	if err != nil {
+		return nil, fmt.Errorf("BuildMultiSigTransactionTransferFT: %w", err)
+	}
 
 	// Change output back to multisig address (hardcoded fee per # of ftutxos)
 	// Mirrors TS switch: 1→4000, 2→5500, 3→7000, 4→8500, 5→10000
@@ -856,7 +906,7 @@ func BuildMultiSigTransactionTransferFT(
 	// Apply FT unlock scripts (inputs 1…)
 	for i := range ftutxos {
 		inputIdx := i + 1
-		us, err := ft.GetFTUnlockSwap(privKey, tx, preTXs[i], prepreTxDatas[i], contractTX, inputIdx, int(ftutxos[i].Vout), util.FTVersion(ftVersion), false, false)
+		us, err := ft.GetFTUnlockSwap(privKey, tx, preTXs[i], prepreTxDatas[i], contractTX, inputIdx, int(ftutxos[i].Vout), util.FTVersion(ftVersion), isCoin, false)
 		if err != nil {
 			return nil, fmt.Errorf("BuildMultiSigTransactionTransferFT: FT unlock input %d: %w", i, err)
 		}

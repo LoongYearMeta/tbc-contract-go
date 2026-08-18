@@ -47,7 +47,7 @@ func TestSwapToTBCLocalRejectsInsufficientSuppliedFT(t *testing.T) {
 	}
 }
 
-func TestUnlockedPoolCodeRejectsTagThatCrossesLockSizeBoundary(t *testing.T) {
+func TestUnlockedPoolCodeNoLongerUsesLegacySizeLockDiscriminator(t *testing.T) {
 	pool := NewPoolNFT2(nil)
 	txid := strings.Repeat("11", 32)
 	shortCode, err := pool.getPoolNftCode(
@@ -61,18 +61,29 @@ func TestUnlockedPoolCodeRejectsTagThatCrossesLockSizeBoundary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(shortCode.Bytes()) > 3_300 {
-		t.Fatalf("short unlocked pool code bytes=%d want<=3300", len(shortCode.Bytes()))
+	if len(shortCode.Bytes()) <= 3_300 {
+		t.Fatalf("new unlocked pool code bytes=%d want>3300", len(shortCode.Bytes()))
 	}
-	if _, err := pool.getPoolNftCode(
+	longCode, err := pool.getPoolNftCode(
 		txid,
 		0,
 		2,
 		3,
 		"0123456789abcdef",
 		false,
-	); err == nil {
-		t.Fatal("expected ambiguous unlocked pool tag to be rejected")
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(longCode.Bytes()) <= len(shortCode.Bytes()) {
+		t.Fatalf("long tag code bytes=%d want>%d", len(longCode.Bytes()), len(shortCode.Bytes()))
+	}
+	if pool.cachedPoolLockFlag() != 0 {
+		t.Fatal("unlocked pool cache reported locked")
+	}
+	pool.WithLock = true
+	if pool.cachedPoolLockFlag() != 1 {
+		t.Fatal("locked pool cache reported unlocked")
 	}
 }
 

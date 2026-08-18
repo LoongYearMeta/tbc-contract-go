@@ -23,6 +23,7 @@ var ServiceFeeAddress = map[int]string{
 	3: "125fTLNsraQxTYqT4EeQNF2ggzcqicveKL",
 	4: "19DetoaaohQkjFVJ6oGXd83xhZYQSbpE1g",
 	5: "15EKrhuD8Yf3SfhjAgbizYqfnBbKh9ZMZ7",
+	6: "1N7rf2AuAHB2aCrVgnbQhSWhaUVk3rGhjm",
 }
 
 // serviceFeeAddressPKHSet: Hash160 of each service fee address, computed once.
@@ -57,6 +58,8 @@ const (
 	poolFtV2PartialOffset = 1856
 	poolCoinLength        = 2012
 	poolCoinPartialOffset = 1984
+	poolFtV4Length        = 2076
+	poolFtV4PartialOffset = 2048
 )
 
 // --------------------------------------------------------------------------
@@ -116,6 +119,9 @@ func poolPartialHashAndSuffix(script []byte) (phHex string, suffix []byte) {
 	case poolCoinLength:
 		phHex = partialsha256.CalculatePartialHash(script[:poolCoinPartialOffset])
 		suffix = script[poolCoinPartialOffset:]
+	case poolFtV4Length:
+		phHex = partialsha256.CalculatePartialHash(script[:poolFtV4PartialOffset])
+		suffix = script[poolFtV4PartialOffset:]
 	default:
 		phHex = "00"
 		suffix = script
@@ -125,7 +131,7 @@ func poolPartialHashAndSuffix(script []byte) (phHex string, suffix []byte) {
 
 // poolIsFTScript returns true if the locking script is an FT/coin code script.
 func poolIsFTScript(l int) bool {
-	return l == poolFtV1Length || l == poolFtV2Length || l == poolCoinLength
+	return l == poolFtV1Length || l == poolFtV2Length || l == poolCoinLength || l == poolFtV4Length
 }
 
 // --------------------------------------------------------------------------
@@ -540,6 +546,8 @@ func poolPartialOffsetForLength(scriptLen int) int {
 		return poolFtV1PartialOffset
 	case poolCoinLength:
 		return poolCoinPartialOffset
+	case poolFtV4Length:
+		return poolFtV4PartialOffset
 	default:
 		return poolFtV2PartialOffset
 	}

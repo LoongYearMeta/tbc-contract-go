@@ -31,6 +31,17 @@ func htlcTokenTargetFee(tx *bt.Tx, extraBytes int) int {
 }
 
 func htlcTokenClassify(script *bscript.Script) (util.FTScriptInfo, error) {
+	if script == nil {
+		return util.FTScriptInfo{}, fmt.Errorf("unsupported FT code: nil script")
+	}
+	switch len(script.Bytes()) {
+	case util.FTV2CodeLength, util.LegacyCoinCodeLength, util.FTV4CodeLength:
+	default:
+		return util.FTScriptInfo{}, fmt.Errorf(
+			"unsupported FT code length %d; expected %d, %d, %d",
+			len(script.Bytes()), util.FTV2CodeLength, util.LegacyCoinCodeLength, util.FTV4CodeLength,
+		)
+	}
 	info, err := util.ClassifyFTScript(script)
 	if err != nil {
 		return util.FTScriptInfo{}, fmt.Errorf("unsupported FT code: %w", err)

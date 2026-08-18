@@ -27,6 +27,8 @@ import (
 
 const (
 	obOrderDataEncodedLen = 114
+	maxOrderInputs        = 10
+	maxOrderFTInputs      = 5
 
 	obFTv2Partial = 1856
 	obCoinPartial = 1984
@@ -97,15 +99,23 @@ func obAddrPKH(address string) (string, error) {
 
 // GetSellOrderCode mirrors getSellOrderCode(isCoin, taxAddress) in TS.
 func (o *OrderBook) GetSellOrderCode(isCoin bool, taxAddress string) (*bscript.Script, error) {
-	return o.buildOrderCodeScript("sell", isCoin, taxAddress)
+	ftCodeSize := "5c07"
+	if isCoin {
+		ftCodeSize = "dc07"
+	}
+	return o.buildOrderCodeScript("sell", isCoin, taxAddress, ftCodeSize)
 }
 
 // GetBuyOrderCode mirrors getBuyOrderCode(isCoin, taxAddress) in TS.
 func (o *OrderBook) GetBuyOrderCode(isCoin bool, taxAddress string) (*bscript.Script, error) {
-	return o.buildOrderCodeScript("buy", isCoin, taxAddress)
+	ftCodeSize := "5c07"
+	if isCoin {
+		ftCodeSize = "dc07"
+	}
+	return o.buildOrderCodeScript("buy", isCoin, taxAddress, ftCodeSize)
 }
 
-func (o *OrderBook) buildOrderCodeScript(orderType string, isCoin bool, taxAddress string) (*bscript.Script, error) {
+func (o *OrderBook) buildOrderCodeScript(orderType string, isCoin bool, taxAddress, ftCodeSize string) (*bscript.Script, error) {
 	addrHex, err := obAddrPKH(o.HoldAddress)
 	if err != nil {
 		return nil, fmt.Errorf("buildOrderCodeScript: holdAddress: %w", err)
@@ -114,9 +124,8 @@ func (o *OrderBook) buildOrderCodeScript(orderType string, isCoin bool, taxAddre
 	if err != nil {
 		return nil, fmt.Errorf("buildOrderCodeScript: taxAddress: %w", err)
 	}
-	ftCodeSize := "5c07" // FT v2 (1884 bytes = 0x075c)
-	if isCoin {
-		ftCodeSize = "dc07" // Coin (2012 bytes = 0x07dc)
+	if len(ftCodeSize) != 4 {
+		return nil, fmt.Errorf("buildOrderCodeScript: FT code size must be two-byte little-endian hex")
 	}
 
 	var base string
@@ -152,6 +161,89 @@ func (o *OrderBook) buildOrderCodeScript(orderType string, isCoin bool, taxAddre
 		return nil, err
 	}
 	return bscript.NewFromHexString(cleanHex + orderDataHex)
+}
+
+func orderBookFTCodeSizeHex(codeScriptHex string) (string, error) {
+	raw, err := hex.DecodeString(codeScriptHex)
+	if err != nil {
+		return "", fmt.Errorf("invalid FT code script hex: %w", err)
+	}
+	if len(raw) > 0xffff {
+		return "", fmt.Errorf("FT code script is too large: %d", len(raw))
+	}
+	return fmt.Sprintf("%02x%02x", byte(len(raw)), byte(len(raw)>>8)), nil
+}
+
+func validateSellOrderInputCount(utxoCount int) error {
+	if utxoCount > maxOrderInputs {
+		return fmt.Errorf("Sell order UTXO count must not exceed %d", maxOrderInputs)
+	}
+	return nil
+}
+
+func validateBuyOrderInputCount(utxoCount, ftUtxoCount int) error {
+	if ftUtxoCount > maxOrderFTInputs {
+		return fmt.Errorf("Buy order FT UTXO count must not exceed %d", maxOrderFTInputs)
+	}
+	if utxoCount+ftUtxoCount > maxOrderInputs {
+		return fmt.Errorf("Buy order total input count must not exceed %d", maxOrderInputs)
+	}
+	return nil
+}
+
+type orderBookCoinInputContext struct {
+	InputIndex int
+	IsCoin     bool
+	PreTX      *bt.Tx
+	PreTxVout  int
+}
+
+func orderBookCoinInputLockTime(context orderBookCoinInputContext) (uint32, error) {
+	if context.PreTX == nil || context.PreTxVout < 0 || context.PreTxVout+1 >= len(context.PreTX.Outputs) {
+		return 0, fmt.Errorf("Missing StableCoin Tape output for input %d", context.InputIndex)
+	}
+	return GetLockTimeFromTape(context.PreTX.Outputs[context.PreTxVout+1].LockingScript)
+}
+
+func applyOrderBookCoinInputLockTimes(tx *bt.Tx, contexts []orderBookCoinInputContext) error {
+	lockTimeMax := tx.LockTime
+	for _, context := range contexts {
+		if !context.IsCoin {
+			continue
+		}
+		if context.InputIndex < 0 || context.InputIndex >= len(tx.Inputs) {
+			return fmt.Errorf("StableCoin input %d is out of range", context.InputIndex)
+		}
+		lockTime, err := orderBookCoinInputLockTime(context)
+		if err != nil {
+			return err
+		}
+		tx.Inputs[context.InputIndex].SequenceNumber = 4294967294
+		if lockTime > lockTimeMax {
+			lockTimeMax = lockTime
+		}
+	}
+	tx.LockTime = lockTimeMax
+	return nil
+}
+
+func validateOrderBookCoinInputLockTimes(tx *bt.Tx, contexts []orderBookCoinInputContext) error {
+	for _, context := range contexts {
+		if !context.IsCoin {
+			continue
+		}
+		if context.InputIndex < 0 || context.InputIndex >= len(tx.Inputs) || tx.Inputs[context.InputIndex].SequenceNumber != 4294967294 {
+			return fmt.Errorf("StableCoin input %d sequence must be 4294967294 before signing", context.InputIndex)
+		}
+		required, err := orderBookCoinInputLockTime(context)
+		if err != nil {
+			return err
+		}
+		if tx.LockTime < required {
+			return fmt.Errorf("StableCoin input %d requires lockTime %d, got %d", context.InputIndex, required, tx.LockTime)
+		}
+	}
+	return nil
 }
 
 // BuildOrderDataHex mirrors buildOrderData() in TS, returns the 114-byte order data as hex.
@@ -334,6 +426,9 @@ func (o *OrderBook) BuildSellOrderTX(
 	ftCodeScriptHex string,
 	utxos []*bt.UTXO,
 ) (string, error) {
+	if err := validateSellOrderInputCount(len(utxos)); err != nil {
+		return "", err
+	}
 	if !obIsValidAddress(holdAddress) || !obIsValidAddress(taxAddress) {
 		return "", fmt.Errorf("BuildSellOrderTX: invalid holdAddress or taxAddress")
 	}
@@ -362,7 +457,11 @@ func (o *OrderBook) BuildSellOrderTX(
 	o.FtID = ftID
 	o.FtPartialHash = partialHash
 
-	sellCode, err := o.GetSellOrderCode(isCoin, taxAddress)
+	ftCodeSize, err := orderBookFTCodeSizeHex(ftCodeScriptHex)
+	if err != nil {
+		return "", err
+	}
+	sellCode, err := o.buildOrderCodeScript("sell", isCoin, taxAddress, ftCodeSize)
 	if err != nil {
 		return "", err
 	}
@@ -597,6 +696,9 @@ func (o *OrderBook) BuildBuyOrderTX(
 	ftutxos []*util.FtUTXO,
 	preTXs []*bt.Tx,
 ) (string, error) {
+	if err := validateBuyOrderInputCount(len(utxos), len(ftutxos)); err != nil {
+		return "", err
+	}
 	if !obIsValidAddress(holdAddress) || !obIsValidAddress(taxAddress) {
 		return "", fmt.Errorf("BuildBuyOrderTX: invalid holdAddress or taxAddress")
 	}
@@ -629,7 +731,11 @@ func (o *OrderBook) BuildBuyOrderTX(
 	o.FtID = ftID
 	o.FtPartialHash = partialHash
 
-	buyOrder, err := o.GetBuyOrderCode(isCoin, taxAddress)
+	ftCodeSize, err := orderBookFTCodeSizeHex(ftCodeScriptHex)
+	if err != nil {
+		return "", err
+	}
+	buyOrder, err := o.buildOrderCodeScript("buy", isCoin, taxAddress, ftCodeSize)
 	if err != nil {
 		return "", err
 	}
@@ -669,6 +775,16 @@ func (o *OrderBook) BuildBuyOrderTX(
 		return "", err
 	}
 	if err := tx.FromUTXOs(utxos...); err != nil {
+		return "", err
+	}
+	coinInputs := make([]orderBookCoinInputContext, len(ftutxos))
+	for i, ftutxo := range ftutxos {
+		if i >= len(preTXs) {
+			return "", fmt.Errorf("BuildBuyOrderTX: missing preTX for FT input %d", i)
+		}
+		coinInputs[i] = orderBookCoinInputContext{InputIndex: i, IsCoin: isCoin, PreTX: preTXs[i], PreTxVout: int(ftutxo.Vout)}
+	}
+	if err := applyOrderBookCoinInputLockTimes(tx, coinInputs); err != nil {
 		return "", err
 	}
 	tx.AddOutput(&bt.Output{LockingScript: buyOrder, Satoshis: o.BuyCodeDust})
@@ -734,6 +850,10 @@ func (o *OrderBook) BuildCancelBuyOrderTX(
 	}
 	ftTapeHex := hex.EncodeToString(ftPreTX.Outputs[int(ftUTXO.Vout)+1].LockingScript.Bytes())
 	ftCodeScriptHex := hex.EncodeToString(ftUTXO.LockingScript.Bytes())
+	ftInfo, err := classifyOrderBookFTCode(ftCodeScriptHex)
+	if err != nil {
+		return "", fmt.Errorf("BuildCancelBuyOrderTX: classify FT code: %w", err)
+	}
 	ftCodeOut, err := BuildFTtransferCode(ftCodeScriptHex, buyData.HoldAddress)
 	if err != nil {
 		return "", err
@@ -751,6 +871,11 @@ func (o *OrderBook) BuildCancelBuyOrderTX(
 		return "", err
 	}
 	if err := tx.FromUTXOs(utxos...); err != nil {
+		return "", err
+	}
+	if err := applyOrderBookCoinInputLockTimes(tx, []orderBookCoinInputContext{{
+		InputIndex: 1, IsCoin: ftInfo.IsCoin, PreTX: ftPreTX, PreTxVout: int(ftUTXO.Vout),
+	}}); err != nil {
 		return "", err
 	}
 	tx.AddOutput(&bt.Output{LockingScript: ftCodeOut, Satoshis: ftUTXO.Satoshis})
@@ -839,8 +964,10 @@ func (o *OrderBook) CancelBuyOrderWithSign(
 		return "", err
 	}
 
-	if isCoin {
-		tx.Inputs[1].SequenceNumber = 4294967294
+	if err := applyOrderBookCoinInputLockTimes(tx, []orderBookCoinInputContext{{
+		InputIndex: 1, IsCoin: isCoin, PreTX: ftPreTX, PreTxVout: int(ftUTXO.Vout),
+	}}); err != nil {
+		return "", err
 	}
 	pubKeyHex := hex.EncodeToString(privKey.PubKey().SerialiseCompressed())
 	ft := &FT{ContractTxid: buyData.FtID, CodeScript: ftCodeScriptHex, TapeScript: ftTapeHex}
@@ -920,6 +1047,24 @@ func (o *OrderBook) FillSigsMakeBuyOrder(
 	if len(preTXs) == 0 {
 		return "", fmt.Errorf("FillSigsMakeBuyOrder: preTXs required")
 	}
+	if len(tx.Outputs) < 2 {
+		return "", fmt.Errorf("FillSigsMakeBuyOrder: missing FT output")
+	}
+	ftInfo, err := util.ClassifyFTScript(tx.Outputs[1].LockingScript)
+	if err != nil {
+		return "", fmt.Errorf("FillSigsMakeBuyOrder: classify FT output: %w", err)
+	}
+	isCoin = ftInfo.IsCoin
+	coinInputs := make([]orderBookCoinInputContext, len(preTXs))
+	for i, preTX := range preTXs {
+		if i >= len(tx.Inputs) {
+			return "", fmt.Errorf("FillSigsMakeBuyOrder: input %d is out of range", i)
+		}
+		coinInputs[i] = orderBookCoinInputContext{InputIndex: i, IsCoin: isCoin, PreTX: preTX, PreTxVout: int(tx.Inputs[i].PreviousTxOutIndex)}
+	}
+	if err := validateOrderBookCoinInputLockTimes(tx, coinInputs); err != nil {
+		return "", err
+	}
 
 	for i := 0; i < len(preTXs) && i < len(sigs); i++ {
 		vout := int(tx.Inputs[i].PreviousTxOutIndex)
@@ -986,7 +1131,13 @@ func (o *OrderBook) FillSigsCancelBuyOrder(
 	if err != nil {
 		return "", fmt.Errorf("FillSigsCancelBuyOrder: classify FT code: %w", err)
 	}
-	us1, err := StaticGetFTUnlockSwap(sigs[1], publicKey, tx, ftPreTX, ftPrePreTxData, buyPreTX, 1, vout1, ftInfo.Version, isCoin || ftInfo.IsCoin, false)
+	isCoin = ftInfo.IsCoin
+	if err := validateOrderBookCoinInputLockTimes(tx, []orderBookCoinInputContext{{
+		InputIndex: 1, IsCoin: isCoin, PreTX: ftPreTX, PreTxVout: vout1,
+	}}); err != nil {
+		return "", err
+	}
+	us1, err := StaticGetFTUnlockSwap(sigs[1], publicKey, tx, ftPreTX, ftPrePreTxData, buyPreTX, 1, vout1, ftInfo.Version, isCoin, false)
 	if err != nil {
 		return "", err
 	}
@@ -1083,8 +1234,10 @@ func (o *OrderBook) MatchOrder(
 	if err := tx.FromUTXOs(utxos...); err != nil {
 		return "", err
 	}
-	if isCoin {
-		tx.Inputs[1].SequenceNumber = 4294967294
+	if err := applyOrderBookCoinInputLockTimes(tx, []orderBookCoinInputContext{{
+		InputIndex: 1, IsCoin: isCoin, PreTX: ftPreTX, PreTxVout: int(ftUTXO.Vout),
+	}}); err != nil {
+		return "", err
 	}
 
 	// FT Seller output

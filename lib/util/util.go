@@ -238,36 +238,63 @@ func GetOpCode(n int) (string, error) {
 	return "", errors.New("number must be < 256")
 }
 
-// GetLpCostAddress mirrors TS getLpCostAddress.
-// Extracts the pubkeyHash from poolCode at offset 213..253 (bytes 213..232, i.e. chars 426..465).
-func GetLpCostAddress(poolCode string) (string, error) {
-	if len(poolCode) < 426+40 {
-		return "", errors.New("poolCode too short for getLpCostAddress")
+type lpCostData struct {
+	pubKeyHash []byte
+	amount     []byte
+}
+
+func getLpCostData(poolCode string) (lpCostData, error) {
+	if poolCode == "" || len(poolCode)%2 != 0 {
+		return lpCostData{}, errors.New("Invalid pool code")
 	}
-	pubKeyHashHex := poolCode[426 : 426+40]
-	pkh, err := hex.DecodeString(pubKeyHashHex)
+	poolScript, err := bscript.NewFromHexString(poolCode)
 	if err != nil {
-		return "", fmt.Errorf("invalid pubKeyHash hex: %w", err)
+		return lpCostData{}, errors.New("Invalid pool code")
 	}
-	addr, err := bscript.NewAddressFromPublicKeyHash(pkh, true)
+	chunks := poolScript.Chunks()
+	matches := make([]lpCostData, 0, 1)
+	for i := 0; i+5 < len(chunks); i++ {
+		addressChunk := chunks[i]
+		amountChunk := chunks[i+4]
+		if len(addressChunk.Buf) == 20 &&
+			chunks[i+1].OpcodeNum == bscript.OpEQUALVERIFY &&
+			chunks[i+2].OpcodeNum == bscript.OpPARTIALHASH &&
+			chunks[i+3].OpcodeNum == bscript.OpOVER &&
+			len(amountChunk.Buf) == 8 &&
+			chunks[i+5].OpcodeNum == bscript.OpEQUALVERIFY {
+			matches = append(matches, lpCostData{
+				pubKeyHash: append([]byte(nil), addressChunk.Buf...),
+				amount:     append([]byte(nil), amountChunk.Buf...),
+			})
+		}
+	}
+	if len(matches) != 1 {
+		return lpCostData{}, errors.New("Invalid locked pool code: expected exactly one LP cost entry")
+	}
+	return matches[0], nil
+}
+
+// GetLpCostAddress mirrors JS 1.6.6 getLpCostAddress and locates the LP fee
+// entry by opcode context so it remains valid across Pool code versions.
+func GetLpCostAddress(poolCode string) (string, error) {
+	data, err := getLpCostData(poolCode)
+	if err != nil {
+		return "", err
+	}
+	addr, err := bscript.NewAddressFromPublicKeyHash(data.pubKeyHash, true)
 	if err != nil {
 		return "", fmt.Errorf("address from pubKeyHash: %w", err)
 	}
 	return addr.AddressString, nil
 }
 
-// GetLpCostAmount mirrors TS getLpCostAmount.
-// Reads the 8-byte LE uint64 at offset 237..244 (chars 474..489).
+// GetLpCostAmount mirrors JS 1.6.6 getLpCostAmount.
 func GetLpCostAmount(poolCode string) (uint64, error) {
-	if len(poolCode) < 474+16 {
-		return 0, errors.New("poolCode too short for getLpCostAmount")
-	}
-	amountHex := poolCode[474 : 474+16]
-	b, err := hex.DecodeString(amountHex)
+	data, err := getLpCostData(poolCode)
 	if err != nil {
-		return 0, fmt.Errorf("invalid amount hex: %w", err)
+		return 0, err
 	}
-	return binary.LittleEndian.Uint64(b), nil
+	return binary.LittleEndian.Uint64(data.amount), nil
 }
 
 // scriptHash computes the TBC indexer's scriptpubkeyhash (reversed SHA256).

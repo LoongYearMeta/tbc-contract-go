@@ -12,6 +12,7 @@ package contract
 //     initialized via InitFromContractID or set manually.
 
 import (
+	"bytes"
 	_ "embed"
 	"encoding/binary"
 	"encoding/hex"
@@ -39,8 +40,14 @@ var poolNFT2CodeTemplate string
 //go:embed asm/poolnft2_ftlp_code.asm
 var poolNFT2FtlpCodeTemplate string
 
+//go:embed asm/poolnft2_ftlp_v3_code.asm
+var poolNFT2FtlpV3CodeTemplate string
+
 //go:embed asm/poolnft2_ftlp_locktime_code.asm
 var poolNFT2FtlpLockTimeCodeTemplate string
+
+//go:embed asm/poolnft2_ftlp_v3_locktime_code.asm
+var poolNFT2FtlpV3LockTimeCodeTemplate string
 
 //go:embed asm/poolnft2_lock_code_pre.asm
 var poolNFT2LockCodePreTemplate string
@@ -49,9 +56,8 @@ var poolNFT2LockCodePreTemplate string
 var poolNFT2LockCodeLastTemplate string
 
 const (
-	poolNFT2Version              = 2
-	poolNFT2DefaultFeeBPS        = 35 // 万分之35
-	poolNFT2UnlockedMaxCodeBytes = 3_300
+	poolNFT2Version       = 2
+	poolNFT2DefaultFeeBPS = 35 // 万分之35
 )
 
 // PoolNFT2 线性池实例状态（对齐 poolNFT2.0 类字段）。
@@ -179,29 +185,57 @@ func parsePoolNftTapeExtra(tape *bscript.Script) (PoolNFT2ExtraInfo, error) {
 	if len(ch) <= 8 {
 		return out, nil
 	}
-	parseChunk := func(i int) (int, bool) {
-		if i >= len(ch) || ch[i].Buf == nil {
-			return 0, false
-		}
-		n, err := strconv.ParseInt(hex.EncodeToString(ch[i].Buf), 16, 64)
-		if err != nil {
-			return 0, false
-		}
-		return int(n), true
-	}
-	if v, ok := parseChunk(5); ok {
+	if v, ok := poolScriptChunkNumber(ch, 5); ok {
 		out.ServiceFeeRate = v
 	}
-	if v, ok := parseChunk(6); ok {
+	if v, ok := poolScriptChunkNumber(ch, 6); ok {
 		out.LpPlan = v
 	}
-	if v, ok := parseChunk(7); ok {
+	if v, ok := poolScriptChunkNumber(ch, 7); ok {
 		out.WithLock = (v == 1)
 	}
-	if v, ok := parseChunk(8); ok {
+	if v, ok := poolScriptChunkNumber(ch, 8); ok {
 		out.WithLockTime = (v == 1)
 	}
 	return out, nil
+}
+
+func poolScriptChunkNumber(chunks []bscript.Chunk, index int) (int, bool) {
+	if index < 0 || index >= len(chunks) {
+		return 0, false
+	}
+	chunk := chunks[index]
+	if chunk.Buf != nil {
+		if len(chunk.Buf) == 0 {
+			return 0, true
+		}
+		n := new(big.Int).SetBytes(chunk.Buf)
+		if !n.IsInt64() {
+			return 0, false
+		}
+		return int(n.Int64()), true
+	}
+	if chunk.OpcodeNum == bscript.OpFALSE {
+		return 0, true
+	}
+	if chunk.OpcodeNum >= bscript.Op1 && chunk.OpcodeNum <= bscript.Op16 {
+		return int(chunk.OpcodeNum - (bscript.Op1 - 1)), true
+	}
+	return 0, false
+}
+
+func poolTapeLockFlag(tape *bscript.Script, fallback int) int {
+	if tape == nil {
+		return fallback
+	}
+	lockFlag, ok := poolScriptChunkNumber(tape.Chunks(), 7)
+	if !ok {
+		return fallback
+	}
+	if lockFlag == 1 {
+		return 1
+	}
+	return 0
 }
 
 // PoolNFTDifference 对齐 TS poolNFTDifference 接口。
@@ -430,6 +464,12 @@ func (p *PoolNFT2) GetPoolNftUnlockOffLine(
 	option int,
 	swapOption int,
 ) (*bscript.Script, error) {
+	if currentUnlockIndex < 0 || currentUnlockIndex >= len(currentTX.Inputs) {
+		return nil, fmt.Errorf("GetPoolNftUnlockOffLine: input index %d out of range", currentUnlockIndex)
+	}
+	preVout := int(currentTX.Inputs[currentUnlockIndex].PreviousTxOutIndex)
+	withLock = poolLockFlagFromTx(poolnftPreTX, preVout, withLock)
+
 	pretxdata, err := util.GetPoolNFTPreTxdata(poolnftPreTX)
 	if err != nil {
 		return nil, fmt.Errorf("GetPoolNftUnlockOffLine pretxdata: %w", err)
@@ -680,6 +720,35 @@ var poolNFT2ServiceFeeAddresses = map[int]string{
 	3: "125fTLNsraQxTYqT4EeQNF2ggzcqicveKL",
 	4: "19DetoaaohQkjFVJ6oGXd83xhZYQSbpE1g",
 	5: "15EKrhuD8Yf3SfhjAgbizYqfnBbKh9ZMZ7",
+	6: "1N7rf2AuAHB2aCrVgnbQhSWhaUVk3rGhjm",
+}
+
+var poolNFT2PlanFeeRates = map[int]int{1: 35, 2: 35, 3: 135, 4: 335, 5: 535, 6: 130}
+
+type poolFeeConfig struct {
+	ServiceFeeRate int
+	LpPlan         int
+}
+
+func resolvePoolFeeConfig(serviceFeeRate, lpPlan int) (poolFeeConfig, error) {
+	want, ok := poolNFT2PlanFeeRates[lpPlan]
+	if !ok {
+		return poolFeeConfig{}, fmt.Errorf("invalid lpPlan: must be one of 1, 2, 3, 4, 5, 6")
+	}
+	if serviceFeeRate != want {
+		return poolFeeConfig{}, fmt.Errorf("invalid serviceFeeRate for lpPlan %d: expected %d", lpPlan, want)
+	}
+	return poolFeeConfig{ServiceFeeRate: want, LpPlan: lpPlan}, nil
+}
+
+func getLpServiceFeeRate(lpPlan, serviceFeeRate int) int {
+	if lpPlan == 1 {
+		return serviceFeeRate - 10
+	}
+	if lpPlan == 6 {
+		return 80
+	}
+	return 5
 }
 
 // eaterAddress is the Bitcoin eater address for burning tokens.
@@ -713,6 +782,9 @@ func classifyPoolFTCode(codeHex string) (ftVersion int, isCoin bool, err error) 
 
 // ftCodeSizeHex returns the 2-byte LE hex for the FT code size used in pool script.
 func ftCodeSizeHex(isCoin bool, ftVersion int) string {
+	if ftVersion == 4 {
+		return "1c08"
+	}
 	if isCoin {
 		return "dc07"
 	}
@@ -743,12 +815,41 @@ func poolNFTSHA256thenHash160(poolNftCodeHex string) (string, error) {
 	return hex.EncodeToString(h160), nil
 }
 
-// isLockByCodeLen returns 1 if poolCode hex length > 6600 (mirrors TS isLock).
-func isLockByCodeLen(poolNftCodeHex string) int {
-	if len(poolNftCodeHex) > poolNFT2UnlockedMaxCodeBytes*2 {
+// cachedPoolLockFlag mirrors JS getCachedPoolLockFlag. Pool scripts grew past
+// the old 6600-hex-character heuristic in 1.6.6, so lock state now comes from
+// the Pool tape metadata populated by InitFromContractID.
+func (p *PoolNFT2) cachedPoolLockFlag() int {
+	if p.WithLock {
 		return 1
 	}
 	return 0
+}
+
+func poolLockFlagFromTx(tx *bt.Tx, poolCodeVout int, fallback int) int {
+	if tx == nil || poolCodeVout < 0 || poolCodeVout+1 >= len(tx.Outputs) {
+		return fallback
+	}
+	return poolTapeLockFlag(tx.Outputs[poolCodeVout+1].LockingScript, fallback)
+}
+
+func (p *PoolNFT2) fetchPoolLockFlag(poolUtxoTxid string) (int, error) {
+	txid := strings.TrimSpace(poolUtxoTxid)
+	poolCodeVout := 0
+	if txid == "" {
+		poolnft, err := api.FetchPoolNFTUTXO(p.ContractTxID, p.Network)
+		if err != nil {
+			return 0, fmt.Errorf("fetchPoolLockFlag fetch current pool UTXO: %w", err)
+		}
+		txid = hex.EncodeToString(poolnft.TxID)
+		poolCodeVout = int(poolnft.Vout)
+	}
+	tx, err := api.FetchTXRaw(txid, p.Network)
+	if err != nil {
+		return 0, fmt.Errorf("fetchPoolLockFlag fetch transaction: %w", err)
+	}
+	flag := poolLockFlagFromTx(tx, poolCodeVout, p.cachedPoolLockFlag())
+	p.WithLock = flag == 1
+	return flag, nil
 }
 
 // utxoHexFromTxIDVout encodes txid (reversed) + vout as 36-byte LE hex.
@@ -834,13 +935,6 @@ func (p *PoolNFT2) getPoolNftCode(txid string, vout uint32, lpPlan, ftVersion in
 	)
 	if err != nil {
 		return nil, err
-	}
-	if len(script.Bytes()) > poolNFT2UnlockedMaxCodeBytes {
-		return nil, fmt.Errorf(
-			"unlocked Pool NFT code is %d bytes; tag makes it cross the %d-byte lock discriminator",
-			len(script.Bytes()),
-			poolNFT2UnlockedMaxCodeBytes,
-		)
 	}
 	return script, nil
 }
@@ -1046,6 +1140,50 @@ func toLegacyFtlpCodePre(source string) (string, error) {
 	)
 }
 
+func buildFtlpCodeLast(preLength int, hashField string, isCoin bool, ftVersion int) ([]byte, error) {
+	targetLength := util.FTV1CodeLength
+	if ftVersion == 4 {
+		targetLength = util.FTV4CodeLength
+	} else if isCoin {
+		targetLength = util.LegacyCoinCodeLength
+	} else if ftVersion == 2 || ftVersion == 3 {
+		targetLength = util.FTV2CodeLength
+	} else if ftVersion != 1 {
+		return nil, fmt.Errorf("unsupported FTLP version %d", ftVersion)
+	}
+	usePushData2 := isCoin || ftVersion > 1
+	overhead := 32
+	if usePushData2 {
+		overhead = 33
+	}
+	paddingSize := targetLength - preLength - overhead
+	if paddingSize < 0 {
+		return nil, fmt.Errorf("invalid FTLP code length: target %d, pre %d", targetLength, preLength)
+	}
+	var push []byte
+	if usePushData2 {
+		if paddingSize > 0xffff {
+			return nil, fmt.Errorf("FTLP padding exceeds uint16")
+		}
+		push = []byte{bscript.OpPUSHDATA2, byte(paddingSize), byte(paddingSize >> 8)}
+	} else {
+		if paddingSize > 0xff {
+			return nil, fmt.Errorf("FTLP v1 padding exceeds uint8")
+		}
+		push = []byte{bscript.OpPUSHDATA1, byte(paddingSize)}
+	}
+	hashBytes, err := hex.DecodeString(hashField)
+	if err != nil || len(hashBytes) != 21 {
+		return nil, fmt.Errorf("invalid FTLP holder hash")
+	}
+	last := append(push, bytes.Repeat([]byte{0xff}, paddingSize)...)
+	last = append(last, bscript.OpDROP, bscript.OpRETURN, 21)
+	last = append(last, hashBytes...)
+	last = append(last, 5)
+	last = append(last, []byte{0x02, 'C', 'o', 'd', 'e'}...)
+	return last, nil
+}
+
 func (p *PoolNFT2) getFtlpCode(poolNftCodeHash, address string, tapeSize int, isCoin bool, ftVersion int) (*bscript.Script, error) {
 	pkh, err := pubKeyHashFromAddress(address)
 	if err != nil {
@@ -1058,11 +1196,15 @@ func (p *PoolNFT2) getFtlpCode(poolNftCodeHash, address string, tapeSize int, is
 	// placeholders. The previous inline asm was missing 10 of the 16 cases,
 	// leaving FT-LP code that did not authenticate the same set of input
 	// slots the on-chain verifier expects.
+	template := poolNFT2FtlpV3CodeTemplate
+	if ftVersion == 4 {
+		template = poolNFT2FtlpCodeTemplate
+	}
 	pre := strings.NewReplacer(
 		"${codeHash}", poolNftCodeHash,
 		"${tapeSizeHex}", tapeSizeHex,
-	).Replace(poolNFT2FtlpCodeTemplate)
-	if ftVersion != 3 {
+	).Replace(template)
+	if ftVersion != 3 && ftVersion != 4 {
 		pre, err = toLegacyFtlpCodePre(pre)
 		if err != nil {
 			return nil, fmt.Errorf("getFtlpCode legacy template: %w", err)
@@ -1086,37 +1228,7 @@ func (p *PoolNFT2) getFtlpCode(poolNftCodeHash, address string, tapeSize int, is
 	// PUSHDATA2 length bytes (the chunk has nil Buf). The resulting FT-LP
 	// transfer code is 2 bytes shorter than expected and the pool contract's
 	// outputs-data verification fails with OP_EQUALVERIFY at broadcast.
-	var paddingHex string
-	var pushOpcode string
-	if isCoin {
-		if ftVersion == 3 {
-			// 528 bytes = 0x0210.
-			paddingHex = strings.Repeat("ff", 528)
-			pushOpcode = "4d1002"
-		} else {
-			// 577 bytes = 0x0241.
-			paddingHex = strings.Repeat("ff", 577)
-			pushOpcode = "4d4102"
-		}
-	} else if ftVersion == 3 {
-		// 400 bytes = 0x0190.
-		paddingHex = strings.Repeat("ff", 400)
-		pushOpcode = "4d9001"
-	} else if ftVersion == 2 {
-		// 449 bytes of 0xff → PUSHDATA2 length 449 = 0x01c1 LE → bytes c1 01
-		paddingHex = strings.Repeat("ff", 449)
-		pushOpcode = "4dc101"
-	} else {
-		// 130 bytes of 0xff → PUSHDATA1 0x82 (PUSHDATA1 length is a single byte)
-		paddingHex = strings.Repeat("ff", 130)
-		pushOpcode = "4c82"
-	}
-
-	// Build last part as raw hex:
-	// pushOpcode + padding + 75(OP_DROP) 6a(OP_RETURN) 15 hash 05 02436f6465
-	hashBytes := hashField
-	lastHex := pushOpcode + paddingHex + "756a15" + hashBytes + "05" + "02436f6465"
-	lastBytes, err := hex.DecodeString(lastHex)
+	lastBytes, err := buildFtlpCodeLast(preScript.Len(), hashField, isCoin, ftVersion)
 	if err != nil {
 		return nil, fmt.Errorf("getFtlpCode last hex decode: %w", err)
 	}
@@ -1141,12 +1253,16 @@ func (p *PoolNFT2) getFtlpCodeWithLockTime(poolNftCodeHash, address string, tape
 	// Full TS template (poolNFT2.0.ts:4801). 16 ${tapeSizeHex} + 3 ${hash}
 	// + 1 ${codeHash} placeholders. The previous inline asm was missing 10
 	// of the 16 tape-size cases plus all 3 ${hash} substitutions.
+	template := poolNFT2FtlpV3LockTimeCodeTemplate
+	if ftVersion == 4 {
+		template = poolNFT2FtlpLockTimeCodeTemplate
+	}
 	pre := strings.NewReplacer(
 		"${codeHash}", poolNftCodeHash,
 		"${hash}", hashField,
 		"${tapeSizeHex}", tapeSizeHex,
-	).Replace(poolNFT2FtlpLockTimeCodeTemplate)
-	if ftVersion != 3 {
+	).Replace(template)
+	if ftVersion != 3 && ftVersion != 4 {
 		pre, err = toLegacyFtlpCodePre(pre)
 		if err != nil {
 			return nil, fmt.Errorf("getFtlpCodeWithLockTime legacy template: %w", err)
@@ -1160,35 +1276,7 @@ func (p *PoolNFT2) getFtlpCodeWithLockTime(poolNftCodeHash, address string, tape
 	// Padding sizes differ from getFtlpCode (with lock time variant). The
 	// same LE uint16 PUSHDATA2 byte order applies — see getFtlpCode for the
 	// detailed explanation.
-	var paddingHex string
-	var pushOpcode string
-	if isCoin {
-		if ftVersion == 3 {
-			// 504 bytes = 0x01f8.
-			paddingHex = strings.Repeat("ff", 504)
-			pushOpcode = "4df801"
-		} else {
-			// 553 bytes = 0x0229.
-			paddingHex = strings.Repeat("ff", 553)
-			pushOpcode = "4d2902"
-		}
-	} else if ftVersion == 3 {
-		// 376 bytes = 0x0178.
-		paddingHex = strings.Repeat("ff", 376)
-		pushOpcode = "4d7801"
-	} else if ftVersion == 2 {
-		// 425 bytes of 0xff → PUSHDATA2 length 425 = 0x01a9 LE → bytes a9 01
-		paddingHex = strings.Repeat("ff", 425)
-		pushOpcode = "4da901"
-	} else {
-		// 106 bytes of 0xff → PUSHDATA1 0x6a (PUSHDATA1 length is a single byte)
-		paddingHex = strings.Repeat("ff", 106)
-		pushOpcode = "4c6a"
-	}
-
-	hashBytes := hashField
-	lastHex := pushOpcode + paddingHex + "756a15" + hashBytes + "05" + "02436f6465"
-	lastBytes, err := hex.DecodeString(lastHex)
+	lastBytes, err := buildFtlpCodeLast(preScript.Len(), hashField, isCoin, ftVersion)
 	if err != nil {
 		return nil, fmt.Errorf("getFtlpCodeWithLockTime last hex decode: %w", err)
 	}
@@ -1214,8 +1302,19 @@ func (p *PoolNFT2) getFtlpCodeWithLockTime(poolNftCodeHash, address string, tape
 // unsafe: those fields are caches and can drift from the on-chain truth,
 // producing a tape with a different sha256 than the one the pool's
 // unlock script expects in OP_PARTIAL_HASH.
-func (p *PoolNFT2) updatePoolNftTape() (*bscript.Script, error) {
-	tx, err := api.FetchTXRaw(p.ContractTxID, p.Network)
+func (p *PoolNFT2) updatePoolNftTape(poolUtxoTxid ...string) (*bscript.Script, error) {
+	txid := ""
+	if len(poolUtxoTxid) > 0 {
+		txid = strings.TrimSpace(poolUtxoTxid[0])
+	}
+	if txid == "" {
+		poolnft, err := api.FetchPoolNFTUTXO(p.ContractTxID, p.Network)
+		if err != nil {
+			return nil, fmt.Errorf("updatePoolNftTape fetch current pool UTXO: %w", err)
+		}
+		txid = hex.EncodeToString(poolnft.TxID)
+	}
+	tx, err := api.FetchTXRaw(txid, p.Network)
 	if err != nil {
 		return nil, fmt.Errorf("updatePoolNftTape fetchTX: %w", err)
 	}
@@ -1499,9 +1598,12 @@ func (p *PoolNFT2) CreatePoolNFT(
 	lpPlan int,
 	withLockTime bool,
 ) ([]string, error) {
-	if lpPlan < 1 || lpPlan > 5 {
-		lpPlan = 1
+	poolFees, err := resolvePoolFeeConfig(serviceFeeRate, lpPlan)
+	if err != nil {
+		return nil, fmt.Errorf("CreatePoolNFT: %w", err)
 	}
+	lpPlan = poolFees.LpPlan
+	serviceFeeRate = poolFees.ServiceFeeRate
 
 	// --- txSource: P2PKH with flag ---
 	addr, err := bscript.NewAddressFromPublicKeyHash(crypto.Hash160(privKey.PubKey().SerialiseCompressed()), true)
@@ -1591,14 +1693,17 @@ func (p *PoolNFT2) CreatePoolNFT(
 	if err != nil {
 		return nil, err
 	}
-	offset := ftV2PartialOffset
-	if isCoin {
-		offset = coinPartialOffset
-	} else if ftVersion == 1 {
-		offset = ftV1PartialOffset
+	ftlpOffset, err := util.FTPartialOffset(ftlpCodeScript)
+	if err != nil {
+		return nil, fmt.Errorf("CreatePoolNFT FTLP partial offset: %w", err)
 	}
-	p.FtLpPartialHash = calculatePartialHash(ftlpCodeBytes[:offset])
-	p.FtAPartialHash = calculatePartialHash(ftaCodeBytes[:offset])
+	ftaCodeScript := bscript.NewFromBytes(ftaCodeBytes)
+	ftaOffset, err := util.FTPartialOffset(ftaCodeScript)
+	if err != nil {
+		return nil, fmt.Errorf("CreatePoolNFT FT-A partial offset: %w", err)
+	}
+	p.FtLpPartialHash = calculatePartialHash(ftlpCodeBytes[:ftlpOffset])
+	p.FtAPartialHash = calculatePartialHash(ftaCodeBytes[:ftaOffset])
 
 	if serviceFeeRate > 0 {
 		p.ServiceFeeRate = serviceFeeRate
@@ -1679,9 +1784,12 @@ func (p *PoolNFT2) CreatePoolNFTWithLock(
 	lpPlan int,
 	withLockTime bool,
 ) ([]string, error) {
-	if lpPlan < 1 || lpPlan > 5 {
-		lpPlan = 1
+	poolFees, err := resolvePoolFeeConfig(serviceFeeRate, lpPlan)
+	if err != nil {
+		return nil, fmt.Errorf("CreatePoolNFTWithLock: %w", err)
 	}
+	lpPlan = poolFees.LpPlan
+	serviceFeeRate = poolFees.ServiceFeeRate
 
 	// --- txSource: P2PKH with "for poolnft mint" flag ---
 	addr, err := bscript.NewAddressFromPublicKeyHash(crypto.Hash160(privKey.PubKey().SerialiseCompressed()), true)
@@ -1768,14 +1876,17 @@ func (p *PoolNFT2) CreatePoolNFTWithLock(
 	if err != nil {
 		return nil, err
 	}
-	offset := ftV2PartialOffset
-	if isCoin {
-		offset = coinPartialOffset
-	} else if ftVersion == 1 {
-		offset = ftV1PartialOffset
+	ftlpOffset, err := util.FTPartialOffset(ftlpCodeScript)
+	if err != nil {
+		return nil, fmt.Errorf("CreatePoolNFTWithLock FTLP partial offset: %w", err)
 	}
-	p.FtLpPartialHash = calculatePartialHash(ftlpCodeBytes[:offset])
-	p.FtAPartialHash = calculatePartialHash(ftaCodeBytes[:offset])
+	ftaCodeScript := bscript.NewFromBytes(ftaCodeBytes)
+	ftaOffset, err := util.FTPartialOffset(ftaCodeScript)
+	if err != nil {
+		return nil, fmt.Errorf("CreatePoolNFTWithLock FT-A partial offset: %w", err)
+	}
+	p.FtLpPartialHash = calculatePartialHash(ftlpCodeBytes[:ftlpOffset])
+	p.FtAPartialHash = calculatePartialHash(ftaCodeBytes[:ftaOffset])
 
 	if serviceFeeRate > 0 {
 		p.ServiceFeeRate = serviceFeeRate
@@ -1884,6 +1995,24 @@ func (p *PoolNFT2) InitPoolNFT(
 	}
 	tapeLen := len(ftaInfo.TapeScript) / 2
 
+	// The current pool UTXO may live in a later state transaction. Its adjacent
+	// tape is the source of truth for the lock flag in JS 1.6.6.
+	poolnft, err := api.FetchPoolNFTUTXO(p.ContractTxID, p.Network)
+	if err != nil {
+		return "", fmt.Errorf("InitPoolNFT FetchPoolNFTUTXO: %w", err)
+	}
+	poolUtxoTxid := hex.EncodeToString(poolnft.TxID)
+	poolPreTX, err := api.FetchTXRaw(poolUtxoTxid, p.Network)
+	if err != nil {
+		return "", fmt.Errorf("InitPoolNFT fetch current pool transaction: %w", err)
+	}
+	tapeVout := int(poolnft.Vout) + 1
+	if tapeVout >= len(poolPreTX.Outputs) {
+		return "", fmt.Errorf("InitPoolNFT: current pool transaction missing tape output")
+	}
+	lockStatus := poolTapeLockFlag(poolPreTX.Outputs[tapeVout].LockingScript, p.cachedPoolLockFlag())
+	p.WithLock = lockStatus == 1
+
 	// parse amounts
 	tbcAmountBN, err := util.ParseDecimalToBigInt(tbcAmount, 6)
 	if err != nil {
@@ -1897,15 +2026,32 @@ func (p *PoolNFT2) InitPoolNFT(
 		return "", fmt.Errorf("InitPoolNFT: Invalid amount Input")
 	}
 
+	totalTbcAmountBN := new(big.Int).Set(tbcAmountBN)
+	var lpCostAmount uint64
+	if lockStatus == 1 {
+		lpCostAmount, err = util.GetLpCostAmount(p.PoolNftCode)
+		if err != nil {
+			return "", fmt.Errorf("InitPoolNFT get LP cost: %w", err)
+		}
+		tbcAmountBN.Sub(tbcAmountBN, new(big.Int).SetUint64(lpCostAmount))
+		if tbcAmountBN.Sign() <= 0 {
+			return "", fmt.Errorf("InitPoolNFT: TBC amount input must be greater than LP cost of %.6f", float64(lpCostAmount)/1_000_000)
+		}
+	}
+
 	p.TbcAmount = new(big.Int).Set(tbcAmountBN)
 	p.FtLpAmount = new(big.Int).Set(tbcAmountBN)
 	p.FtAAmount = new(big.Int).Set(ftAAmountBN)
 
-	tbcAmountSats, err := bigIntToSats(tbcAmountBN, "InitPoolNFT tbcAmount")
+	tbcAmountSats, err := bigIntToSats(tbcAmountBN, "InitPoolNFT pool tbcAmount")
 	if err != nil {
 		return "", err
 	}
-	if utxo.Satoshis < tbcAmountSats {
+	totalTbcAmountSats, err := bigIntToSats(totalTbcAmountBN, "InitPoolNFT total tbcAmount")
+	if err != nil {
+		return "", err
+	}
+	if utxo.Satoshis < totalTbcAmountSats {
 		return "", fmt.Errorf("InitPoolNFT: Insufficient TBC amount, please merge UTXOs")
 	}
 
@@ -1945,15 +2091,9 @@ func (p *PoolNFT2) InitPoolNFT(
 	amountHex, changeHex := BuildTapeAmountWithFtInputIndex(ftAAmountBN, tapeAmountSetIn, 1)
 
 	// pool tape (updated with current state)
-	poolnftTapeScript, err := p.updatePoolNftTape()
+	poolnftTapeScript, err := p.updatePoolNftTape(poolUtxoTxid)
 	if err != nil {
 		return "", err
-	}
-
-	// Pool NFT UTXO
-	poolnft, err := api.FetchPoolNFTUTXO(p.ContractTxID, p.Network)
-	if err != nil {
-		return "", fmt.Errorf("InitPoolNFT FetchPoolNFTUTXO: %w", err)
 	}
 
 	tx := newFTTx()
@@ -2014,6 +2154,16 @@ func (p *PoolNFT2) InitPoolNFT(
 	tx.AddOutput(&bt.Output{Satoshis: 500, LockingScript: ftlpCodeScript})
 	tx.AddOutput(&bt.Output{Satoshis: 0, LockingScript: ftlpTapeScript})
 
+	if lockStatus == 1 {
+		lpCostAddress, err := util.GetLpCostAddress(p.PoolNftCode)
+		if err != nil {
+			return "", fmt.Errorf("InitPoolNFT get LP cost address: %w", err)
+		}
+		if err := tx.PayToAddress(lpCostAddress, lpCostAmount); err != nil {
+			return "", fmt.Errorf("InitPoolNFT pay LP cost: %w", err)
+		}
+	}
+
 	// FT-A change (if needed)
 	if ftAAmountBN.Cmp(fttxoA.FtBalance) < 0 {
 		changeCode, err2 := BuildFTtransferCode(ftaInfo.CodeScript, addr.AddressString)
@@ -2040,7 +2190,7 @@ func (p *PoolNFT2) InitPoolNFT(
 	ft := &FT{CodeScript: ftaInfo.CodeScript, TapeScript: ftaInfo.TapeScript}
 
 	signAll := func() error {
-		poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), 0, 1, 0)
+		poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), lockStatus, 1, 0)
 		if err != nil {
 			return fmt.Errorf("InitPoolNFT pool unlock: %w", err)
 		}
@@ -2264,7 +2414,11 @@ func (p *PoolNFT2) IncreaseLP(
 	amountTBC string,
 	lockTime uint32,
 ) (string, error) {
-	lockStatus := p.WithLock || isLockByCodeLen(p.PoolNftCode) == 1
+	lockFlag, err := p.fetchPoolLockFlag("")
+	if err != nil {
+		return "", fmt.Errorf("IncreaseLP: %w", err)
+	}
+	lockStatus := lockFlag == 1
 
 	var lpCostAmount uint64
 	if lockStatus {
@@ -2802,7 +2956,10 @@ func (p *PoolNFT2) ConsumeLP(
 	// First pass — provisional change so unlock sighashes commit to non-zero.
 	adjustFeeAndChange(tx, 80)
 
-	withLockInt := isLockByCodeLen(p.PoolNftCode)
+	withLockInt, err := p.fetchPoolLockFlag(hex.EncodeToString(poolnft.TxID))
+	if err != nil {
+		return nil, fmt.Errorf("ConsumeLP fetch pool lock flag: %w", err)
+	}
 
 	// TS poolNFT2.0.ts:1265-1266 sets sequence=0xFFFFFFFE on the LP input
 	// (input 1) for with_lock_time pools so tx.LockTime is honored.
@@ -2871,9 +3028,9 @@ func (p *PoolNFT2) SwapToToken(
 	}
 
 	// TS precedence: instance value wins over caller param.
-	if p.LpPlan >= 1 && p.LpPlan <= 5 {
+	if _, ok := poolNFT2PlanFeeRates[p.LpPlan]; ok {
 		lpPlan = p.LpPlan
-	} else if lpPlan < 1 || lpPlan > 5 {
+	} else if _, ok := poolNFT2PlanFeeRates[lpPlan]; !ok {
 		lpPlan = 1
 	}
 
@@ -2886,10 +3043,7 @@ func (p *PoolNFT2) SwapToToken(
 	serviceFee := new(big.Int).Mul(amountTBCBN, big.NewInt(int64(p.ServiceFeeRate)))
 	serviceFee.Div(serviceFee, big.NewInt(10000))
 
-	lpRate := int64(p.ServiceFeeRate - 10)
-	if lpPlan != 1 {
-		lpRate = 5
-	}
+	lpRate := int64(getLpServiceFeeRate(lpPlan, p.ServiceFeeRate))
 	serviceFeeLP := new(big.Int).Mul(amountTBCBN, big.NewInt(lpRate))
 	serviceFeeLP.Div(serviceFeeLP, big.NewInt(10000))
 	serviceFeeA := new(big.Int).Sub(serviceFee, serviceFeeLP)
@@ -3052,7 +3206,7 @@ func (p *PoolNFT2) SwapToToken(
 	// First pass — provisional change so unlock sighashes commit to non-zero.
 	adjustFeeAndChange(tx, 80)
 
-	withLockInt := isLockByCodeLen(p.PoolNftCode)
+	withLockInt := poolLockFlagFromTx(contractTX, int(poolnft.Vout), p.cachedPoolLockFlag())
 	if isCoin {
 		for i := range fttxosC {
 			tx.Inputs[i+2].SequenceNumber = 4294967294
@@ -3164,9 +3318,9 @@ func (p *PoolNFT2) swapToTBC(
 	_ = ftVersion
 
 	// TS precedence: instance value wins over caller param.
-	if p.LpPlan >= 1 && p.LpPlan <= 5 {
+	if _, ok := poolNFT2PlanFeeRates[p.LpPlan]; ok {
 		lpPlan = p.LpPlan
-	} else if lpPlan < 1 || lpPlan > 5 {
+	} else if _, ok := poolNFT2PlanFeeRates[lpPlan]; !ok {
 		lpPlan = 1
 	}
 
@@ -3206,10 +3360,7 @@ func (p *PoolNFT2) swapToTBC(
 	// Service fee
 	serviceFee := new(big.Int).Mul(tbcDecrement, big.NewInt(int64(p.ServiceFeeRate)))
 	serviceFee.Div(serviceFee, big.NewInt(10000))
-	lpRate := int64(p.ServiceFeeRate - 10)
-	if lpPlan != 1 {
-		lpRate = 5
-	}
+	lpRate := int64(getLpServiceFeeRate(lpPlan, p.ServiceFeeRate))
 	serviceFeeLP := new(big.Int).Mul(tbcDecrement, big.NewInt(lpRate))
 	serviceFeeLP.Div(serviceFeeLP, big.NewInt(10000))
 	serviceFeeA := new(big.Int).Sub(serviceFee, serviceFeeLP)
@@ -3332,7 +3483,10 @@ func (p *PoolNFT2) swapToTBC(
 	// First pass — provisional change so unlock sighashes commit to non-zero.
 	adjustFeeAndChange(tx, 80)
 
-	withLockInt := isLockByCodeLen(p.PoolNftCode)
+	withLockInt, err := p.fetchPoolLockFlag(hex.EncodeToString(poolnft.TxID))
+	if err != nil {
+		return "", fmt.Errorf("SwapToTBC fetch pool lock flag: %w", err)
+	}
 	if isCoin {
 		tx.Inputs[1].SequenceNumber = 4294967294
 	}
@@ -4168,7 +4322,7 @@ func (p *PoolNFT2) mergeFTinPoolSingle(
 		return "", nil, fmt.Errorf("mergeFTinPoolSingle: P2PKH change dropped (post-fee=%d, pre=%d) — fee input too small for non-dust change; supply a larger feeUTXO", len(tx.Outputs), preAdjustCount)
 	}
 
-	withLockInt := isLockByCodeLen(p.PoolNftCode)
+	withLockInt := poolLockFlagFromTx(poolnftPreTX, 0, p.cachedPoolLockFlag())
 	if isCoin {
 		for i := range ftutxos {
 			tx.Inputs[i+1].SequenceNumber = 4294967294

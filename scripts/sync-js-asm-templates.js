@@ -78,6 +78,30 @@ const poolSource = fs.readFileSync(
   "utf8",
 );
 writeTemplate(
+  "lib/contract/asm/poolnft2_code.asm",
+  extractTemplate(
+    poolSource,
+    "    getPoolNftCode(txid, vout, lpPlan, ftVersion, tag, isCoin) {",
+    "const poolNftCode =",
+  ),
+);
+writeTemplate(
+  "lib/contract/asm/poolnft2_lock_code_pre.asm",
+  extractTemplate(
+    poolSource,
+    "    getPoolNftCodeWithLock(txid, vout, lpPlan, lpCostAddress, lpCostTBC, pubKeyLock, ftVersion, tag, isCoin) {",
+    "const poolNftCodePre =",
+  ),
+);
+writeTemplate(
+  "lib/contract/asm/poolnft2_lock_code_last.asm",
+  extractTemplate(
+    poolSource,
+    "    getPoolNftCodeWithLock(txid, vout, lpPlan, lpCostAddress, lpCostTBC, pubKeyLock, ftVersion, tag, isCoin) {",
+    "const poolNftCodeLast =",
+  ),
+);
+writeTemplate(
   "lib/contract/asm/poolnft2_ftlp_code.asm",
   extractTemplate(
     poolSource,
@@ -86,11 +110,27 @@ writeTemplate(
   ),
 );
 writeTemplate(
+  "lib/contract/asm/poolnft2_ftlp_v3_code.asm",
+  extractTemplate(
+    poolSource,
+    "    getFtlpCode(poolNftCodeHash, address, tapeSize, isCoin, ftVersion) {",
+    "const ftlpV3CodePreTemplate =",
+  ),
+);
+writeTemplate(
   "lib/contract/asm/poolnft2_ftlp_locktime_code.asm",
   extractTemplate(
     poolSource,
     "    getFtlpCodeWithLockTime(poolNftCodeHash, address, tapeSize, isCoin, ftVersion) {",
     "const ftlpCodePreTemplate =",
+  ),
+);
+writeTemplate(
+  "lib/contract/asm/poolnft2_ftlp_v3_locktime_code.asm",
+  extractTemplate(
+    poolSource,
+    "    getFtlpCodeWithLockTime(poolNftCodeHash, address, tapeSize, isCoin, ftVersion) {",
+    "const ftlpV3CodePreTemplate =",
   ),
 );
 

@@ -480,8 +480,8 @@ func validateMultiSigFTPair(
 	if err != nil {
 		return err
 	}
-	if info.Version != contractutil.FTVersion3 || info.IsCoin {
-		return fmt.Errorf("multisig FT pair %d is not ordinary FT v3", codeVout)
+	if info.Version != contractutil.FTVersion4 || info.IsCoin {
+		return fmt.Errorf("multisig FT pair %d is not ordinary FT v4", codeVout)
 	}
 	balance, err := contractutil.GetFtBalanceFromTape(tape.LockingScript.ToHex())
 	if err != nil {

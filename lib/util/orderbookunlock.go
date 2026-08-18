@@ -19,10 +19,12 @@ import (
 const (
 	obFTCodeLength      = 1884
 	obCoinCodeLength    = 2012
+	obFTV4CodeLength    = 2076
 	obBuyCodeLength     = 960 + 114 // 1074
 	obSellCodeLength    = 832 + 114 // 946
 	obFTPartialOffset   = 1856
 	obCoinPartialOffset = 1984
+	obFTV4PartialOffset = 2048
 	obBuyPartialOffset  = 960
 	obSellPartialOffset = 832
 )
@@ -206,6 +208,8 @@ func getCurrentTxOutputsDataOBFixed(tx *bt.Tx, fixedOutputCount int) (string, er
 			partialOffset = obFTPartialOffset
 		} else if scriptLen == obCoinCodeLength {
 			partialOffset = obCoinPartialOffset
+		} else if scriptLen == obFTV4CodeLength {
+			partialOffset = obFTV4PartialOffset
 		} else if scriptLen == obBuyCodeLength {
 			partialOffset = obBuyPartialOffset
 		} else if scriptLen == obSellCodeLength {
@@ -247,7 +251,7 @@ func getCurrentTxOutputsDataOBFixed(tx *bt.Tx, fixedOutputCount int) (string, er
 		buf = append(buf, sizeBytes...)
 
 		// FT / Coin code outputs are always followed by their tape as a pair.
-		if scriptLen == obFTCodeLength || scriptLen == obCoinCodeLength {
+		if scriptLen == obFTCodeLength || scriptLen == obCoinCodeLength || scriptLen == obFTV4CodeLength {
 			if i+1 < len(tx.Outputs) {
 				nextOut := tx.Outputs[i+1]
 				nextScript := nextOut.LockingScript.Bytes()
