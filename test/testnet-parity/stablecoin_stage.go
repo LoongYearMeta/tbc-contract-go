@@ -307,7 +307,7 @@ func buildStableCoinLifecyclePlan(
 		address,
 		funding,
 		fundingParent,
-		"go-js-1.6.5 initial StableCoin mint",
+		"go-js-1.6.6 initial StableCoin mint",
 	)
 	if err != nil {
 		return nil, fmt.Errorf("StableCoin create prepare: %w", err)
@@ -356,7 +356,7 @@ func buildStableCoinLifecyclePlan(
 		adminFee,
 		initialMint,
 		coinNFT,
-		"go-js-1.6.5 additional StableCoin mint",
+		"go-js-1.6.6 additional StableCoin mint",
 	)
 	if err != nil {
 		return nil, fmt.Errorf("StableCoin admin mint prepare: %w", err)
@@ -668,7 +668,7 @@ func verifyStableCoinIndexedStateOnce(
 	if plan == nil || plan.StableCoin == nil || plan.Unfreeze == nil {
 		return fmt.Errorf("StableCoin indexed-state verification requires a complete plan")
 	}
-	stableCoinID := plan.CoinNFT.TxID()
+	stableCoinID := plan.StableCoin.ContractTxid
 	info, err := api.FetchCoinInfo(stableCoinID, network)
 	if err != nil {
 		return fmt.Errorf("FetchCoinInfo: %w", err)
@@ -782,7 +782,7 @@ func runStableCoinLifecycle(cfg config, decoded *wif.WIF, address string) error 
 				item.Label,
 				item.Raw,
 				cfg.Network,
-				"stablecoin-js-1.6.5-layout-supply-locktime",
+				"stablecoin-js-1.6.6-layout-supply-locktime",
 				validate,
 			)
 			return accepted, err

@@ -428,7 +428,7 @@ func validateFTLPPair(
 	return balance, nil
 }
 
-func waitForFTV3Info(contractID, network string) (*api.FtInfoResponse, error) {
+func waitForFTV4Info(contractID, network string) (*api.FtInfoResponse, error) {
 	const attempts = 15
 	var lastErr error
 	for attempt := 1; attempt <= attempts; attempt++ {
@@ -436,14 +436,14 @@ func waitForFTV3Info(contractID, network string) (*api.FtInfoResponse, error) {
 		if err == nil {
 			classified, classifyErr := contractutil.ClassifyFTScriptHex(info.CodeScript)
 			if classifyErr == nil &&
-				classified.Version == contractutil.FTVersion3 &&
+				classified.Version == contractutil.FTVersion4 &&
 				!classified.IsCoin {
 				return info, nil
 			}
 			if classifyErr != nil {
 				err = classifyErr
 			} else {
-				err = fmt.Errorf("indexed pool token is not ordinary FT v3")
+				err = fmt.Errorf("indexed pool token is not ordinary FT v4")
 			}
 		}
 		lastErr = err
@@ -671,7 +671,7 @@ func runPoolCreateStage(cfg config, decoded *wif.WIF, address string) error {
 			label,
 			item.Raw,
 			cfg.Network,
-			"ordinary-ft-v3-for-pool",
+			"ordinary-ft-v4-for-pool",
 			func(tx *bt.Tx) error {
 				if label == "pool-token-source" {
 					return validateFTLifecycleTransaction("ft-source", tx)
@@ -683,7 +683,7 @@ func runPoolCreateStage(cfg config, decoded *wif.WIF, address string) error {
 			return err
 		}
 	}
-	if _, err := waitForFTV3Info(token.ContractTxid, cfg.Network); err != nil {
+	if _, err := waitForFTV4Info(token.ContractTxid, cfg.Network); err != nil {
 		return err
 	}
 
@@ -1003,7 +1003,7 @@ func runPoolLockStage(cfg config, decoded *wif.WIF, address string) error {
 	if cfg.TokenA == "" {
 		return fmt.Errorf("TBC_TESTNET_TOKEN_A is required for pool-lock")
 	}
-	if _, err := waitForFTV3Info(cfg.TokenA, cfg.Network); err != nil {
+	if _, err := waitForFTV4Info(cfg.TokenA, cfg.Network); err != nil {
 		return err
 	}
 	funding, err := api.FetchUTXO(

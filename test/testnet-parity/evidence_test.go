@@ -230,3 +230,81 @@ func TestCollectBroadcastEvidenceExecutesScriptsBeforeBroadcast(t *testing.T) {
 		t.Fatalf("broadcast called %d times", broadcastCalls)
 	}
 }
+
+func schnorrCandidateTransaction(t *testing.T) *bt.Tx {
+	t.Helper()
+	unlockingScript := bscript.NewScript()
+	if err := unlockingScript.AppendPushData(make([]byte, 65)); err != nil {
+		t.Fatal(err)
+	}
+	if err := unlockingScript.AppendPushData(make([]byte, 32)); err != nil {
+		t.Fatal(err)
+	}
+	tx := bt.NewTx()
+	tx.Inputs = append(tx.Inputs, &bt.Input{UnlockingScript: unlockingScript})
+	return tx
+}
+
+func TestScriptPreflightFallsBackOnlyForGoSchnorrInterpreterGap(t *testing.T) {
+	tx := schnorrCandidateTransaction(t)
+	goCalls := 0
+	jsCalls := 0
+	err := validateInputScriptsWithFallback(
+		tx,
+		func(string) (*bt.Tx, error) { return nil, errors.New("unused") },
+		func(*bt.Tx, func(string) (*bt.Tx, error)) error {
+			goCalls++
+			return errors.New("input 0: malformed signature: format has wrong type: 0x4")
+		},
+		func(*bt.Tx, func(string) (*bt.Tx, error)) error {
+			jsCalls++
+			return nil
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if goCalls != 1 || jsCalls != 1 {
+		t.Fatalf("go calls=%d js calls=%d, want 1/1", goCalls, jsCalls)
+	}
+}
+
+func TestScriptPreflightDoesNotFallbackForOrdinaryScriptFailure(t *testing.T) {
+	tx := bt.NewTx()
+	tx.Inputs = append(tx.Inputs, &bt.Input{UnlockingScript: bscript.NewFromBytes([]byte{0x00})})
+	jsCalls := 0
+	err := validateInputScriptsWithFallback(
+		tx,
+		func(string) (*bt.Tx, error) { return nil, errors.New("unused") },
+		func(*bt.Tx, func(string) (*bt.Tx, error)) error {
+			return errors.New("input 0: malformed signature: format has wrong type: 0x4")
+		},
+		func(*bt.Tx, func(string) (*bt.Tx, error)) error {
+			jsCalls++
+			return nil
+		},
+	)
+	if err == nil || !strings.Contains(err.Error(), "malformed signature") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if jsCalls != 0 {
+		t.Fatalf("JS fallback called %d times", jsCalls)
+	}
+}
+
+func TestScriptPreflightRejectsWhenJSRejectsSchnorrCandidate(t *testing.T) {
+	tx := schnorrCandidateTransaction(t)
+	err := validateInputScriptsWithFallback(
+		tx,
+		func(string) (*bt.Tx, error) { return nil, errors.New("unused") },
+		func(*bt.Tx, func(string) (*bt.Tx, error)) error {
+			return errors.New("input 0: malformed signature: format has wrong type: 0x4")
+		},
+		func(*bt.Tx, func(string) (*bt.Tx, error)) error {
+			return errors.New("input 0: SCRIPT_ERR_SIG_NULLFAIL")
+		},
+	)
+	if err == nil || !strings.Contains(err.Error(), "JS Schnorr preflight") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

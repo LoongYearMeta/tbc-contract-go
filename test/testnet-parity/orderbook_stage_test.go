@@ -127,7 +127,7 @@ func TestValidateResidualSaleVolume(t *testing.T) {
 	}
 }
 
-func TestOrderBookStageUsesOrdinaryFTV3(t *testing.T) {
+func TestOrderBookStageUsesOrdinaryFTV4(t *testing.T) {
 	privateKey, address, funding := ftStageFixture(t)
 	token, err := contract.NewFT(&contract.FtParams{
 		Name: "Order Matrix", Symbol: "OMX", Amount: 1_000_000, Decimal: 2,

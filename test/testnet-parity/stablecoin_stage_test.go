@@ -128,7 +128,7 @@ func TestStableCoinTapeLockTimeRoundTrip(t *testing.T) {
 	}
 }
 
-func TestBuildStableCoinLifecyclePlanCoversJS165Surface(t *testing.T) {
+func TestBuildStableCoinLifecyclePlanCoversJS166Surface(t *testing.T) {
 	privateKey, address, _ := ftStageFixture(t)
 	parent, funding, aggregateKey := stableCoinStageFixture(t, privateKey)
 	const lockTime = uint32(1_800_000_000)

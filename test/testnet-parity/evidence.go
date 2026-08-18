@@ -7,6 +7,8 @@ import (
 	"io"
 	"math/bits"
 	"os"
+	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
@@ -15,6 +17,8 @@ import (
 )
 
 const evidenceRefetchAttempts = 10
+
+const jsScriptVerifier = "test/testnet-parity/js-script-verify.js"
 
 type txEvidence struct {
 	Stage     string `json:"stage"`
@@ -79,7 +83,12 @@ func feeFromParents(tx *bt.Tx, fetch func(string) (*bt.Tx, error)) (uint64, erro
 	return inputs - outputs, nil
 }
 
-func validateInputScriptsFromParents(
+type inputScriptValidator func(
+	*bt.Tx,
+	func(string) (*bt.Tx, error),
+) error
+
+func validateInputScriptsWithGo(
 	tx *bt.Tx,
 	fetch func(string) (*bt.Tx, error),
 ) error {
@@ -108,6 +117,122 @@ func validateInputScriptsFromParents(
 		}
 	}
 	return nil
+}
+
+func hasSchnorrUnlockCandidate(tx *bt.Tx) bool {
+	if tx == nil {
+		return false
+	}
+	for _, input := range tx.Inputs {
+		if input == nil || input.UnlockingScript == nil {
+			continue
+		}
+		hasSignature := false
+		hasXOnlyKey := false
+		for _, chunk := range input.UnlockingScript.Chunks() {
+			switch len(chunk.Buf) {
+			case 65:
+				hasSignature = true
+			case 32:
+				hasXOnlyKey = true
+			}
+		}
+		if hasSignature && hasXOnlyKey {
+			return true
+		}
+	}
+	return false
+}
+
+func isGoSchnorrInterpreterGap(tx *bt.Tx, err error) bool {
+	if err == nil || !hasSchnorrUnlockCandidate(tx) {
+		return false
+	}
+	message := err.Error()
+	return strings.Contains(message, "malformed signature") &&
+		strings.Contains(message, "format has wrong type")
+}
+
+func validateInputScriptsWithFallback(
+	tx *bt.Tx,
+	fetch func(string) (*bt.Tx, error),
+	goValidator inputScriptValidator,
+	jsValidator inputScriptValidator,
+) error {
+	if goValidator == nil || jsValidator == nil {
+		return fmt.Errorf("script preflight validators are required")
+	}
+	err := goValidator(tx, fetch)
+	if err == nil {
+		return nil
+	}
+	if !isGoSchnorrInterpreterGap(tx, err) {
+		return err
+	}
+	if jsErr := jsValidator(tx, fetch); jsErr != nil {
+		return fmt.Errorf("JS Schnorr preflight: %w", jsErr)
+	}
+	return nil
+}
+
+func validateInputScriptsWithJS(
+	tx *bt.Tx,
+	fetch func(string) (*bt.Tx, error),
+) error {
+	if tx == nil {
+		return fmt.Errorf("nil transaction")
+	}
+	parents := make([]string, len(tx.Inputs))
+	for index, input := range tx.Inputs {
+		parent, err := fetch(input.PreviousTxIDStr())
+		if err != nil {
+			return fmt.Errorf("input %d parent: %w", index, err)
+		}
+		vout := int(input.PreviousTxOutIndex)
+		if vout < 0 || vout >= len(parent.Outputs) {
+			return fmt.Errorf("input %d parent vout %d out of range", index, vout)
+		}
+		parents[index] = parent.String()
+	}
+	payload, err := json.Marshal(struct {
+		Raw     string   `json:"raw"`
+		Parents []string `json:"parents"`
+	}{Raw: tx.String(), Parents: parents})
+	if err != nil {
+		return fmt.Errorf("encode JS script preflight: %w", err)
+	}
+	command := exec.Command("node", jsScriptVerifier)
+	command.Env = os.Environ()
+	command.Stdin = bytes.NewReader(payload)
+	output, err := command.Output()
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			return fmt.Errorf("%s", strings.TrimSpace(string(exitError.Stderr)))
+		}
+		return err
+	}
+	var result struct {
+		Success bool `json:"success"`
+	}
+	if err := json.Unmarshal(output, &result); err != nil {
+		return fmt.Errorf("decode JS script preflight: %w", err)
+	}
+	if !result.Success {
+		return fmt.Errorf("JS verifier returned unsuccessful result")
+	}
+	return nil
+}
+
+func validateInputScriptsFromParents(
+	tx *bt.Tx,
+	fetch func(string) (*bt.Tx, error),
+) error {
+	return validateInputScriptsWithFallback(
+		tx,
+		fetch,
+		validateInputScriptsWithGo,
+		validateInputScriptsWithJS,
+	)
 }
 
 func fetchEvidenceTransaction(

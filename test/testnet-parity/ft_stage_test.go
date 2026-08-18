@@ -39,7 +39,7 @@ func ftStageFixture(t *testing.T) (*bec.PrivateKey, string, *bt.UTXO) {
 	}
 }
 
-func TestValidateFTV3Outputs(t *testing.T) {
+func TestValidateFTV4Outputs(t *testing.T) {
 	privateKey, address, funding := ftStageFixture(t)
 	token, err := contract.NewFT(&contract.FtParams{
 		Name: "Matrix", Symbol: "MFT", Amount: 1_000_000, Decimal: 2,
@@ -55,7 +55,7 @@ func TestValidateFTV3Outputs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	balance, err := validateFTV3Outputs(mint, 0)
+	balance, err := validateFTV4Outputs(mint, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func TestValidateFTV3Outputs(t *testing.T) {
 	}
 }
 
-func TestValidateFTV3OutputsRejectsMissingTape(t *testing.T) {
+func TestValidateFTV4OutputsRejectsMissingTape(t *testing.T) {
 	privateKey, address, funding := ftStageFixture(t)
 	token, err := contract.NewFT(&contract.FtParams{
 		Name: "Matrix", Symbol: "MFT", Amount: 1_000_000, Decimal: 2,
@@ -82,7 +82,7 @@ func TestValidateFTV3OutputsRejectsMissingTape(t *testing.T) {
 		t.Fatal(err)
 	}
 	mint.Outputs = mint.Outputs[:1]
-	if _, err := validateFTV3Outputs(mint, 0); err == nil {
+	if _, err := validateFTV4Outputs(mint, 0); err == nil {
 		t.Fatal("expected missing FT Tape rejection")
 	}
 }
@@ -122,7 +122,7 @@ func TestBuildFTLifecyclePlanCoversTransferBatchAndMerge(t *testing.T) {
 	if len(plan.Batch.Outputs) != 7 {
 		t.Fatalf("batch outputs=%d want=7", len(plan.Batch.Outputs))
 	}
-	mergedBalance, err := validateFTV3Outputs(plan.Merge, 0)
+	mergedBalance, err := validateFTV4Outputs(plan.Merge, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

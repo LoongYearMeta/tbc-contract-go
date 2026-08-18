@@ -18,8 +18,6 @@ import (
 	"github.com/LoongYearMeta/tbc-lib-go/wif"
 )
 
-const ftV3PartialOffset = 1856
-
 type plannedTransaction struct {
 	Label string
 	Raw   string
@@ -51,7 +49,7 @@ type plannedTransactionAcceptor func(
 	validate func(*bt.Tx) error,
 ) (*bt.Tx, error)
 
-func validateFTV3Outputs(tx *bt.Tx, codeVout int) (*big.Int, error) {
+func validateFTV4Outputs(tx *bt.Tx, codeVout int) (*big.Int, error) {
 	if tx == nil {
 		return nil, fmt.Errorf("nil FT transaction")
 	}
@@ -142,7 +140,7 @@ func buildFTLifecyclePlan(
 	if err != nil {
 		return nil, err
 	}
-	mintedBalance, err := validateFTV3Outputs(mint, 0)
+	mintedBalance, err := validateFTV4Outputs(mint, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -179,10 +177,10 @@ func buildFTLifecyclePlan(
 	if err != nil {
 		return nil, err
 	}
-	if _, err := validateFTV3Outputs(transfer, 0); err != nil {
+	if _, err := validateFTV4Outputs(transfer, 0); err != nil {
 		return nil, err
 	}
-	if _, err := validateFTV3Outputs(transfer, 2); err != nil {
+	if _, err := validateFTV4Outputs(transfer, 2); err != nil {
 		return nil, err
 	}
 
@@ -206,7 +204,7 @@ func buildFTLifecyclePlan(
 		additionalFee,
 		[]*bt.Tx{transfer},
 		[]string{transferPrePre},
-		[]byte("go-js-1.6.5-full-matrix"),
+		[]byte("go-js-1.6.6-full-matrix"),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("FT additional-info transfer build: %w", err)
@@ -215,10 +213,10 @@ func buildFTLifecyclePlan(
 	if err != nil {
 		return nil, err
 	}
-	if _, err := validateFTV3Outputs(additional, 0); err != nil {
+	if _, err := validateFTV4Outputs(additional, 0); err != nil {
 		return nil, err
 	}
-	if _, err := validateFTV3Outputs(additional, 2); err != nil {
+	if _, err := validateFTV4Outputs(additional, 2); err != nil {
 		return nil, err
 	}
 
@@ -260,7 +258,7 @@ func buildFTLifecyclePlan(
 		return nil, err
 	}
 	for _, codeVout := range []int{0, 2, 4} {
-		if _, err := validateFTV3Outputs(batch, codeVout); err != nil {
+		if _, err := validateFTV4Outputs(batch, codeVout); err != nil {
 			return nil, err
 		}
 	}
@@ -307,7 +305,7 @@ func buildFTLifecyclePlan(
 	if err != nil {
 		return nil, err
 	}
-	if _, err := validateFTV3Outputs(merge, 0); err != nil {
+	if _, err := validateFTV4Outputs(merge, 0); err != nil {
 		return nil, err
 	}
 
@@ -331,7 +329,7 @@ func buildFTLifecyclePlan(
 }
 
 func requireFTBalance(tx *bt.Tx, codeVout int, want int64) error {
-	balance, err := validateFTV3Outputs(tx, codeVout)
+	balance, err := validateFTV4Outputs(tx, codeVout)
 	if err != nil {
 		return err
 	}
@@ -448,7 +446,7 @@ func runFTStage(cfg config, decoded *wif.WIF, address string) error {
 				item.Label,
 				item.Raw,
 				cfg.Network,
-				"ft-v3-layout-and-amounts",
+				"ft-v4-layout-and-amounts",
 				validate,
 			)
 			return accepted, err

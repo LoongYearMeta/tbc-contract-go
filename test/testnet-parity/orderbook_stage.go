@@ -257,7 +257,7 @@ func validateFTAtAddress(
 	if err := validateOrderBookFTCode(template); err != nil {
 		return err
 	}
-	balance, err := validateFTV3Outputs(tx, codeVout)
+	balance, err := validateFTV4Outputs(tx, codeVout)
 	if err != nil {
 		return err
 	}
@@ -779,7 +779,7 @@ func runOrderBookStage(
 		"orderbook-ft-source",
 		mintRaws[0],
 		cfg.Network,
-		"ordinary-ft-v3-source",
+		"ordinary-ft-v4-source",
 		func(tx *bt.Tx) error {
 			return validateFTLifecycleTransaction("ft-source", tx)
 		},
@@ -790,7 +790,7 @@ func runOrderBookStage(
 		"orderbook-ft-mint",
 		mintRaws[1],
 		cfg.Network,
-		"ordinary-ft-v3-mint",
+		"ordinary-ft-v4-mint",
 		func(tx *bt.Tx) error {
 			if err := requireFTBalance(tx, 0, 100_000_000); err != nil {
 				return err
@@ -800,7 +800,7 @@ func runOrderBookStage(
 	); err != nil {
 		return err
 	}
-	if _, err := waitForFTV3Info(token.ContractTxid, cfg.Network); err != nil {
+	if _, err := waitForFTV4Info(token.ContractTxid, cfg.Network); err != nil {
 		return err
 	}
 

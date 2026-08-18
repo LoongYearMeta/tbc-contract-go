@@ -399,12 +399,12 @@ func runFTAndHTLC(cfg config, decoded *wif.WIF, address string) error {
 	selfRaw, err := token.TransferWithAdditionalInfo(
 		decoded.PrivKey, address, big.NewInt(10_000_000),
 		[]*contractutil.FtUTXO{ftUTXO}, feeUTXO,
-		[]*bt.Tx{ftPreTX}, []string{ftPrePre}, []byte("go-js-1.6.5-parity"),
+		[]*bt.Tx{ftPreTX}, []string{ftPrePre}, []byte("go-js-1.6.6-parity"),
 	)
 	if err != nil {
-		return fmt.Errorf("FT v3 self-transfer build: %w", err)
+		return fmt.Errorf("FT v4 self-transfer build: %w", err)
 	}
-	selfTX, _, err := broadcastOne("ft-v3-self-transfer", selfRaw, cfg.Network)
+	selfTX, _, err := broadcastOne("ft-v4-self-transfer", selfRaw, cfg.Network)
 	if err != nil {
 		return err
 	}
@@ -525,7 +525,7 @@ func runFTAndHTLC(cfg config, decoded *wif.WIF, address string) error {
 	if _, _, err := broadcastOne("token-htlc-refund", refundRaw, cfg.Network); err != nil {
 		return err
 	}
-	fmt.Println("ft-v3 and token-htlc scenarios pass")
+	fmt.Println("ft-v4 and token-htlc scenarios pass")
 	return nil
 }
 
@@ -552,7 +552,7 @@ func mintAndBroadcast(
 		return nil, nil, fmt.Errorf("%s mint has %d outputs, want FT code and tape", label, len(mintTX.Outputs))
 	}
 	if got := mintTX.Outputs[0].LockingScript.Len(); got != 1884 {
-		return nil, nil, fmt.Errorf("%s mint code length %d, want released FT v3 length 1884", label, got)
+		return nil, nil, fmt.Errorf("%s mint code length %d, want released FT v4 length 1884", label, got)
 	}
 	fmt.Printf("%s mint_code_bytes=%d\n", label, mintTX.Outputs[0].LockingScript.Len())
 	refetchedSource, _, err := broadcastOne(label+"-source", raws[0], network)
