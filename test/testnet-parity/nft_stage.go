@@ -47,6 +47,9 @@ func validateNFTOutputs(tx *bt.Tx) error {
 	if tx.Outputs[2].Satoshis != 0 || !tx.Outputs[2].LockingScript.IsSafeDataOut() {
 		return fmt.Errorf("NFT Tape is not zero-satoshi safe data")
 	}
+	if version := contract.GetNFTVersion(tx.Outputs[0].LockingScript); version != contract.NFTVersion2 {
+		return fmt.Errorf("NFT Code version=%d want=2", version)
+	}
 	return nil
 }
 
