@@ -23,6 +23,7 @@ const pkg = JSON.parse(
 if (pkg.version !== "1.6.6") {
   throw new Error(`expected tbc-contract 1.6.6, found ${pkg.version}`);
 }
+const sdk = require(jsRoot);
 
 function extractTemplate(source, marker, declaration) {
   const markerAt = source.indexOf(marker);
@@ -91,4 +92,37 @@ writeTemplate(
     "    getFtlpCodeWithLockTime(poolNftCodeHash, address, tapeSize, isCoin, ftVersion) {",
     "const ftlpCodePreTemplate =",
   ),
+);
+
+const nftFixtureTxid = "11".repeat(32);
+const nftFixtureOutpoint = `${"11".repeat(32)}00000000`;
+function nftTemplate(script) {
+  const asm = script.toASM();
+  if (!asm.includes(nftFixtureOutpoint)) {
+    throw new Error("NFT template does not contain the fixed original outpoint");
+  }
+  return asm
+    .split(" ")
+    .map((token) => {
+      if (token === nftFixtureOutpoint) {
+        return "0x24 0x${utxoHex}";
+      }
+      if (token === "0") {
+        return "OP_0";
+      }
+      if (/^[0-9a-f]+$/i.test(token) && token.length % 2 === 0) {
+        const bytes = token.length / 2;
+        return `0x${bytes.toString(16).padStart(2, "0")} 0x${token}`;
+      }
+      return token;
+    })
+    .join(" ");
+}
+writeTemplate(
+  "lib/contract/asm/nft_code.asm",
+  nftTemplate(sdk.NFT.buildCodeScript(nftFixtureTxid, 0)),
+);
+writeTemplate(
+  "lib/contract/asm/nft_code_v1.asm",
+  nftTemplate(sdk.NFT.buildCodeScript_v1(nftFixtureTxid, 0)),
 );

@@ -25,10 +25,23 @@ import (
 //go:embed asm/nft_code.asm
 var nftCodeTemplateASM string
 
+//go:embed asm/nft_code_v1.asm
+var nftCodeV1TemplateASM string
+
 //go:embed asm/nft_code_v0.asm
 var nftCodeV0TemplateASM string
 
 const nftSatPerKB = 80
+
+// NFTVersion identifies the three published NFT code generations.
+type NFTVersion int
+
+const (
+	NFTVersionUnknown NFTVersion = -1
+	NFTVersion0       NFTVersion = 0
+	NFTVersion1       NFTVersion = 1
+	NFTVersion2       NFTVersion = 2
+)
 
 // ---------------------------------------------------------------------------
 // Types
@@ -121,6 +134,17 @@ func BuildCodeScript(txHash string, outputIndex uint32) (*bscript.Script, error)
 	return parseNFTCodeASM(asm)
 }
 
+// BuildCodeScriptV1 builds the legacy NFT v1 code used by SDK releases before
+// 1.6.6. New NFT creation uses BuildCodeScript (v2).
+func BuildCodeScriptV1(txHash string, outputIndex uint32) (*bscript.Script, error) {
+	utxoHex, err := nftUtxoHex(txHash, outputIndex)
+	if err != nil {
+		return nil, err
+	}
+	asm := strings.ReplaceAll(nftCodeV1TemplateASM, "${utxoHex}", utxoHex)
+	return parseNFTCodeASM(asm)
+}
+
 // BuildCodeScriptV0 mirrors NFT.buildCodeScript_v0.
 func BuildCodeScriptV0(txHash string, outputIndex uint32) (*bscript.Script, error) {
 	utxoHex, err := nftUtxoHex(txHash, outputIndex)
@@ -129,6 +153,35 @@ func BuildCodeScriptV0(txHash string, outputIndex uint32) (*bscript.Script, erro
 	}
 	asm := strings.ReplaceAll(nftCodeV0TemplateASM, "${utxoHex}", utxoHex)
 	return parseNFTCodeASM(asm)
+}
+
+// GetNFTVersion classifies an NFT code script without guessing from a marker
+// alone: v0/v2 both end in 3Code and are distinguished by exact byte length.
+func GetNFTVersion(codeScript *bscript.Script) NFTVersion {
+	if codeScript == nil {
+		return NFTVersionUnknown
+	}
+	code := codeScript.Bytes()
+	marker := append([]byte{5}, []byte("3Code")...)
+	switch {
+	case len(code) == 140 && bytes.HasSuffix(code, marker):
+		return NFTVersion2
+	case len(code) == 125 && bytes.HasSuffix(code, []byte{bscript.OpCHECKSIG, bscript.OpRETURN}):
+		return NFTVersion1
+	case len(code) == 142 && bytes.HasSuffix(code, marker):
+		return NFTVersion0
+	default:
+		return NFTVersionUnknown
+	}
+}
+
+// GetNFTVersionHex parses and classifies serialized NFT code.
+func GetNFTVersionHex(codeHex string) NFTVersion {
+	script, err := bscript.NewFromHexString(codeHex)
+	if err != nil {
+		return NFTVersionUnknown
+	}
+	return GetNFTVersion(script)
 }
 
 // BuildMintScript mirrors NFT.buildMintScript.
@@ -607,7 +660,26 @@ func BatchCreateNFT(collectionID, address string, priv *bec.PrivateKey, datas []
 // TransferNFT mirrors NFT.transferNFT.
 // batch=true skips adding a change output (caller chains the next tx manually).
 func (n *NFT) TransferNFT(addressFrom, addressTo string, priv *bec.PrivateKey, utxos []*bt.UTXO, preTx, prePreTx *bt.Tx, batch bool) (string, error) {
-	code, err := BuildCodeScript(n.CollectionID, uint32(n.CollectionIndex))
+	return n.transferNFT(addressFrom, addressTo, priv, utxos, preTx, prePreTx, batch, NFTVersion2)
+}
+
+// TransferNFTV1 spends and recreates an NFT using the legacy v1 code.
+func (n *NFT) TransferNFTV1(addressFrom, addressTo string, priv *bec.PrivateKey, utxos []*bt.UTXO, preTx, prePreTx *bt.Tx, batch bool) (string, error) {
+	return n.transferNFT(addressFrom, addressTo, priv, utxos, preTx, prePreTx, batch, NFTVersion1)
+}
+
+func (n *NFT) transferNFT(addressFrom, addressTo string, priv *bec.PrivateKey, utxos []*bt.UTXO, preTx, prePreTx *bt.Tx, batch bool, version NFTVersion) (string, error) {
+	if preTx == nil || len(preTx.Outputs) < 2 {
+		return "", fmt.Errorf("TransferNFT: previous transaction is missing NFT outputs")
+	}
+	if got := GetNFTVersion(preTx.Outputs[0].LockingScript); got != version {
+		return "", fmt.Errorf("TransferNFT: previous NFT version %d does not match requested version %d", got, version)
+	}
+	buildCode := BuildCodeScript
+	if version == NFTVersion1 {
+		buildCode = BuildCodeScriptV1
+	}
+	code, err := buildCode(n.CollectionID, uint32(n.CollectionIndex))
 	if err != nil {
 		return "", err
 	}
@@ -668,7 +740,28 @@ func (n *NFT) TransferNFT(addressFrom, addressTo string, priv *bec.PrivateKey, u
 // tbcAmountSat is the satoshi amount to send to addressToTbc alongside the NFT.
 func (n *NFT) TransferNFTWithTBC(addressFrom, addressToNft, addressToTbc string, priv *bec.PrivateKey,
 	utxos []*bt.UTXO, preTx, prePreTx *bt.Tx, tbcAmountSat uint64) (string, error) {
-	code, err := BuildCodeScript(n.CollectionID, uint32(n.CollectionIndex))
+	return n.transferNFTWithTBC(addressFrom, addressToNft, addressToTbc, priv, utxos, preTx, prePreTx, tbcAmountSat, NFTVersion2)
+}
+
+// TransferNFTWithTBCV1 spends and recreates a legacy v1 NFT with a TBC payment.
+func (n *NFT) TransferNFTWithTBCV1(addressFrom, addressToNft, addressToTbc string, priv *bec.PrivateKey,
+	utxos []*bt.UTXO, preTx, prePreTx *bt.Tx, tbcAmountSat uint64) (string, error) {
+	return n.transferNFTWithTBC(addressFrom, addressToNft, addressToTbc, priv, utxos, preTx, prePreTx, tbcAmountSat, NFTVersion1)
+}
+
+func (n *NFT) transferNFTWithTBC(addressFrom, addressToNft, addressToTbc string, priv *bec.PrivateKey,
+	utxos []*bt.UTXO, preTx, prePreTx *bt.Tx, tbcAmountSat uint64, version NFTVersion) (string, error) {
+	if preTx == nil || len(preTx.Outputs) < 2 {
+		return "", fmt.Errorf("TransferNFTWithTBC: previous transaction is missing NFT outputs")
+	}
+	if got := GetNFTVersion(preTx.Outputs[0].LockingScript); got != version {
+		return "", fmt.Errorf("TransferNFTWithTBC: previous NFT version %d does not match requested version %d", got, version)
+	}
+	buildCode := BuildCodeScript
+	if version == NFTVersion1 {
+		buildCode = BuildCodeScriptV1
+	}
+	code, err := buildCode(n.CollectionID, uint32(n.CollectionIndex))
 	if err != nil {
 		return "", err
 	}
