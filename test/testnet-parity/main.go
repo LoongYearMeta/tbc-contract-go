@@ -86,7 +86,7 @@ func run(cfg config) error {
 	if err != nil {
 		return fmt.Errorf("decode testnet key: %w", err)
 	}
-	address, err := bscript.NewAddressFromPublicKey(decoded.PrivKey.PubKey(), false)
+	address, err := bscript.NewAddressFromPublicKey(decoded.PrivKey.PubKey(), decoded.CompressPubKey)
 	if err != nil {
 		return err
 	}
@@ -161,6 +161,12 @@ func run(cfg config) error {
 	if cfg.Stage == stageOrderBook {
 		return runOrderBookStage(cfg, decoded, address.AddressString)
 	}
+	if cfg.Stage == stageTBC20 {
+		if !decoded.CompressPubKey {
+			return fmt.Errorf("TBC20 stage requires a compressed-public-key WIF")
+		}
+		return runTBC20Stage(cfg, decoded, address.AddressString)
+	}
 	if cfg.Stage == "core-contracts" {
 		return runCoreContracts(cfg, decoded, address.AddressString)
 	}
@@ -226,7 +232,7 @@ func runPoolFoundation(cfg config, decoded *wif.WIF) error {
 	if err := pool.InitCreate(cfg.TokenA); err != nil {
 		return err
 	}
-	address, err := bscript.NewAddressFromPublicKey(decoded.PrivKey.PubKey(), false)
+	address, err := bscript.NewAddressFromPublicKey(decoded.PrivKey.PubKey(), decoded.CompressPubKey)
 	if err != nil {
 		return err
 	}

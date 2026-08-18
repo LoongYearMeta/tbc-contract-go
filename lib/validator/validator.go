@@ -626,7 +626,8 @@ func ValidateOnChainTransaction(ctxGo context.Context, options TokenValidationOp
 			asset.InputVins = append(asset.InputVins, source.evidence.Vin)
 			asset.InputRaw.Add(asset.InputRaw, source.pair.tape.balance)
 		}
-		for logical, pair := range pairs {
+		for _, logical := range logicalKeys {
+			pair := pairs[logical]
 			asset := assets[pair.code.identity]
 			if asset == nil {
 				ctx.addInvalid("OUTPUT_IDENTITY_WITHOUT_INPUT", "MATRIX", TokenValidationIssue{Identity: pair.code.identity})

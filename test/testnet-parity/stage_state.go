@@ -20,6 +20,7 @@ const (
 	stagePoolTrade  stageName = "pool-trade"
 	stagePoolLock   stageName = "pool-lock"
 	stageOrderBook  stageName = "orderbook"
+	stageTBC20      stageName = "tbc20"
 
 	stageLegacyHTLC           stageName = "htlc"
 	stageLegacyCoreContracts  stageName = "core-contracts"
@@ -56,6 +57,7 @@ func parseStage(value string) (stageName, error) {
 		stagePoolTrade,
 		stagePoolLock,
 		stageOrderBook,
+		stageTBC20,
 		stageLegacyHTLC,
 		stageLegacyCoreContracts,
 		stageLegacyPoolFoundation,

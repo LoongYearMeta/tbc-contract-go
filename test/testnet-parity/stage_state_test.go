@@ -30,6 +30,7 @@ func TestParseStageAcceptsFullMatrixStages(t *testing.T) {
 		"pool-trade",
 		"pool-lock",
 		"orderbook",
+		"tbc20",
 	} {
 		stage, err := parseStage(value)
 		if err != nil {
