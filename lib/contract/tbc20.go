@@ -12,7 +12,10 @@ import (
 	"unicode/utf8"
 
 	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
+	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
+	"github.com/LoongYearMeta/tbc-lib-go/crypto"
+	"golang.org/x/text/unicode/norm"
 )
 
 const (
@@ -174,7 +177,82 @@ func InstantiateTBC20Code(original TBC20Outpoint, controller [21]byte, tapeSize 
 	if len(code.Bytes()) != TBC20CodeBytes {
 		return nil, fmt.Errorf("TBC20: instantiated code must be %d bytes, got %d", TBC20CodeBytes, len(code.Bytes()))
 	}
+	if err := ValidateTBC20Code(code, tapeSize); err != nil {
+		return nil, err
+	}
 	return code, nil
+}
+
+// ValidateTBC20Code verifies every immutable byte of the embedded compiler
+// artifact while permitting only the original outpoint, tape-size constants,
+// and terminal controller fields to vary.
+func ValidateTBC20Code(codeScript *bscript.Script, expectedTapeSize int) error {
+	if codeScript == nil || len(codeScript.Bytes()) != TBC20CodeBytes {
+		return fmt.Errorf("TBC20: codeScript must be %d bytes", TBC20CodeBytes)
+	}
+	code := codeScript.Bytes()
+	template := strings.TrimSpace(tbc20LockHexTemplate)
+	offset := 0
+	embeddedTapeSize := -1
+	for len(template) > 0 {
+		placeholderAt := strings.IndexByte(template, '<')
+		if placeholderAt < 0 {
+			constant, err := hex.DecodeString(template)
+			if err != nil || offset+len(constant) > len(code) || !bytes.Equal(code[offset:offset+len(constant)], constant) {
+				return fmt.Errorf("TBC20: codeScript differs from compiler artifact at byte %d", offset)
+			}
+			offset += len(constant)
+			break
+		}
+		if placeholderAt > 0 {
+			constant, err := hex.DecodeString(template[:placeholderAt])
+			if err != nil || offset+len(constant) > len(code) || !bytes.Equal(code[offset:offset+len(constant)], constant) {
+				return fmt.Errorf("TBC20: codeScript differs from compiler artifact at byte %d", offset)
+			}
+			offset += len(constant)
+			template = template[placeholderAt:]
+		}
+		end := strings.IndexByte(template, '>')
+		if end < 0 {
+			return fmt.Errorf("TBC20: embedded compiler artifact has an unterminated placeholder")
+		}
+		placeholder := template[:end+1]
+		template = template[end+1:]
+		switch placeholder {
+		case "<self.OriginalUTXO36>":
+			if offset+37 > len(code) || code[offset] != 36 {
+				return fmt.Errorf("TBC20: OriginalUTXO must use a direct 36-byte push")
+			}
+			offset += 37
+		case "<self.ConstTapeSize1>":
+			if offset+2 > len(code) || code[offset] != 1 {
+				return fmt.Errorf("TBC20: ConstTapeSize must use a direct one-byte push")
+			}
+			current := int(code[offset+1])
+			if embeddedTapeSize >= 0 && embeddedTapeSize != current {
+				return fmt.Errorf("TBC20: codeScript contains inconsistent tape sizes")
+			}
+			embeddedTapeSize = current
+			offset += 2
+		case "<self.Controller21>":
+			if offset+22 > len(code) || code[offset] != 21 || code[offset+21] == 0x80 {
+				return fmt.Errorf("TBC20: Controller must use a canonical direct 21-byte push")
+			}
+			offset += 22
+		default:
+			return fmt.Errorf("TBC20: unknown compiler artifact placeholder %s", placeholder)
+		}
+	}
+	if offset != len(code) || embeddedTapeSize < 0 {
+		return fmt.Errorf("TBC20: codeScript does not exactly match the compiler artifact")
+	}
+	if err := validateTBC20TapeSize(embeddedTapeSize); err != nil {
+		return err
+	}
+	if expectedTapeSize != 0 && embeddedTapeSize != expectedTapeSize {
+		return fmt.Errorf("TBC20: embedded tape size %d differs from expected %d", embeddedTapeSize, expectedTapeSize)
+	}
+	return nil
 }
 
 func TBC20Controller(codeScript *bscript.Script) ([21]byte, error) {
@@ -186,10 +264,10 @@ func TBC20CodeIdentity(codeScript *bscript.Script) ([]byte, error) {
 }
 
 func ReplaceTBC20Controller(codeScript *bscript.Script, controller [21]byte) (*bscript.Script, error) {
-	if codeScript == nil || len(codeScript.Bytes()) != TBC20CodeBytes {
-		return nil, fmt.Errorf("TBC20: codeScript must be %d bytes", TBC20CodeBytes)
+	if controller[20] == 0x80 {
+		return nil, fmt.Errorf("TBC20: controller option 80 is non-canonical ScriptNum negative zero")
 	}
-	if _, err := TBC20Controller(codeScript); err != nil {
+	if err := ValidateTBC20Code(codeScript, 0); err != nil {
 		return nil, err
 	}
 	before, err := TBC20CodeIdentity(codeScript)
@@ -287,6 +365,9 @@ func BuildTBC20MetadataExtension(definition TBC20Definition) ([]byte, *big.Int, 
 	if definition.Name == "" || !utf8.ValidString(definition.Name) {
 		return nil, nil, fmt.Errorf("TBC20: metadata.name must be non-empty valid UTF-8")
 	}
+	if !norm.NFC.IsNormalString(definition.Name) {
+		return nil, nil, fmt.Errorf("TBC20: metadata.name must use canonical NFC Unicode normalization")
+	}
 	if definition.Symbol == "" {
 		return nil, nil, fmt.Errorf("TBC20: metadata.symbol is required")
 	}
@@ -365,6 +446,47 @@ func NewTBC20(config TBC20Config) (*TBC20, error) {
 	if t.TapeSize != util.TBC20MinTapeBytes+len(extension) {
 		return nil, fmt.Errorf("TBC20: tapeSize does not match extension length")
 	}
+	if t.CodeScript != nil {
+		if err := ValidateTBC20Code(t.CodeScript, t.TapeSize); err != nil {
+			return nil, err
+		}
+	}
 	t.ExtensionData = extension
 	return t, nil
+}
+
+func TBC20AddressController(address string) ([21]byte, error) {
+	return tbc20AddressController(address)
+}
+
+func TBC20ContractController(lockingScript *bscript.Script) ([21]byte, error) {
+	var result [21]byte
+	if lockingScript == nil || len(lockingScript.Bytes()) == 0 {
+		return result, fmt.Errorf("TBC20: contract locking script cannot be empty")
+	}
+	copy(result[:20], crypto.Hash160(crypto.Sha256(lockingScript.Bytes())))
+	result[20] = 1
+	return result, nil
+}
+
+func BuildTBC20UTXO(tx *bt.Tx, codeVout int) (*bt.UTXO, *big.Int, error) {
+	if tx == nil || codeVout < 0 || codeVout+1 >= len(tx.Outputs) {
+		return nil, nil, fmt.Errorf("TBC20: code output must be immediately followed by tape")
+	}
+	code, tape := tx.Outputs[codeVout], tx.Outputs[codeVout+1]
+	if code.Satoshis != TBC20CodeSatoshis || tape.Satoshis != TBC20TapeSatoshis {
+		return nil, nil, fmt.Errorf("TBC20: code/tape values must be exactly 500/0 satoshis")
+	}
+	parsed, err := ParseTBC20Tape(tape.LockingScript)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := ValidateTBC20Code(code.LockingScript, parsed.Size); err != nil {
+		return nil, nil, err
+	}
+	txid, err := hex.DecodeString(tx.TxID())
+	if err != nil {
+		return nil, nil, err
+	}
+	return &bt.UTXO{TxID: txid, Vout: uint32(codeVout), LockingScript: code.LockingScript, Satoshis: code.Satoshis}, parsed.Balance, nil
 }

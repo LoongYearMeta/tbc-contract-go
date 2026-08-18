@@ -141,6 +141,46 @@ async function main() {
     [[tbc20Mint.sourceTransaction]],
     { verify: true },
   );
+  const tbc20Split = tbc20.transfer(
+    tbc20PrivateKey,
+    tbc20Owner,
+    "400.00000000",
+    [
+      {
+        txId: tbc20Mint.transaction.hash,
+        outputIndex: 0,
+        script: tbc20Mint.transaction.outputs[0].script.toHex(),
+        satoshis: tbc20Mint.transaction.outputs[0].satoshis,
+      },
+    ],
+    {
+      txId: "bb".repeat(32),
+      outputIndex: 2,
+      script: tbc20P2PKH,
+      satoshis: 100000,
+    },
+    [tbc20Mint.transaction],
+    [[tbc20Mint.sourceTransaction]],
+    { verify: true },
+  );
+  const tbc20Merge = tbc20.merge(
+    tbc20PrivateKey,
+    [0, 2].map((outputIndex) => ({
+      txId: tbc20Split.transaction.hash,
+      outputIndex,
+      script: tbc20Split.transaction.outputs[outputIndex].script.toHex(),
+      satoshis: tbc20Split.transaction.outputs[outputIndex].satoshis,
+    })),
+    {
+      txId: "cc".repeat(32),
+      outputIndex: 0,
+      script: tbc20P2PKH,
+      satoshis: 100000,
+    },
+    [tbc20Split.transaction, tbc20Split.transaction],
+    [[tbc20Mint.transaction], [tbc20Mint.transaction]],
+    { verify: true },
+  );
   const tbc20UnlockChunks = tbc20Transfer.transaction.inputs[0].script.chunks;
   if (tbc20UnlockChunks.length !== 123) {
     throw new Error(`expected 123 TBC20 unlock chunks, got ${tbc20UnlockChunks.length}`);
@@ -222,6 +262,13 @@ async function main() {
       transferSignatureHex: tbc20UnlockChunks[98].buf.toString("hex"),
       publicKeyHex: tbc20PrivateKey.toPublicKey().toBuffer().toString("hex"),
       transferTokenAmounts: tbc20Transfer.tokenOutputs.map((output) =>
+        output.amount.toString(),
+      ),
+      splitRaw: tbc20Split.txraw,
+      splitFeeSatoshis: tbc20Split.feeSatoshis,
+      mergeRaw: tbc20Merge.txraw,
+      mergeFeeSatoshis: tbc20Merge.feeSatoshis,
+      mergeTokenAmounts: tbc20Merge.tokenOutputs.map((output) =>
         output.amount.toString(),
       ),
     },

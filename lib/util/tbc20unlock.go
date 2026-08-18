@@ -515,8 +515,11 @@ func tbc20AppendNumber(script *bscript.Script, value int) error {
 	if value < 0 {
 		return fmt.Errorf("TBC20 unlock: negative number")
 	}
+	if value == 0 {
+		return script.AppendOpcodes(bscript.Op0)
+	}
 	if value <= 16 {
-		return script.AppendOpcodes(bscript.Op0 + byte(value))
+		return script.AppendOpcodes(bscript.Op1 - 1 + byte(value))
 	}
 	return script.AppendPushData(EncodeTBC20UnsignedLE(uint64(value)))
 }

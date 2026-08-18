@@ -113,6 +113,29 @@ func TestTBC20ControllerReplacementPreservesIdentity(t *testing.T) {
 	if !bytes.Equal(before, after) {
 		t.Fatal("controller replacement changed identity")
 	}
+	replacement[20] = 0x80
+	if _, err := ReplaceTBC20Controller(code, replacement); err == nil {
+		t.Fatal("accepted ScriptNum negative-zero controller")
+	}
+}
+
+func TestValidateTBC20CodeRejectsArtifactMutation(t *testing.T) {
+	vector := loadTBC20Vector(t)
+	code, err := bscript.NewFromHexString(vector.CodeHex)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := ValidateTBC20Code(code, TBC20MinTapeBytes); err != nil {
+		t.Fatal(err)
+	}
+	if err := ValidateTBC20Code(code, TBC20MinTapeBytes+1); err == nil {
+		t.Fatal("accepted mismatched tape size")
+	}
+	mutated := append([]byte(nil), code.Bytes()...)
+	mutated[100] ^= 1
+	if err := ValidateTBC20Code(bscript.NewFromBytes(mutated), TBC20MinTapeBytes); err == nil {
+		t.Fatal("accepted compiler artifact mutation")
+	}
 }
 
 func TestTBC20HumanAmountConversions(t *testing.T) {
@@ -126,5 +149,12 @@ func TestTBC20HumanAmountConversions(t *testing.T) {
 	}
 	if _, err := TBC20HumanToRaw("1e3", 0); err == nil {
 		t.Fatal("accepted exponent")
+	}
+}
+
+func TestTBC20MetadataRequiresNFC(t *testing.T) {
+	_, _, err := BuildTBC20MetadataExtension(TBC20Definition{Name: "e\u0301", Symbol: "NFC", Supply: "1", Decimal: 0})
+	if err == nil {
+		t.Fatal("accepted decomposed Unicode metadata name")
 	}
 }
