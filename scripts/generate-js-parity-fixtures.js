@@ -279,9 +279,32 @@ async function main() {
     transaction: "zz",
     network: "testnet",
   });
+  const validatorAPI = require(path.join(jsRoot, "lib/api/api.js"));
+  const validatorTransactions = new Map(
+    [
+      tbc20Mint.sourceTransaction,
+      tbc20Mint.transaction,
+      tbc20Split.transaction,
+    ].map((transaction) => [transaction.hash, transaction]),
+  );
+  validatorAPI.fetchTXraw = async (requestedTxid) => {
+    const transaction = validatorTransactions.get(requestedTxid.toLowerCase());
+    if (!transaction) throw new Error(`missing fixture transaction ${requestedTxid}`);
+    return transaction;
+  };
+  const validTransfer = await sdk.TokenValidator.validateOnChainTransaction({
+    transaction: tbc20Transfer.transaction,
+    network: "testnet",
+  });
+  const validMerge = await sdk.TokenValidator.validateOnChainTransaction({
+    transaction: tbc20Merge.transaction,
+    network: "testnet",
+  });
   const reports = {
     invalidPolicy: invalidPolicy.toJSON(),
     invalidRoot: invalidRoot.toJSON(),
+    validTransfer: validTransfer.toJSON(),
+    validMerge: validMerge.toJSON(),
   };
 
   const outputPath = process.argv[2];

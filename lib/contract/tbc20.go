@@ -255,6 +255,64 @@ func ValidateTBC20Code(codeScript *bscript.Script, expectedTapeSize int) error {
 	return nil
 }
 
+// IsTBC20ArtifactCandidate mirrors the validator's deliberately narrow
+// damaged-artifact heuristic: at most eight immutable bytes before the
+// partial-hash boundary may differ. Unrelated contracts of the same length
+// remain opaque instead of being mislabeled as malformed TBC20.
+func IsTBC20ArtifactCandidate(codeScript *bscript.Script) bool {
+	if codeScript == nil || len(codeScript.Bytes()) != TBC20CodeBytes {
+		return false
+	}
+	code := codeScript.Bytes()
+	template := strings.TrimSpace(tbc20LockHexTemplate)
+	offset, mismatches := 0, 0
+	for len(template) > 0 && offset < TBC20CodePartialOffset {
+		placeholderAt := strings.IndexByte(template, '<')
+		constantText := template
+		if placeholderAt >= 0 {
+			constantText = template[:placeholderAt]
+		}
+		if constantText != "" {
+			constant, err := hex.DecodeString(constantText)
+			if err != nil {
+				return false
+			}
+			limit := len(constant)
+			if offset+limit > TBC20CodePartialOffset {
+				limit = TBC20CodePartialOffset - offset
+			}
+			for index := 0; index < limit; index++ {
+				if code[offset+index] != constant[index] {
+					mismatches++
+					if mismatches > 8 {
+						return false
+					}
+				}
+			}
+			offset += len(constant)
+			template = template[len(constantText):]
+			continue
+		}
+		end := strings.IndexByte(template, '>')
+		if end < 0 {
+			return false
+		}
+		placeholder := template[:end+1]
+		template = template[end+1:]
+		switch placeholder {
+		case "<self.OriginalUTXO36>":
+			offset += 37
+		case "<self.ConstTapeSize1>":
+			offset += 2
+		case "<self.Controller21>":
+			offset += 22
+		default:
+			return false
+		}
+	}
+	return mismatches <= 8
+}
+
 func TBC20Controller(codeScript *bscript.Script) ([21]byte, error) {
 	return util.GetTBC20Controller(codeScript)
 }

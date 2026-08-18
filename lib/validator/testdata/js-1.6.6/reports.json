@@ -51,5 +51,365 @@
     "parentsChecked": 0,
     "ancestorsChecked": 0,
     "originalUTXOBoundaries": 0
+  },
+  "validTransfer": {
+    "status": "VALID",
+    "txid": "22fdf3b61db60e6886f8a7ddccb63c5eb64ad6d75357f98a901656023ed72c05",
+    "kind": "TRANSITION",
+    "protocol": {
+      "family": "TBC20",
+      "version": 1
+    },
+    "assurances": [
+      "STRUCTURE",
+      "TRANSITION",
+      "OUTPUT_SOURCE_LINEAGE",
+      "OUTPUT_SOURCE_GRAPH_RESOLVED"
+    ],
+    "issues": [],
+    "inputs": [
+      {
+        "vin": 0,
+        "prevTxid": "b9a7db361f77379367e511dcfba781f6f364a8fb1d4067c5a567f71b8b6dd280",
+        "prevVout": 0,
+        "kind": "TBC20",
+        "resolution": "RESOLVED",
+        "sourceRole": "POSITIVE_SOURCE",
+        "parentTxid": "b9a7db361f77379367e511dcfba781f6f364a8fb1d4067c5a567f71b8b6dd280",
+        "codeVout": 0,
+        "tapeVout": 1,
+        "identity": "8ee1c643cf7b597e050c1a083c914e9418a697753b71a599b8e8e75f0cc8bbad5c09",
+        "slots": [
+          "100000000000",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "balanceRaw": "100000000000",
+        "protocol": {
+          "family": "TBC20",
+          "version": 1
+        }
+      },
+      {
+        "vin": 1,
+        "prevTxid": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "prevVout": 1,
+        "kind": "UNRESOLVED",
+        "resolution": "NOT_REQUESTED"
+      }
+    ],
+    "outputGroups": [
+      {
+        "logicalIndex": 0,
+        "kind": "TBC20",
+        "firstVout": 0,
+        "physicalVoutCount": 2,
+        "codeVout": 0,
+        "tapeVout": 1,
+        "identity": "8ee1c643cf7b597e050c1a083c914e9418a697753b71a599b8e8e75f0cc8bbad5c09",
+        "slots": [
+          "12345600000",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "balanceRaw": "12345600000",
+        "protocol": {
+          "family": "TBC20",
+          "version": 1
+        }
+      },
+      {
+        "logicalIndex": 1,
+        "kind": "TBC20",
+        "firstVout": 2,
+        "physicalVoutCount": 2,
+        "codeVout": 2,
+        "tapeVout": 3,
+        "identity": "8ee1c643cf7b597e050c1a083c914e9418a697753b71a599b8e8e75f0cc8bbad5c09",
+        "slots": [
+          "87654400000",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "balanceRaw": "87654400000",
+        "protocol": {
+          "family": "TBC20",
+          "version": 1
+        }
+      },
+      {
+        "logicalIndex": 2,
+        "kind": "ORDINARY",
+        "firstVout": 4,
+        "physicalVoutCount": 1
+      }
+    ],
+    "assets": [
+      {
+        "identity": "8ee1c643cf7b597e050c1a083c914e9418a697753b71a599b8e8e75f0cc8bbad5c09",
+        "protocol": {
+          "family": "TBC20",
+          "version": 1
+        },
+        "inputVins": [
+          0
+        ],
+        "outputGroups": [
+          0,
+          1
+        ],
+        "inputRaw": "100000000000",
+        "outputRaw": "100000000000",
+        "envelopeHash": "77a2d2597829c8a9b770dd6b5269697cc29850c52797d0c94a323c4f735ea574"
+      }
+    ],
+    "matrix": [
+      [
+        "12345600000",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "87654400000",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "ancestorEdges": [
+      {
+        "currentVin": 0,
+        "parentTxid": "b9a7db361f77379367e511dcfba781f6f364a8fb1d4067c5a567f71b8b6dd280",
+        "parentCodeVout": 0,
+        "parentSlot": 0,
+        "parentVin": 0,
+        "abiPrepreIndex": 5,
+        "ancestorTxid": "3961f1c7a64f85d788bc9325c883878d54dd396c6cb1ea8cc9257068264d3318",
+        "ancestorVout": 0,
+        "parentIdentity": "8ee1c643cf7b597e050c1a083c914e9418a697753b71a599b8e8e75f0cc8bbad5c09",
+        "ancestorIdentity": "19",
+        "resolution": "ORIGINAL_UTXO"
+      }
+    ],
+    "source": {
+      "network": "testnet",
+      "api": "API.fetchTXraw",
+      "trustModel": "API_FETCH_TXRAW_FULLY_TRUSTED",
+      "rootTrustModel": "CALLER_ASSERTED_ON_CHAIN_AND_INPUT_SCRIPTS_VALID",
+      "queriedTxids": [
+        "b9a7db361f77379367e511dcfba781f6f364a8fb1d4067c5a567f71b8b6dd280",
+        "3961f1c7a64f85d788bc9325c883878d54dd396c6cb1ea8cc9257068264d3318"
+      ],
+      "resolvedTxids": [
+        "b9a7db361f77379367e511dcfba781f6f364a8fb1d4067c5a567f71b8b6dd280",
+        "3961f1c7a64f85d788bc9325c883878d54dd396c6cb1ea8cc9257068264d3318"
+      ],
+      "requiredSourceTxids": [
+        "b9a7db361f77379367e511dcfba781f6f364a8fb1d4067c5a567f71b8b6dd280",
+        "3961f1c7a64f85d788bc9325c883878d54dd396c6cb1ea8cc9257068264d3318"
+      ]
+    },
+    "resolvedTransactions": 2,
+    "parentsChecked": 1,
+    "ancestorsChecked": 1,
+    "originalUTXOBoundaries": 1
+  },
+  "validMerge": {
+    "status": "VALID",
+    "txid": "e012a9f6626625e4f6d1235d6794ecc87f86ddc33c422b8fdc5f157d62c5193d",
+    "kind": "TRANSITION",
+    "protocol": {
+      "family": "TBC20",
+      "version": 1
+    },
+    "assurances": [
+      "STRUCTURE",
+      "TRANSITION",
+      "OUTPUT_SOURCE_LINEAGE",
+      "OUTPUT_SOURCE_GRAPH_RESOLVED"
+    ],
+    "issues": [],
+    "inputs": [
+      {
+        "vin": 0,
+        "prevTxid": "cc307a1dea5fdfe90ad819d0026ed8470f782dce3f04dc3e77b4392c1443733c",
+        "prevVout": 0,
+        "kind": "TBC20",
+        "resolution": "RESOLVED",
+        "sourceRole": "POSITIVE_SOURCE",
+        "parentTxid": "cc307a1dea5fdfe90ad819d0026ed8470f782dce3f04dc3e77b4392c1443733c",
+        "codeVout": 0,
+        "tapeVout": 1,
+        "identity": "8ee1c643cf7b597e050c1a083c914e9418a697753b71a599b8e8e75f0cc8bbad5c09",
+        "slots": [
+          "40000000000",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "balanceRaw": "40000000000",
+        "protocol": {
+          "family": "TBC20",
+          "version": 1
+        }
+      },
+      {
+        "vin": 1,
+        "prevTxid": "cc307a1dea5fdfe90ad819d0026ed8470f782dce3f04dc3e77b4392c1443733c",
+        "prevVout": 2,
+        "kind": "TBC20",
+        "resolution": "RESOLVED",
+        "sourceRole": "POSITIVE_SOURCE",
+        "parentTxid": "cc307a1dea5fdfe90ad819d0026ed8470f782dce3f04dc3e77b4392c1443733c",
+        "codeVout": 2,
+        "tapeVout": 3,
+        "identity": "8ee1c643cf7b597e050c1a083c914e9418a697753b71a599b8e8e75f0cc8bbad5c09",
+        "slots": [
+          "60000000000",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "balanceRaw": "60000000000",
+        "protocol": {
+          "family": "TBC20",
+          "version": 1
+        }
+      },
+      {
+        "vin": 2,
+        "prevTxid": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prevVout": 0,
+        "kind": "UNRESOLVED",
+        "resolution": "NOT_REQUESTED"
+      }
+    ],
+    "outputGroups": [
+      {
+        "logicalIndex": 0,
+        "kind": "TBC20",
+        "firstVout": 0,
+        "physicalVoutCount": 2,
+        "codeVout": 0,
+        "tapeVout": 1,
+        "identity": "8ee1c643cf7b597e050c1a083c914e9418a697753b71a599b8e8e75f0cc8bbad5c09",
+        "slots": [
+          "40000000000",
+          "60000000000",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "balanceRaw": "100000000000",
+        "protocol": {
+          "family": "TBC20",
+          "version": 1
+        }
+      },
+      {
+        "logicalIndex": 1,
+        "kind": "ORDINARY",
+        "firstVout": 2,
+        "physicalVoutCount": 1
+      }
+    ],
+    "assets": [
+      {
+        "identity": "8ee1c643cf7b597e050c1a083c914e9418a697753b71a599b8e8e75f0cc8bbad5c09",
+        "protocol": {
+          "family": "TBC20",
+          "version": 1
+        },
+        "inputVins": [
+          0,
+          1
+        ],
+        "outputGroups": [
+          0
+        ],
+        "inputRaw": "100000000000",
+        "outputRaw": "100000000000",
+        "envelopeHash": "77a2d2597829c8a9b770dd6b5269697cc29850c52797d0c94a323c4f735ea574"
+      }
+    ],
+    "matrix": [
+      [
+        "40000000000",
+        "60000000000",
+        "0",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "ancestorEdges": [
+      {
+        "currentVin": 0,
+        "parentTxid": "cc307a1dea5fdfe90ad819d0026ed8470f782dce3f04dc3e77b4392c1443733c",
+        "parentCodeVout": 0,
+        "parentSlot": 0,
+        "parentVin": 0,
+        "abiPrepreIndex": 5,
+        "ancestorTxid": "b9a7db361f77379367e511dcfba781f6f364a8fb1d4067c5a567f71b8b6dd280",
+        "ancestorVout": 0,
+        "parentIdentity": "8ee1c643cf7b597e050c1a083c914e9418a697753b71a599b8e8e75f0cc8bbad5c09",
+        "ancestorIdentity": "8ee1c643cf7b597e050c1a083c914e9418a697753b71a599b8e8e75f0cc8bbad5c09",
+        "resolution": "SAME_IDENTITY"
+      },
+      {
+        "currentVin": 1,
+        "parentTxid": "cc307a1dea5fdfe90ad819d0026ed8470f782dce3f04dc3e77b4392c1443733c",
+        "parentCodeVout": 2,
+        "parentSlot": 0,
+        "parentVin": 0,
+        "abiPrepreIndex": 5,
+        "ancestorTxid": "b9a7db361f77379367e511dcfba781f6f364a8fb1d4067c5a567f71b8b6dd280",
+        "ancestorVout": 0,
+        "parentIdentity": "8ee1c643cf7b597e050c1a083c914e9418a697753b71a599b8e8e75f0cc8bbad5c09",
+        "ancestorIdentity": "8ee1c643cf7b597e050c1a083c914e9418a697753b71a599b8e8e75f0cc8bbad5c09",
+        "resolution": "SAME_IDENTITY"
+      }
+    ],
+    "source": {
+      "network": "testnet",
+      "api": "API.fetchTXraw",
+      "trustModel": "API_FETCH_TXRAW_FULLY_TRUSTED",
+      "rootTrustModel": "CALLER_ASSERTED_ON_CHAIN_AND_INPUT_SCRIPTS_VALID",
+      "queriedTxids": [
+        "cc307a1dea5fdfe90ad819d0026ed8470f782dce3f04dc3e77b4392c1443733c",
+        "b9a7db361f77379367e511dcfba781f6f364a8fb1d4067c5a567f71b8b6dd280"
+      ],
+      "resolvedTxids": [
+        "cc307a1dea5fdfe90ad819d0026ed8470f782dce3f04dc3e77b4392c1443733c",
+        "b9a7db361f77379367e511dcfba781f6f364a8fb1d4067c5a567f71b8b6dd280"
+      ],
+      "requiredSourceTxids": [
+        "cc307a1dea5fdfe90ad819d0026ed8470f782dce3f04dc3e77b4392c1443733c",
+        "b9a7db361f77379367e511dcfba781f6f364a8fb1d4067c5a567f71b8b6dd280"
+      ]
+    },
+    "resolvedTransactions": 2,
+    "parentsChecked": 2,
+    "ancestorsChecked": 2,
+    "originalUTXOBoundaries": 0
   }
 }

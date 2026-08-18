@@ -133,8 +133,15 @@ func TestValidateTBC20CodeRejectsArtifactMutation(t *testing.T) {
 	}
 	mutated := append([]byte(nil), code.Bytes()...)
 	mutated[100] ^= 1
-	if err := ValidateTBC20Code(bscript.NewFromBytes(mutated), TBC20MinTapeBytes); err == nil {
+	mutatedScript := bscript.NewFromBytes(mutated)
+	if err := ValidateTBC20Code(mutatedScript, TBC20MinTapeBytes); err == nil {
 		t.Fatal("accepted compiler artifact mutation")
+	}
+	if !IsTBC20ArtifactCandidate(mutatedScript) {
+		t.Fatal("failed to recognize narrowly damaged TBC20 artifact")
+	}
+	if IsTBC20ArtifactCandidate(bscript.NewFromBytes(bytes.Repeat([]byte{0xff}, TBC20CodeBytes))) {
+		t.Fatal("classified unrelated same-length contract as TBC20 candidate")
 	}
 }
 
