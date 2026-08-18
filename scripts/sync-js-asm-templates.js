@@ -51,6 +51,14 @@ function writeTemplate(relativePath, template) {
   fs.writeFileSync(output, `${normalized}\n`, { mode: 0o644 });
 }
 
+function extractStringConstant(source, name) {
+  const match = source.match(new RegExp(`const ${name} = "([^"]+)";`));
+  if (!match) {
+    throw new Error(`string constant not found: ${name}`);
+  }
+  return match[1];
+}
+
 const ftSource = fs.readFileSync(
   path.join(jsRoot, "lib/contract/ft.js"),
   "utf8",
@@ -165,4 +173,13 @@ writeTemplate(
 writeTemplate(
   "lib/contract/asm/nft_code_v1.asm",
   nftTemplate(sdk.NFT.buildCodeScript_v1(nftFixtureTxid, 0)),
+);
+
+const tbc20Source = fs.readFileSync(
+  path.join(jsRoot, "lib/contract/tbc20.js"),
+  "utf8",
+);
+writeTemplate(
+  "lib/contract/asm/tbc20_lock.hex",
+  extractStringConstant(tbc20Source, "TBC20_LOCK_HEX_TEMPLATE"),
 );

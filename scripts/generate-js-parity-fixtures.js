@@ -101,6 +101,51 @@ async function main() {
   });
   const parsedTape = sdk.TBC20.parseTape(tbc20Tape);
 
+  const tbc20PrivateKey = new tbc.PrivateKey("11".repeat(32));
+  const tbc20RecipientKey = new tbc.PrivateKey("22".repeat(32));
+  const tbc20Owner = tbc20PrivateKey.toAddress().toString();
+  const tbc20P2PKH = tbc.Script.buildPublicKeyHashOut(
+    tbc20PrivateKey.toAddress(),
+  ).toHex();
+  const tbc20 = new sdk.TBC20({
+    name: "Parity Token",
+    symbol: "PTY",
+    supply: "1000.00000000",
+    decimal: 8,
+  });
+  const tbc20Mint = tbc20.mint(tbc20PrivateKey, tbc20Owner, {
+    txId: "aa".repeat(32),
+    outputIndex: 0,
+    script: tbc20P2PKH,
+    satoshis: 300000,
+  });
+  const tbc20Transfer = tbc20.transfer(
+    tbc20PrivateKey,
+    tbc20RecipientKey.toAddress().toString(),
+    "123.45600000",
+    [
+      {
+        txId: tbc20Mint.transaction.hash,
+        outputIndex: 0,
+        script: tbc20Mint.transaction.outputs[0].script.toHex(),
+        satoshis: tbc20Mint.transaction.outputs[0].satoshis,
+      },
+    ],
+    {
+      txId: "bb".repeat(32),
+      outputIndex: 1,
+      script: tbc20P2PKH,
+      satoshis: 100000,
+    },
+    [tbc20Mint.transaction],
+    [[tbc20Mint.sourceTransaction]],
+    { verify: true },
+  );
+  const tbc20UnlockChunks = tbc20Transfer.transaction.inputs[0].script.chunks;
+  if (tbc20UnlockChunks.length !== 123) {
+    throw new Error(`expected 123 TBC20 unlock chunks, got ${tbc20UnlockChunks.length}`);
+  }
+
   const scripts = {
     ftV4Mint: fixture(ftV4Mint, {
       kind: "ordinary-ft-v4",
@@ -162,6 +207,24 @@ async function main() {
     tapeHex: tbc20Tape.toHex(),
     tapeAmounts: parsedTape.amounts.map((amount) => amount.toString()),
     tapeBalance: parsedTape.balance.toString(),
+    transactionFixture: {
+      privateKeyHex: "11".repeat(32),
+      recipient: tbc20RecipientKey.toAddress().toString(),
+      fundingScriptHex: tbc20P2PKH,
+      sourceRaw: tbc20Mint.sourceTxraw,
+      sourceFeeSatoshis: tbc20Mint.sourceFeeSatoshis,
+      mintRaw: tbc20Mint.txraw,
+      mintFeeSatoshis: tbc20Mint.feeSatoshis,
+      transferRaw: tbc20Transfer.txraw,
+      transferFeeSatoshis: tbc20Transfer.feeSatoshis,
+      transferUnlockHex: tbc20Transfer.transaction.inputs[0].script.toHex(),
+      transferUnlockChunks: tbc20UnlockChunks.length,
+      transferSignatureHex: tbc20UnlockChunks[98].buf.toString("hex"),
+      publicKeyHex: tbc20PrivateKey.toPublicKey().toBuffer().toString("hex"),
+      transferTokenAmounts: tbc20Transfer.tokenOutputs.map((output) =>
+        output.amount.toString(),
+      ),
+    },
   };
 
   const invalidPolicy = await sdk.TokenValidator.validateOnChainTransaction({});
