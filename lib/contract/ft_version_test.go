@@ -13,9 +13,11 @@ func contractSyntheticFTScript(t *testing.T, fillOpcode byte) *bscript.Script {
 	t.Helper()
 	suffix := []byte{fillOpcode}
 	if fillOpcode == bscript.OpDATA2 {
-		suffix = append(suffix, 0xaa, 0xbb)
+		suffix = append(suffix, 0xff, 0xff)
 	}
-	suffix = append(suffix, bscript.OpNOP, bscript.OpNOP, bscript.OpNOP, bscript.OpNOP)
+	suffix = append(suffix, bscript.OpNOP, bscript.OpNOP, bscript.OpNOP)
+	suffix = append(suffix, 5)
+	suffix = append(suffix, []byte("2Code")...)
 	body := bytes.Repeat([]byte{bscript.OpNOP}, 1884-len(suffix))
 	return bscript.NewFromBytes(append(body, suffix...))
 }

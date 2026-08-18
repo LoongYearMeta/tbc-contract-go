@@ -3,6 +3,8 @@ package util
 import (
 	"bytes"
 	"encoding/hex"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
@@ -18,12 +20,26 @@ func syntheticFTScript(t *testing.T, length int, fillOpcode byte) *bscript.Scrip
 	// two bytes, while every other marker below is a one-byte opcode.
 	suffix := []byte{fillOpcode}
 	if fillOpcode == bscript.OpDATA2 {
-		suffix = append(suffix, 0xaa, 0xbb)
+		suffix = append(suffix, 0xff, 0xff)
 	}
-	suffix = append(suffix, bscript.OpNOP, bscript.OpNOP, bscript.OpNOP, bscript.OpNOP)
+	suffix = append(suffix, bscript.OpNOP, bscript.OpNOP, bscript.OpNOP)
+	suffix = append(suffix, 5)
+	suffix = append(suffix, []byte("2Code")...)
 	body := bytes.Repeat([]byte{bscript.OpNOP}, length-len(suffix))
 	body = append(body, suffix...)
 	return bscript.NewFromBytes(body)
+}
+
+func syntheticFTScriptWithFill(t *testing.T, length, fillLength int) *bscript.Script {
+	t.Helper()
+	if fillLength < 1 || fillLength > 75 {
+		t.Fatal("unsupported synthetic fill length")
+	}
+	suffix := append([]byte{byte(fillLength)}, bytes.Repeat([]byte{0xff}, fillLength)...)
+	suffix = append(suffix, bscript.OpNOP, bscript.OpNOP, bscript.OpNOP)
+	suffix = append(suffix, 5)
+	suffix = append(suffix, []byte("2Code")...)
+	return bscript.NewFromBytes(append(bytes.Repeat([]byte{bscript.OpNOP}, length-len(suffix)), suffix...))
 }
 
 func TestClassifyFTScriptDistinguishesV2AndV3AtSameLength(t *testing.T) {
@@ -63,7 +79,7 @@ func TestClassifyFTScriptRecognizesV1AndCoin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	coinV2, err := ClassifyFTScript(syntheticFTScript(t, 2012, bscript.Op16))
+	coinV2, err := ClassifyFTScript(syntheticFTScriptWithFill(t, 2012, 11))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,6 +102,56 @@ func TestClassifyFTScriptRejectsRetiredV4(t *testing.T) {
 	v4 := syntheticFTScript(t, 1948, bscript.Op15)
 	if _, err := ClassifyFTScript(v4); err == nil {
 		t.Fatal("expected retired 1948-byte FT v4 script to be rejected")
+	}
+}
+
+func TestClassifyPublishedFTV4(t *testing.T) {
+	tests := []struct {
+		file   string
+		coin   bool
+		offset int
+	}{
+		{file: "ft-v4.hex", offset: 2048},
+		{file: "coin-v4.hex", coin: true, offset: 2048},
+	}
+	for _, test := range tests {
+		t.Run(test.file, func(t *testing.T) {
+			body, err := os.ReadFile(filepath.Join("testdata", "js-1.6.6", test.file))
+			if err != nil {
+				t.Fatal(err)
+			}
+			script, err := bscript.NewFromHexString(string(bytes.TrimSpace(body)))
+			if err != nil {
+				t.Fatal(err)
+			}
+			info, err := ClassifyFTScript(script)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if info.Version != FTVersion4 || info.IsCoin != test.coin {
+				t.Fatalf("classified as %+v", info)
+			}
+			offset, err := FTPartialOffset(script)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if offset != test.offset {
+				t.Fatalf("partial offset = %d, want %d", offset, test.offset)
+			}
+		})
+	}
+}
+
+func TestClassifyFTScriptRejectsMissingMarkerAndBadCoinFill(t *testing.T) {
+	missingMarker := syntheticFTScript(t, 2076, bscript.Op16)
+	missingMarkerBytes := missingMarker.Bytes()
+	missingMarkerBytes[len(missingMarkerBytes)-1] ^= 1
+	if _, err := ClassifyFTScript(bscript.NewFromBytes(missingMarkerBytes)); err == nil {
+		t.Fatal("expected missing marker to be rejected")
+	}
+	badCoinFill := syntheticFTScriptWithFill(t, 2012, 12)
+	if info, err := ClassifyFTScript(badCoinFill); err == nil || info.IsCoin {
+		t.Fatalf("bad coin fill classified as %+v, err=%v", info, err)
 	}
 }
 

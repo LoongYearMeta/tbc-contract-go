@@ -16,14 +16,6 @@ const (
 	ftVersion   = 10
 	ftHashLen   = 32
 	ftAmountLen = 8
-
-	// Constants align with tbc-contract/lib/util/ftunlock.ts
-	ftV1Length        = 1564
-	ftV1PartialOffset = 1536
-	ftV2Length        = 1884
-	ftV2PartialOffset = 1856
-	coinLength        = 2012
-	coinPartialOffset = 1984
 )
 
 // partialOffsetGetPreTx corresponds to getPreTxdata (preTxdata path).
@@ -32,29 +24,19 @@ const (
 // - ft v2 range [ft_v2_length, coin_length) → ft_v2_partial_offset
 // - else default ft_v1_partial_offset
 func partialOffsetGetPreTx(scriptLen int) int {
-	if scriptLen == coinLength {
-		return coinPartialOffset
+	if offset, ok := FTPartialOffsetByLength(scriptLen); ok {
+		return offset
 	}
-	if scriptLen >= ftV2Length && scriptLen < coinLength {
-		return ftV2PartialOffset
-	}
-	return ftV1PartialOffset
+	return FTV1PartialOffset
 }
 
 // partialOffsetGetPrePre corresponds to getPrePreTxdata / getCurrentTxdata FT code+tape pair branch.
 // Matches ftunlock.ts: v1/coin exact match; v2 is range [ft_v2_length, coin_length); else off=0 for generic split.
 func partialOffsetGetPrePre(scriptLen int) int {
-	switch scriptLen {
-	case ftV1Length:
-		return ftV1PartialOffset
-	case coinLength:
-		return coinPartialOffset
-	default:
-		if scriptLen >= ftV2Length && scriptLen < coinLength {
-			return ftV2PartialOffset
-		}
-		return 0
+	if offset, ok := FTPartialOffsetByLength(scriptLen); ok {
+		return offset
 	}
+	return 0
 }
 
 // getLengthHex returns variable-length integer encoding (OP_PUSHDATA1/2).

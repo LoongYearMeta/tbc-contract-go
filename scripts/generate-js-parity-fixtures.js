@@ -180,11 +180,15 @@ async function main() {
     return;
   }
   const contractDir = path.join(repoRoot, "lib/contract/testdata/js-1.6.6");
+  const utilDir = path.join(repoRoot, "lib/util/testdata/js-1.6.6");
   const validatorDir = path.join(repoRoot, "lib/validator/testdata/js-1.6.6");
   fs.mkdirSync(contractDir, { recursive: true });
+  fs.mkdirSync(utilDir, { recursive: true });
   fs.mkdirSync(validatorDir, { recursive: true });
   fs.writeFileSync(path.join(contractDir, "script-hashes.json"), asJSON(scripts), { mode: 0o644 });
   fs.writeFileSync(path.join(contractDir, "tbc20-vectors.json"), asJSON(vectors), { mode: 0o644 });
+  fs.writeFileSync(path.join(utilDir, "ft-v4.hex"), `${ftV4Mint.toHex()}\n`, { mode: 0o644 });
+  fs.writeFileSync(path.join(utilDir, "coin-v4.hex"), `${stableCoinV4Mint.toHex()}\n`, { mode: 0o644 });
   fs.writeFileSync(path.join(validatorDir, "reports.json"), asJSON(reports), { mode: 0o644 });
 }
 
