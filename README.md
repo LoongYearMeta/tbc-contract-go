@@ -2,6 +2,10 @@
 
 TBC 合约与索引 API 的 Go 实现，与 [tbc-contract](https://github.com/sCrypt-Inc/tbc-contract) 的 `lib/contract`、`lib/util` 等对齐。
 
+当前本地版本候选为 **0.2.0**，新增合约以 npm **tbc-contract@1.7.2** 为基准；尚未发布 Git 标签。保留旧合约入口。详见 [兼容范围与真实测试网验证](docs/js-1.7.2-compatibility.md)。
+
+Pool 参数矩阵与旧锁定 LP 拒绝调查见 [专项验证报告](docs/pool-parameter-coverage-172.md)。
+
 ## 结构
 
 ```
@@ -26,7 +30,7 @@ tbc-contract-go/
 
 ## 依赖
 
-- `github.com/LoongYearMeta/tbc-lib-go`：本地开发时通过 `go.mod` 中的 `replace` 指向 sibling **`../tbc-lib-go`**（与团队 fork 对齐）。
+- `github.com/LoongYearMeta/tbc-lib-go`：具体版本以 `go.mod` / `go.sum` 为准。
 
 ## 构建
 
@@ -36,4 +40,4 @@ go build ./...
 
 ## 说明
 
-- 本仓库当前**仅包含库源码**（`lib/`），不含包内 `*_test.go`；验证步骤见 **`docs/test-cases/`**，在业务仓库实现自动化测试即可。
+- 使用 `go test ./...` 运行库和测试工具的回归测试；真实广播证据见版本兼容说明。

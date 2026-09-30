@@ -1,0 +1,32 @@
+{
+  "language": "go",
+  "operation": "legacy-pool-v2-plan6-init",
+  "network": "testnet",
+  "txid": "b4f9de5b9b144b1f4c6ae19bde3c417ee6527aa8c0f8bf68339ea9d45264737d",
+  "bytes": 13862,
+  "fee": 1110,
+  "verifiedInputs": 3,
+  "parents": [
+    {
+      "txid": "40f417caa8371a2fa9b7911dec46595083bf087f87d0156a7cf1004161d175b9",
+      "vout": 0
+    },
+    {
+      "txid": "bac3a1af182cdbed1de2b99c4d8105ff0a190af7f1f3b041f43a9e8e450ee49b",
+      "vout": 0
+    },
+    {
+      "txid": "041f02656f06b16f96d966041f3e9e4244bb86dd278f9efd82f2039af573794c",
+      "vout": 3
+    }
+  ],
+  "broadcastResponse": {
+    "code": "200",
+    "message": "OK",
+    "data": {
+      "txid": "b4f9de5b9b144b1f4c6ae19bde3c417ee6527aa8c0f8bf68339ea9d45264737d"
+    },
+    "request_id": "r-ade9ab67"
+  },
+  "refetched": true
+}

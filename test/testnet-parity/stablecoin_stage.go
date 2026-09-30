@@ -668,7 +668,9 @@ func verifyStableCoinIndexedStateOnce(
 	if plan == nil || plan.StableCoin == nil || plan.Unfreeze == nil {
 		return fmt.Errorf("StableCoin indexed-state verification requires a complete plan")
 	}
-	stableCoinID := plan.StableCoin.ContractTxid
+	// The indexer keys stablecoins by the issuance certificate source,
+	// whereas the JS-compatible instance ContractTxid names the first mint.
+	stableCoinID := plan.CoinNFT.TxID()
 	info, err := api.FetchCoinInfo(stableCoinID, network)
 	if err != nil {
 		return fmt.Errorf("FetchCoinInfo: %w", err)

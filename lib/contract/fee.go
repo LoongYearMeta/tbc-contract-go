@@ -73,6 +73,9 @@ func checkedOutputSatoshis(tx *bt.Tx) (uint64, error) {
 }
 
 func setChangeForTarget(tx *bt.Tx, changeIndex int, targetFee uint64) (bool, error) {
+	return setChangeForTargetMinimum(tx, changeIndex, targetFee, sdkDustLimit)
+}
+func setChangeForTargetMinimum(tx *bt.Tx, changeIndex int, targetFee, minimum uint64) (bool, error) {
 	if tx == nil || changeIndex < 0 || changeIndex >= len(tx.Outputs) {
 		return false, ErrInvalidChangeOutput
 	}
@@ -101,8 +104,8 @@ func setChangeForTarget(tx *bt.Tx, changeIndex int, targetFee uint64) (bool, err
 	}
 
 	change := inputSum - required
-	if err := requireOrdinaryOutput(change, "fee change"); err != nil {
-		return false, err
+	if change < minimum {
+		return false, fmt.Errorf("%w: fee change %d below %d", ErrOrdinaryOutputDust, change, minimum)
 	}
 	if tx.Outputs[changeIndex].Satoshis == change {
 		return false, nil
@@ -133,6 +136,9 @@ func verifyPaidFee(tx *bt.Tx, targetFee uint64) error {
 }
 
 func finalizeSignedFee(tx *bt.Tx, changeIndex int, sign func() error) error {
+	return finalizeSignedFeeMinimum(tx, changeIndex, sdkDustLimit, sign)
+}
+func finalizeSignedFeeMinimum(tx *bt.Tx, changeIndex int, minimum uint64, sign func() error) error {
 	if tx == nil || changeIndex < 0 || changeIndex >= len(tx.Outputs) {
 		return ErrInvalidChangeOutput
 	}
@@ -153,7 +159,7 @@ func finalizeSignedFee(tx *bt.Tx, changeIndex int, sign func() error) error {
 		if observedTarget > targetFloor {
 			targetFloor = observedTarget
 		}
-		changed, err := setChangeForTarget(tx, changeIndex, targetFloor)
+		changed, err := setChangeForTargetMinimum(tx, changeIndex, targetFloor, minimum)
 		if err != nil {
 			return err
 		}
@@ -169,4 +175,28 @@ func finalizeSignedFee(tx *bt.Tx, changeIndex int, sign func() error) error {
 	}
 
 	return ErrFeeDidNotConverge
+}
+
+// Optional trailing AMM change. Rebuild every witness after removing change;
+// the smaller transaction must still pay its own minimum fee.
+func finalizeSignedFeeOptional(tx *bt.Tx, changeIndex int, minimum uint64, sign func() error) error {
+	if tx == nil || changeIndex != len(tx.Outputs)-1 || changeIndex < 0 || sign == nil {
+		return ErrInvalidChangeOutput
+	}
+	err := finalizeSignedFeeMinimum(tx, changeIndex, minimum, sign)
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, ErrOrdinaryOutputDust) && !errors.Is(err, ErrInsufficientContractFee) {
+		return err
+	}
+	tx.Outputs = tx.Outputs[:changeIndex]
+	if err = sign(); err != nil {
+		return err
+	}
+	target, err := contractTargetFee(len(tx.Bytes()))
+	if err != nil {
+		return err
+	}
+	return verifyPaidFee(tx, target)
 }

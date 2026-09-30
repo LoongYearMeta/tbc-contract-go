@@ -189,6 +189,12 @@ func decodeCode(script *bscript.Script) (*decodedCode, *TokenProtocolDescriptor,
 		return nil, nil, fmt.Errorf("empty locking script")
 	}
 	codeBytes := script.Bytes()
+
+ if len(codeBytes)==contract.TBC20StandardCodeBytes {
+  if err:=contract.ValidateTBC20StandardCode(script,0);err!=nil{return nil,nil,fmt.Errorf("INVALID_TBC20_STANDARD_CODE: %w",err)}
+  identity,err:=codeIdentity(script);if err!=nil{return nil,nil,err}
+  return &decodedCode{kind:"TBC20Standard",identity:identity,protocol:TokenProtocolDescriptor{Family:"TBC20Standard",Version:1},originalWire:append([]byte(nil),codeBytes[614:650]...),tapeSize:int(codeBytes[191])},nil,nil
+ }
 	if len(codeBytes) == contract.TBC20CodeBytes {
 		if err := contract.ValidateTBC20Code(script, 0); err != nil {
 			if contract.IsTBC20ArtifactCandidate(script) {
@@ -224,7 +230,7 @@ func decodeTapeForCode(script *bscript.Script, code decodedCode) (decodedTape, e
 	if script == nil || len(script.Bytes()) != code.tapeSize {
 		return result, fmt.Errorf("Tape size differs from Code size")
 	}
-	if code.kind == "TBC20" {
+	if (code.kind == "TBC20" || code.kind == "TBC20Standard") {
 		parsed, err := contract.ParseTBC20Tape(script)
 		if err != nil {
 			return result, err

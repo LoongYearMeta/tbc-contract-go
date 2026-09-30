@@ -1,0 +1,2019 @@
+{
+  "reference": "tbc-contract@1.7.2 / tbc-lib-js@1.0.31",
+  "network": "offline",
+  "address": "1Q1pE5vPGEEMqRcVRMbtBK842Y6Pzo6nK9",
+  "token": {
+    "family": "TBC20Standard",
+    "decimal": 6,
+    "supplyHuman": "1000",
+    "supplyRaw": "1000000000"
+  },
+  "configurations": [
+    {
+      "id": "P1-C0-L0",
+      "plan": 1,
+      "controllers": 0,
+      "locked": false,
+      "lockTime": 0,
+      "useTBC": true
+    },
+    {
+      "id": "P6-C5-L1",
+      "plan": 6,
+      "controllers": 5,
+      "locked": true,
+      "lockTime": 500000001,
+      "useTBC": false
+    }
+  ],
+  "cases": [
+    {
+      "id": "P1-C0-L0-js",
+      "configuration": "P1-C0-L0",
+      "origin": "js",
+      "txids": [
+        "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+        "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+        "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+        "6288f56ca6a2c14ecb97c3c4162068bdd8d468bc737e9d5c8df36d1f1cc82796",
+        "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+        "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+        "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+        "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+        "65adf1a3382fd54c5d3cce50a4b5c6990fe204f2609b411336937a7905fc6f80",
+        "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+        "87f7046aa17981f5b585f1c56ab4a57f4bcbca1c5ae01fa0b65a6a098c856d9b",
+        "b95020cd740c19dc20697db4f888d00c5e1d0cfd05472ac5a86fad20d310fdec"
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "P1-C0-L0-rust",
+      "configuration": "P1-C0-L0",
+      "origin": "rust",
+      "txids": [
+        "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+        "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+        "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+        "6288f56ca6a2c14ecb97c3c4162068bdd8d468bc737e9d5c8df36d1f1cc82796",
+        "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+        "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+        "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+        "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+        "65adf1a3382fd54c5d3cce50a4b5c6990fe204f2609b411336937a7905fc6f80",
+        "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+        "87f7046aa17981f5b585f1c56ab4a57f4bcbca1c5ae01fa0b65a6a098c856d9b",
+        "b95020cd740c19dc20697db4f888d00c5e1d0cfd05472ac5a86fad20d310fdec"
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "P1-C0-L0-go",
+      "configuration": "P1-C0-L0",
+      "origin": "go",
+      "txids": [
+        "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+        "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+        "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+        "6288f56ca6a2c14ecb97c3c4162068bdd8d468bc737e9d5c8df36d1f1cc82796",
+        "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+        "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+        "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+        "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+        "65adf1a3382fd54c5d3cce50a4b5c6990fe204f2609b411336937a7905fc6f80",
+        "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+        "87f7046aa17981f5b585f1c56ab4a57f4bcbca1c5ae01fa0b65a6a098c856d9b",
+        "b95020cd740c19dc20697db4f888d00c5e1d0cfd05472ac5a86fad20d310fdec"
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "P6-C5-L1-js",
+      "configuration": "P6-C5-L1",
+      "origin": "js",
+      "txids": [
+        "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+        "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+        "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+        "fd341fa7c98874cb0b888f603c90e115469c70fdc9fb62e17b00f69f4bb6e076",
+        "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+        "c3c69186902bb5757a8c6dc0380ea9c7dbed32dbe92bbb0065a40f8ab3c3a4f1",
+        "21257db7a028b8619b513046105c33dbe1e120a32f50c4b01b6ef090d70762ba",
+        "7948b194335b31bc903f7f4182aa355b13cace7fcd796cd9f2efd70429b21fcb",
+        "6149233547c93691c74914800812bc7e79d80615d04f10deae86b237ce299149",
+        "757fb2209eecd3ff24cd9c1b974c643e6c4b9ed70ddcf52e58a3c3506291eaca",
+        "7ecaaab318b1f4d494de487747d35cc64783aa1170080402f0d02c908f613996",
+        "f7a01b5a0c5fa724ec7bca5910eebbc37cb87d5cca34f6459d6ce61bce6d261b"
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "P6-C5-L1-rust",
+      "configuration": "P6-C5-L1",
+      "origin": "rust",
+      "txids": [
+        "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+        "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+        "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+        "fd341fa7c98874cb0b888f603c90e115469c70fdc9fb62e17b00f69f4bb6e076",
+        "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+        "c3c69186902bb5757a8c6dc0380ea9c7dbed32dbe92bbb0065a40f8ab3c3a4f1",
+        "21257db7a028b8619b513046105c33dbe1e120a32f50c4b01b6ef090d70762ba",
+        "7948b194335b31bc903f7f4182aa355b13cace7fcd796cd9f2efd70429b21fcb",
+        "6149233547c93691c74914800812bc7e79d80615d04f10deae86b237ce299149",
+        "757fb2209eecd3ff24cd9c1b974c643e6c4b9ed70ddcf52e58a3c3506291eaca",
+        "7ecaaab318b1f4d494de487747d35cc64783aa1170080402f0d02c908f613996",
+        "10af70426bf4037c6adcf8d12bcc3212784aa4f4a59f373559f73765a46b7d55"
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "P6-C5-L1-go",
+      "configuration": "P6-C5-L1",
+      "origin": "go",
+      "txids": [
+        "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+        "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+        "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+        "fd341fa7c98874cb0b888f603c90e115469c70fdc9fb62e17b00f69f4bb6e076",
+        "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+        "613d456c41bbfb8fa82a0cf90a8509d2940ee39cfd64c62710e8dc0eaec505a5",
+        "de7d44fb0209e119ff79c6f0c3fdad6ce3ac0810ec9a53c41cd10d35f0fab8a9",
+        "0b94279d037ce01f941b7eb20cb04baf8de345567bb1145036d105967fa143a0",
+        "b4395f222e0d885cd296f0a0650d56ace1262dae2c596af05d47784b03c6cbc7",
+        "4544ec1d3810d4891bfbf53ca437d5dc7dc0d5290328e1b3ded346a55325ae5b",
+        "d57326ff0ae3a250b75b6d14ea6092c7165aadff5e557ad6ce398f4158d99282",
+        "ab524cf0b1f0c0a62885419956aef330d12bbe2769d6a799257ec079bb6c2147"
+      ],
+      "status": "passed"
+    }
+  ],
+  "transactions": [
+    {
+      "caseId": "P1-C0-L0-js",
+      "language": "js",
+      "operation": "standard.mint",
+      "txid": "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+      "fee": 80,
+      "bytes": 192,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "29fd28d9983aacd64151f5f5962bde2a2d1c306c0e10d646782b141df57b6358",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-js",
+      "language": "js",
+      "operation": "standard.mint",
+      "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+      "fee": 237,
+      "bytes": 2956,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-js",
+      "language": "js",
+      "operation": "amm.mint",
+      "txid": "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+      "fee": 80,
+      "bytes": 191,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-js",
+      "language": "js",
+      "operation": "amm.mint",
+      "txid": "6288f56ca6a2c14ecb97c3c4162068bdd8d468bc737e9d5c8df36d1f1cc82796",
+      "fee": 673,
+      "bytes": 8408,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-js",
+      "language": "js",
+      "operation": "amm.add",
+      "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+      "fee": 1586,
+      "bytes": 19817,
+      "verifiedInputs": 4,
+      "parents": [
+        {
+          "txid": "6288f56ca6a2c14ecb97c3c4162068bdd8d468bc737e9d5c8df36d1f1cc82796",
+          "vout": 0
+        },
+        {
+          "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+          "vout": 0
+        },
+        {
+          "txid": "6288f56ca6a2c14ecb97c3c4162068bdd8d468bc737e9d5c8df36d1f1cc82796",
+          "vout": 2
+        },
+        {
+          "txid": "6288f56ca6a2c14ecb97c3c4162068bdd8d468bc737e9d5c8df36d1f1cc82796",
+          "vout": 4
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-js",
+      "language": "rust",
+      "operation": "amm.add",
+      "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+      "fee": 1759,
+      "bytes": 21984,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+          "vout": 0
+        },
+        {
+          "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+          "vout": 6
+        },
+        {
+          "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+          "vout": 2
+        },
+        {
+          "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+          "vout": 8
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-js",
+      "language": "js",
+      "operation": "amm.swap_ft",
+      "txid": "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+      "fee": 1374,
+      "bytes": 17166,
+      "verifiedInputs": 3,
+      "parents": [
+        {
+          "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+          "vout": 0
+        },
+        {
+          "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+          "vout": 8
+        },
+        {
+          "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-js",
+      "language": "rust",
+      "operation": "amm.swap_tbc",
+      "txid": "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+      "fee": 1539,
+      "bytes": 19232,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+          "vout": 0
+        },
+        {
+          "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+          "vout": 6
+        },
+        {
+          "txid": "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+          "vout": 5
+        },
+        {
+          "txid": "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+          "vout": 7
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-js",
+      "language": "rust",
+      "operation": "amm.lp_transfer",
+      "txid": "65adf1a3382fd54c5d3cce50a4b5c6990fe204f2609b411336937a7905fc6f80",
+      "fee": 361,
+      "bytes": 4505,
+      "verifiedInputs": 2,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "65adf1a3382fd54c5d3cce50a4b5c6990fe204f2609b411336937a7905fc6f80",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+          "vout": 4
+        },
+        {
+          "txid": "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+          "vout": 8
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-js",
+      "language": "js",
+      "operation": "amm.remove",
+      "txid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+      "fee": 2053,
+      "bytes": 25662,
+      "verifiedInputs": 4,
+      "parents": [
+        {
+          "txid": "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+          "vout": 0
+        },
+        {
+          "txid": "65adf1a3382fd54c5d3cce50a4b5c6990fe204f2609b411336937a7905fc6f80",
+          "vout": 0
+        },
+        {
+          "txid": "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+          "vout": 4
+        },
+        {
+          "txid": "65adf1a3382fd54c5d3cce50a4b5c6990fe204f2609b411336937a7905fc6f80",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-js",
+      "language": "rust",
+      "operation": "amm.lp_transfer",
+      "txid": "87f7046aa17981f5b585f1c56ab4a57f4bcbca1c5ae01fa0b65a6a098c856d9b",
+      "fee": 507,
+      "bytes": 6330,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "87f7046aa17981f5b585f1c56ab4a57f4bcbca1c5ae01fa0b65a6a098c856d9b",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+          "vout": 9
+        },
+        {
+          "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+          "vout": 4
+        },
+        {
+          "txid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+          "vout": 11
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-js",
+      "language": "js",
+      "operation": "amm.remove",
+      "txid": "b95020cd740c19dc20697db4f888d00c5e1d0cfd05472ac5a86fad20d310fdec",
+      "fee": 1848,
+      "bytes": 23095,
+      "verifiedInputs": 4,
+      "parents": [
+        {
+          "txid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+          "vout": 0
+        },
+        {
+          "txid": "87f7046aa17981f5b585f1c56ab4a57f4bcbca1c5ae01fa0b65a6a098c856d9b",
+          "vout": 0
+        },
+        {
+          "txid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+          "vout": 7
+        },
+        {
+          "txid": "87f7046aa17981f5b585f1c56ab4a57f4bcbca1c5ae01fa0b65a6a098c856d9b",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-rust",
+      "language": "rust",
+      "operation": "standard.mint",
+      "txid": "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+      "fee": 80,
+      "bytes": 192,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "29fd28d9983aacd64151f5f5962bde2a2d1c306c0e10d646782b141df57b6358",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-rust",
+      "language": "rust",
+      "operation": "standard.mint",
+      "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+      "fee": 237,
+      "bytes": 2956,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-rust",
+      "language": "rust",
+      "operation": "amm.mint",
+      "txid": "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+      "fee": 80,
+      "bytes": 191,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-rust",
+      "language": "rust",
+      "operation": "amm.mint",
+      "txid": "6288f56ca6a2c14ecb97c3c4162068bdd8d468bc737e9d5c8df36d1f1cc82796",
+      "fee": 673,
+      "bytes": 8408,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-rust",
+      "language": "rust",
+      "operation": "amm.add",
+      "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+      "fee": 1586,
+      "bytes": 19817,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "6288f56ca6a2c14ecb97c3c4162068bdd8d468bc737e9d5c8df36d1f1cc82796",
+          "vout": 0
+        },
+        {
+          "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+          "vout": 0
+        },
+        {
+          "txid": "6288f56ca6a2c14ecb97c3c4162068bdd8d468bc737e9d5c8df36d1f1cc82796",
+          "vout": 2
+        },
+        {
+          "txid": "6288f56ca6a2c14ecb97c3c4162068bdd8d468bc737e9d5c8df36d1f1cc82796",
+          "vout": 4
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-rust",
+      "language": "go",
+      "operation": "amm.add",
+      "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+      "fee": 1759,
+      "bytes": 21984,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+          "vout": 0
+        },
+        {
+          "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+          "vout": 6
+        },
+        {
+          "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+          "vout": 2
+        },
+        {
+          "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+          "vout": 8
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-rust",
+      "language": "rust",
+      "operation": "amm.swap_ft",
+      "txid": "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+      "fee": 1374,
+      "bytes": 17166,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+          "vout": 0
+        },
+        {
+          "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+          "vout": 8
+        },
+        {
+          "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-rust",
+      "language": "go",
+      "operation": "amm.swap_tbc",
+      "txid": "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+      "fee": 1539,
+      "bytes": 19232,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+          "vout": 0
+        },
+        {
+          "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+          "vout": 6
+        },
+        {
+          "txid": "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+          "vout": 5
+        },
+        {
+          "txid": "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+          "vout": 7
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-rust",
+      "language": "go",
+      "operation": "amm.lp_transfer",
+      "txid": "65adf1a3382fd54c5d3cce50a4b5c6990fe204f2609b411336937a7905fc6f80",
+      "fee": 361,
+      "bytes": 4505,
+      "verifiedInputs": 2,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "65adf1a3382fd54c5d3cce50a4b5c6990fe204f2609b411336937a7905fc6f80",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+          "vout": 4
+        },
+        {
+          "txid": "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+          "vout": 8
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-rust",
+      "language": "rust",
+      "operation": "amm.remove",
+      "txid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+      "fee": 2053,
+      "bytes": 25662,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+          "vout": 0
+        },
+        {
+          "txid": "65adf1a3382fd54c5d3cce50a4b5c6990fe204f2609b411336937a7905fc6f80",
+          "vout": 0
+        },
+        {
+          "txid": "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+          "vout": 4
+        },
+        {
+          "txid": "65adf1a3382fd54c5d3cce50a4b5c6990fe204f2609b411336937a7905fc6f80",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-rust",
+      "language": "go",
+      "operation": "amm.lp_transfer",
+      "txid": "87f7046aa17981f5b585f1c56ab4a57f4bcbca1c5ae01fa0b65a6a098c856d9b",
+      "fee": 507,
+      "bytes": 6330,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "87f7046aa17981f5b585f1c56ab4a57f4bcbca1c5ae01fa0b65a6a098c856d9b",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+          "vout": 9
+        },
+        {
+          "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+          "vout": 4
+        },
+        {
+          "txid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+          "vout": 11
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-rust",
+      "language": "rust",
+      "operation": "amm.remove",
+      "txid": "b95020cd740c19dc20697db4f888d00c5e1d0cfd05472ac5a86fad20d310fdec",
+      "fee": 1848,
+      "bytes": 23095,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "b95020cd740c19dc20697db4f888d00c5e1d0cfd05472ac5a86fad20d310fdec",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+          "vout": 0
+        },
+        {
+          "txid": "87f7046aa17981f5b585f1c56ab4a57f4bcbca1c5ae01fa0b65a6a098c856d9b",
+          "vout": 0
+        },
+        {
+          "txid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+          "vout": 7
+        },
+        {
+          "txid": "87f7046aa17981f5b585f1c56ab4a57f4bcbca1c5ae01fa0b65a6a098c856d9b",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-go",
+      "language": "go",
+      "operation": "standard.mint",
+      "txid": "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+      "fee": 80,
+      "bytes": 192,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "29fd28d9983aacd64151f5f5962bde2a2d1c306c0e10d646782b141df57b6358",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-go",
+      "language": "go",
+      "operation": "standard.mint",
+      "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+      "fee": 237,
+      "bytes": 2956,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-go",
+      "language": "go",
+      "operation": "amm.mint",
+      "txid": "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+      "fee": 80,
+      "bytes": 191,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-go",
+      "language": "go",
+      "operation": "amm.mint",
+      "txid": "6288f56ca6a2c14ecb97c3c4162068bdd8d468bc737e9d5c8df36d1f1cc82796",
+      "fee": 673,
+      "bytes": 8408,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-go",
+      "language": "go",
+      "operation": "amm.add",
+      "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+      "fee": 1586,
+      "bytes": 19817,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "6288f56ca6a2c14ecb97c3c4162068bdd8d468bc737e9d5c8df36d1f1cc82796",
+          "vout": 0
+        },
+        {
+          "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+          "vout": 0
+        },
+        {
+          "txid": "6288f56ca6a2c14ecb97c3c4162068bdd8d468bc737e9d5c8df36d1f1cc82796",
+          "vout": 2
+        },
+        {
+          "txid": "6288f56ca6a2c14ecb97c3c4162068bdd8d468bc737e9d5c8df36d1f1cc82796",
+          "vout": 4
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-go",
+      "language": "js",
+      "operation": "amm.add",
+      "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+      "fee": 1759,
+      "bytes": 21984,
+      "verifiedInputs": 4,
+      "parents": [
+        {
+          "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+          "vout": 0
+        },
+        {
+          "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+          "vout": 6
+        },
+        {
+          "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+          "vout": 2
+        },
+        {
+          "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+          "vout": 8
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-go",
+      "language": "go",
+      "operation": "amm.swap_ft",
+      "txid": "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+      "fee": 1374,
+      "bytes": 17166,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+          "vout": 0
+        },
+        {
+          "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+          "vout": 8
+        },
+        {
+          "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-go",
+      "language": "js",
+      "operation": "amm.swap_tbc",
+      "txid": "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+      "fee": 1539,
+      "bytes": 19232,
+      "verifiedInputs": 4,
+      "parents": [
+        {
+          "txid": "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+          "vout": 0
+        },
+        {
+          "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+          "vout": 6
+        },
+        {
+          "txid": "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+          "vout": 5
+        },
+        {
+          "txid": "ba0b240f808710d7829aac61cfed69ab43c4eae7531caab90d98d5513234afe2",
+          "vout": 7
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-go",
+      "language": "js",
+      "operation": "amm.lp_transfer",
+      "txid": "65adf1a3382fd54c5d3cce50a4b5c6990fe204f2609b411336937a7905fc6f80",
+      "fee": 361,
+      "bytes": 4505,
+      "verifiedInputs": 2,
+      "parents": [
+        {
+          "txid": "a05fdcf7ddc31dc3c7ab190fb9cd8c7d5fa8256618b7ede647dc0c84ddd51081",
+          "vout": 4
+        },
+        {
+          "txid": "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+          "vout": 8
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-go",
+      "language": "go",
+      "operation": "amm.remove",
+      "txid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+      "fee": 2053,
+      "bytes": 25662,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+          "vout": 0
+        },
+        {
+          "txid": "65adf1a3382fd54c5d3cce50a4b5c6990fe204f2609b411336937a7905fc6f80",
+          "vout": 0
+        },
+        {
+          "txid": "97f32dd461078a5546dd832e6803d0f4103ad085b1f74ba20ac4d265cfab3a59",
+          "vout": 4
+        },
+        {
+          "txid": "65adf1a3382fd54c5d3cce50a4b5c6990fe204f2609b411336937a7905fc6f80",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-go",
+      "language": "js",
+      "operation": "amm.lp_transfer",
+      "txid": "87f7046aa17981f5b585f1c56ab4a57f4bcbca1c5ae01fa0b65a6a098c856d9b",
+      "fee": 507,
+      "bytes": 6330,
+      "verifiedInputs": 3,
+      "parents": [
+        {
+          "txid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+          "vout": 9
+        },
+        {
+          "txid": "3b05270d0e70701f9e3f0ef2486f8fa4aa0326bcb7ced4bae292e5de283bb873",
+          "vout": 4
+        },
+        {
+          "txid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+          "vout": 11
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P1-C0-L0-go",
+      "language": "go",
+      "operation": "amm.remove",
+      "txid": "b95020cd740c19dc20697db4f888d00c5e1d0cfd05472ac5a86fad20d310fdec",
+      "fee": 1848,
+      "bytes": 23095,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "b95020cd740c19dc20697db4f888d00c5e1d0cfd05472ac5a86fad20d310fdec",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+          "vout": 0
+        },
+        {
+          "txid": "87f7046aa17981f5b585f1c56ab4a57f4bcbca1c5ae01fa0b65a6a098c856d9b",
+          "vout": 0
+        },
+        {
+          "txid": "201738c8d59499f2e0f10169c15a6c528577d1fa0adc4b4a1f784b1a90a59659",
+          "vout": 7
+        },
+        {
+          "txid": "87f7046aa17981f5b585f1c56ab4a57f4bcbca1c5ae01fa0b65a6a098c856d9b",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-js",
+      "language": "js",
+      "operation": "standard.mint",
+      "txid": "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+      "fee": 80,
+      "bytes": 192,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "29fd28d9983aacd64151f5f5962bde2a2d1c306c0e10d646782b141df57b6358",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-js",
+      "language": "js",
+      "operation": "standard.mint",
+      "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+      "fee": 237,
+      "bytes": 2956,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-js",
+      "language": "js",
+      "operation": "amm.mint",
+      "txid": "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+      "fee": 80,
+      "bytes": 191,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-js",
+      "language": "js",
+      "operation": "amm.mint",
+      "txid": "fd341fa7c98874cb0b888f603c90e115469c70fdc9fb62e17b00f69f4bb6e076",
+      "fee": 684,
+      "bytes": 8541,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-js",
+      "language": "js",
+      "operation": "amm.add",
+      "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+      "fee": 1621,
+      "bytes": 20258,
+      "verifiedInputs": 4,
+      "parents": [
+        {
+          "txid": "fd341fa7c98874cb0b888f603c90e115469c70fdc9fb62e17b00f69f4bb6e076",
+          "vout": 0
+        },
+        {
+          "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+          "vout": 0
+        },
+        {
+          "txid": "fd341fa7c98874cb0b888f603c90e115469c70fdc9fb62e17b00f69f4bb6e076",
+          "vout": 2
+        },
+        {
+          "txid": "fd341fa7c98874cb0b888f603c90e115469c70fdc9fb62e17b00f69f4bb6e076",
+          "vout": 4
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-js",
+      "language": "rust",
+      "operation": "amm.add",
+      "txid": "c3c69186902bb5757a8c6dc0380ea9c7dbed32dbe92bbb0065a40f8ab3c3a4f1",
+      "fee": 1794,
+      "bytes": 22422,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "613d456c41bbfb8fa82a0cf90a8509d2940ee39cfd64c62710e8dc0eaec505a5",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+          "vout": 0
+        },
+        {
+          "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+          "vout": 6
+        },
+        {
+          "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+          "vout": 2
+        },
+        {
+          "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+          "vout": 8
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-js",
+      "language": "js",
+      "operation": "amm.swap_ft",
+      "txid": "21257db7a028b8619b513046105c33dbe1e120a32f50c4b01b6ef090d70762ba",
+      "fee": 1393,
+      "bytes": 17410,
+      "verifiedInputs": 3,
+      "parents": [
+        {
+          "txid": "c3c69186902bb5757a8c6dc0380ea9c7dbed32dbe92bbb0065a40f8ab3c3a4f1",
+          "vout": 0
+        },
+        {
+          "txid": "c3c69186902bb5757a8c6dc0380ea9c7dbed32dbe92bbb0065a40f8ab3c3a4f1",
+          "vout": 8
+        },
+        {
+          "txid": "c3c69186902bb5757a8c6dc0380ea9c7dbed32dbe92bbb0065a40f8ab3c3a4f1",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-js",
+      "language": "rust",
+      "operation": "amm.swap_tbc",
+      "txid": "7948b194335b31bc903f7f4182aa355b13cace7fcd796cd9f2efd70429b21fcb",
+      "fee": 1567,
+      "bytes": 19578,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "7948b194335b31bc903f7f4182aa355b13cace7fcd796cd9f2efd70429b21fcb",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "21257db7a028b8619b513046105c33dbe1e120a32f50c4b01b6ef090d70762ba",
+          "vout": 0
+        },
+        {
+          "txid": "c3c69186902bb5757a8c6dc0380ea9c7dbed32dbe92bbb0065a40f8ab3c3a4f1",
+          "vout": 6
+        },
+        {
+          "txid": "21257db7a028b8619b513046105c33dbe1e120a32f50c4b01b6ef090d70762ba",
+          "vout": 5
+        },
+        {
+          "txid": "21257db7a028b8619b513046105c33dbe1e120a32f50c4b01b6ef090d70762ba",
+          "vout": 7
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-js",
+      "language": "rust",
+      "operation": "amm.lp_transfer",
+      "txid": "6149233547c93691c74914800812bc7e79d80615d04f10deae86b237ce299149",
+      "fee": 377,
+      "bytes": 4704,
+      "verifiedInputs": 2,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "6149233547c93691c74914800812bc7e79d80615d04f10deae86b237ce299149",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+          "vout": 4
+        },
+        {
+          "txid": "7948b194335b31bc903f7f4182aa355b13cace7fcd796cd9f2efd70429b21fcb",
+          "vout": 8
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-js",
+      "language": "js",
+      "operation": "amm.remove",
+      "txid": "757fb2209eecd3ff24cd9c1b974c643e6c4b9ed70ddcf52e58a3c3506291eaca",
+      "fee": 2104,
+      "bytes": 26294,
+      "verifiedInputs": 4,
+      "parents": [
+        {
+          "txid": "7948b194335b31bc903f7f4182aa355b13cace7fcd796cd9f2efd70429b21fcb",
+          "vout": 0
+        },
+        {
+          "txid": "6149233547c93691c74914800812bc7e79d80615d04f10deae86b237ce299149",
+          "vout": 0
+        },
+        {
+          "txid": "7948b194335b31bc903f7f4182aa355b13cace7fcd796cd9f2efd70429b21fcb",
+          "vout": 4
+        },
+        {
+          "txid": "6149233547c93691c74914800812bc7e79d80615d04f10deae86b237ce299149",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-js",
+      "language": "rust",
+      "operation": "amm.lp_transfer",
+      "txid": "7ecaaab318b1f4d494de487747d35cc64783aa1170080402f0d02c908f613996",
+      "fee": 523,
+      "bytes": 6525,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "7ecaaab318b1f4d494de487747d35cc64783aa1170080402f0d02c908f613996",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "757fb2209eecd3ff24cd9c1b974c643e6c4b9ed70ddcf52e58a3c3506291eaca",
+          "vout": 9
+        },
+        {
+          "txid": "c3c69186902bb5757a8c6dc0380ea9c7dbed32dbe92bbb0065a40f8ab3c3a4f1",
+          "vout": 4
+        },
+        {
+          "txid": "757fb2209eecd3ff24cd9c1b974c643e6c4b9ed70ddcf52e58a3c3506291eaca",
+          "vout": 11
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-js",
+      "language": "js",
+      "operation": "amm.remove",
+      "txid": "f7a01b5a0c5fa724ec7bca5910eebbc37cb87d5cca34f6459d6ce61bce6d261b",
+      "fee": 1884,
+      "bytes": 23536,
+      "verifiedInputs": 4,
+      "parents": [
+        {
+          "txid": "757fb2209eecd3ff24cd9c1b974c643e6c4b9ed70ddcf52e58a3c3506291eaca",
+          "vout": 0
+        },
+        {
+          "txid": "7ecaaab318b1f4d494de487747d35cc64783aa1170080402f0d02c908f613996",
+          "vout": 0
+        },
+        {
+          "txid": "757fb2209eecd3ff24cd9c1b974c643e6c4b9ed70ddcf52e58a3c3506291eaca",
+          "vout": 7
+        },
+        {
+          "txid": "7ecaaab318b1f4d494de487747d35cc64783aa1170080402f0d02c908f613996",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-rust",
+      "language": "rust",
+      "operation": "standard.mint",
+      "txid": "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+      "fee": 80,
+      "bytes": 192,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "29fd28d9983aacd64151f5f5962bde2a2d1c306c0e10d646782b141df57b6358",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-rust",
+      "language": "rust",
+      "operation": "standard.mint",
+      "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+      "fee": 237,
+      "bytes": 2956,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-rust",
+      "language": "rust",
+      "operation": "amm.mint",
+      "txid": "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+      "fee": 80,
+      "bytes": 191,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-rust",
+      "language": "rust",
+      "operation": "amm.mint",
+      "txid": "fd341fa7c98874cb0b888f603c90e115469c70fdc9fb62e17b00f69f4bb6e076",
+      "fee": 684,
+      "bytes": 8541,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-rust",
+      "language": "rust",
+      "operation": "amm.add",
+      "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+      "fee": 1621,
+      "bytes": 20258,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "fd341fa7c98874cb0b888f603c90e115469c70fdc9fb62e17b00f69f4bb6e076",
+          "vout": 0
+        },
+        {
+          "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+          "vout": 0
+        },
+        {
+          "txid": "fd341fa7c98874cb0b888f603c90e115469c70fdc9fb62e17b00f69f4bb6e076",
+          "vout": 2
+        },
+        {
+          "txid": "fd341fa7c98874cb0b888f603c90e115469c70fdc9fb62e17b00f69f4bb6e076",
+          "vout": 4
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-rust",
+      "language": "go",
+      "operation": "amm.add",
+      "txid": "c3c69186902bb5757a8c6dc0380ea9c7dbed32dbe92bbb0065a40f8ab3c3a4f1",
+      "fee": 1794,
+      "bytes": 22422,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "613d456c41bbfb8fa82a0cf90a8509d2940ee39cfd64c62710e8dc0eaec505a5",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+          "vout": 0
+        },
+        {
+          "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+          "vout": 6
+        },
+        {
+          "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+          "vout": 2
+        },
+        {
+          "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+          "vout": 8
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-rust",
+      "language": "rust",
+      "operation": "amm.swap_ft",
+      "txid": "21257db7a028b8619b513046105c33dbe1e120a32f50c4b01b6ef090d70762ba",
+      "fee": 1393,
+      "bytes": 17410,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "21257db7a028b8619b513046105c33dbe1e120a32f50c4b01b6ef090d70762ba",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "c3c69186902bb5757a8c6dc0380ea9c7dbed32dbe92bbb0065a40f8ab3c3a4f1",
+          "vout": 0
+        },
+        {
+          "txid": "c3c69186902bb5757a8c6dc0380ea9c7dbed32dbe92bbb0065a40f8ab3c3a4f1",
+          "vout": 8
+        },
+        {
+          "txid": "c3c69186902bb5757a8c6dc0380ea9c7dbed32dbe92bbb0065a40f8ab3c3a4f1",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-rust",
+      "language": "go",
+      "operation": "amm.swap_tbc",
+      "txid": "7948b194335b31bc903f7f4182aa355b13cace7fcd796cd9f2efd70429b21fcb",
+      "fee": 1567,
+      "bytes": 19578,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "7948b194335b31bc903f7f4182aa355b13cace7fcd796cd9f2efd70429b21fcb",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "21257db7a028b8619b513046105c33dbe1e120a32f50c4b01b6ef090d70762ba",
+          "vout": 0
+        },
+        {
+          "txid": "c3c69186902bb5757a8c6dc0380ea9c7dbed32dbe92bbb0065a40f8ab3c3a4f1",
+          "vout": 6
+        },
+        {
+          "txid": "21257db7a028b8619b513046105c33dbe1e120a32f50c4b01b6ef090d70762ba",
+          "vout": 5
+        },
+        {
+          "txid": "21257db7a028b8619b513046105c33dbe1e120a32f50c4b01b6ef090d70762ba",
+          "vout": 7
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-rust",
+      "language": "go",
+      "operation": "amm.lp_transfer",
+      "txid": "6149233547c93691c74914800812bc7e79d80615d04f10deae86b237ce299149",
+      "fee": 377,
+      "bytes": 4704,
+      "verifiedInputs": 2,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "6149233547c93691c74914800812bc7e79d80615d04f10deae86b237ce299149",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+          "vout": 4
+        },
+        {
+          "txid": "7948b194335b31bc903f7f4182aa355b13cace7fcd796cd9f2efd70429b21fcb",
+          "vout": 8
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-rust",
+      "language": "rust",
+      "operation": "amm.remove",
+      "txid": "757fb2209eecd3ff24cd9c1b974c643e6c4b9ed70ddcf52e58a3c3506291eaca",
+      "fee": 2104,
+      "bytes": 26294,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "757fb2209eecd3ff24cd9c1b974c643e6c4b9ed70ddcf52e58a3c3506291eaca",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "7948b194335b31bc903f7f4182aa355b13cace7fcd796cd9f2efd70429b21fcb",
+          "vout": 0
+        },
+        {
+          "txid": "6149233547c93691c74914800812bc7e79d80615d04f10deae86b237ce299149",
+          "vout": 0
+        },
+        {
+          "txid": "7948b194335b31bc903f7f4182aa355b13cace7fcd796cd9f2efd70429b21fcb",
+          "vout": 4
+        },
+        {
+          "txid": "6149233547c93691c74914800812bc7e79d80615d04f10deae86b237ce299149",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-rust",
+      "language": "go",
+      "operation": "amm.lp_transfer",
+      "txid": "7ecaaab318b1f4d494de487747d35cc64783aa1170080402f0d02c908f613996",
+      "fee": 523,
+      "bytes": 6525,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "7ecaaab318b1f4d494de487747d35cc64783aa1170080402f0d02c908f613996",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "757fb2209eecd3ff24cd9c1b974c643e6c4b9ed70ddcf52e58a3c3506291eaca",
+          "vout": 9
+        },
+        {
+          "txid": "c3c69186902bb5757a8c6dc0380ea9c7dbed32dbe92bbb0065a40f8ab3c3a4f1",
+          "vout": 4
+        },
+        {
+          "txid": "757fb2209eecd3ff24cd9c1b974c643e6c4b9ed70ddcf52e58a3c3506291eaca",
+          "vout": 11
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-rust",
+      "language": "rust",
+      "operation": "amm.remove",
+      "txid": "10af70426bf4037c6adcf8d12bcc3212784aa4f4a59f373559f73765a46b7d55",
+      "fee": 1883,
+      "bytes": 23537,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "f7a01b5a0c5fa724ec7bca5910eebbc37cb87d5cca34f6459d6ce61bce6d261b",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "757fb2209eecd3ff24cd9c1b974c643e6c4b9ed70ddcf52e58a3c3506291eaca",
+          "vout": 0
+        },
+        {
+          "txid": "7ecaaab318b1f4d494de487747d35cc64783aa1170080402f0d02c908f613996",
+          "vout": 0
+        },
+        {
+          "txid": "757fb2209eecd3ff24cd9c1b974c643e6c4b9ed70ddcf52e58a3c3506291eaca",
+          "vout": 7
+        },
+        {
+          "txid": "7ecaaab318b1f4d494de487747d35cc64783aa1170080402f0d02c908f613996",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-go",
+      "language": "go",
+      "operation": "standard.mint",
+      "txid": "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+      "fee": 80,
+      "bytes": 192,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "29fd28d9983aacd64151f5f5962bde2a2d1c306c0e10d646782b141df57b6358",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-go",
+      "language": "go",
+      "operation": "standard.mint",
+      "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+      "fee": 237,
+      "bytes": 2956,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "a134d2d1b99dc3d9a36fba431a07b101ed1bf2ea70327d138cb35f1ef01f406c",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-go",
+      "language": "go",
+      "operation": "amm.mint",
+      "txid": "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+      "fee": 80,
+      "bytes": 191,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-go",
+      "language": "go",
+      "operation": "amm.mint",
+      "txid": "fd341fa7c98874cb0b888f603c90e115469c70fdc9fb62e17b00f69f4bb6e076",
+      "fee": 684,
+      "bytes": 8541,
+      "verifiedInputs": 1,
+      "parents": [
+        {
+          "txid": "55d59513c52fa6fedfb121776d1ef6951af3d6dc424ec149e68ca985e8a15279",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-go",
+      "language": "go",
+      "operation": "amm.add",
+      "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+      "fee": 1621,
+      "bytes": 20258,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "fd341fa7c98874cb0b888f603c90e115469c70fdc9fb62e17b00f69f4bb6e076",
+          "vout": 0
+        },
+        {
+          "txid": "a9e98b15c284ddf49f31dd573aee6788447d630beacc51520bef937620527616",
+          "vout": 0
+        },
+        {
+          "txid": "fd341fa7c98874cb0b888f603c90e115469c70fdc9fb62e17b00f69f4bb6e076",
+          "vout": 2
+        },
+        {
+          "txid": "fd341fa7c98874cb0b888f603c90e115469c70fdc9fb62e17b00f69f4bb6e076",
+          "vout": 4
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-go",
+      "language": "js",
+      "operation": "amm.add",
+      "txid": "613d456c41bbfb8fa82a0cf90a8509d2940ee39cfd64c62710e8dc0eaec505a5",
+      "fee": 1795,
+      "bytes": 22423,
+      "verifiedInputs": 4,
+      "parents": [
+        {
+          "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+          "vout": 0
+        },
+        {
+          "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+          "vout": 6
+        },
+        {
+          "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+          "vout": 2
+        },
+        {
+          "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+          "vout": 8
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-go",
+      "language": "go",
+      "operation": "amm.swap_ft",
+      "txid": "de7d44fb0209e119ff79c6f0c3fdad6ce3ac0810ec9a53c41cd10d35f0fab8a9",
+      "fee": 1393,
+      "bytes": 17411,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "de7d44fb0209e119ff79c6f0c3fdad6ce3ac0810ec9a53c41cd10d35f0fab8a9",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "613d456c41bbfb8fa82a0cf90a8509d2940ee39cfd64c62710e8dc0eaec505a5",
+          "vout": 0
+        },
+        {
+          "txid": "613d456c41bbfb8fa82a0cf90a8509d2940ee39cfd64c62710e8dc0eaec505a5",
+          "vout": 8
+        },
+        {
+          "txid": "613d456c41bbfb8fa82a0cf90a8509d2940ee39cfd64c62710e8dc0eaec505a5",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-go",
+      "language": "js",
+      "operation": "amm.swap_tbc",
+      "txid": "0b94279d037ce01f941b7eb20cb04baf8de345567bb1145036d105967fa143a0",
+      "fee": 1567,
+      "bytes": 19579,
+      "verifiedInputs": 4,
+      "parents": [
+        {
+          "txid": "de7d44fb0209e119ff79c6f0c3fdad6ce3ac0810ec9a53c41cd10d35f0fab8a9",
+          "vout": 0
+        },
+        {
+          "txid": "613d456c41bbfb8fa82a0cf90a8509d2940ee39cfd64c62710e8dc0eaec505a5",
+          "vout": 6
+        },
+        {
+          "txid": "de7d44fb0209e119ff79c6f0c3fdad6ce3ac0810ec9a53c41cd10d35f0fab8a9",
+          "vout": 5
+        },
+        {
+          "txid": "de7d44fb0209e119ff79c6f0c3fdad6ce3ac0810ec9a53c41cd10d35f0fab8a9",
+          "vout": 7
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-go",
+      "language": "js",
+      "operation": "amm.lp_transfer",
+      "txid": "b4395f222e0d885cd296f0a0650d56ace1262dae2c596af05d47784b03c6cbc7",
+      "fee": 377,
+      "bytes": 4704,
+      "verifiedInputs": 2,
+      "parents": [
+        {
+          "txid": "ece48d317dbcfa456d746af3c5dcbf23ace9e9a8e49ec533c30189f6ebdae105",
+          "vout": 4
+        },
+        {
+          "txid": "0b94279d037ce01f941b7eb20cb04baf8de345567bb1145036d105967fa143a0",
+          "vout": 8
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-go",
+      "language": "go",
+      "operation": "amm.remove",
+      "txid": "4544ec1d3810d4891bfbf53ca437d5dc7dc0d5290328e1b3ded346a55325ae5b",
+      "fee": 2104,
+      "bytes": 26294,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "4544ec1d3810d4891bfbf53ca437d5dc7dc0d5290328e1b3ded346a55325ae5b",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "0b94279d037ce01f941b7eb20cb04baf8de345567bb1145036d105967fa143a0",
+          "vout": 0
+        },
+        {
+          "txid": "b4395f222e0d885cd296f0a0650d56ace1262dae2c596af05d47784b03c6cbc7",
+          "vout": 0
+        },
+        {
+          "txid": "0b94279d037ce01f941b7eb20cb04baf8de345567bb1145036d105967fa143a0",
+          "vout": 4
+        },
+        {
+          "txid": "b4395f222e0d885cd296f0a0650d56ace1262dae2c596af05d47784b03c6cbc7",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-go",
+      "language": "js",
+      "operation": "amm.lp_transfer",
+      "txid": "d57326ff0ae3a250b75b6d14ea6092c7165aadff5e557ad6ce398f4158d99282",
+      "fee": 523,
+      "bytes": 6526,
+      "verifiedInputs": 3,
+      "parents": [
+        {
+          "txid": "4544ec1d3810d4891bfbf53ca437d5dc7dc0d5290328e1b3ded346a55325ae5b",
+          "vout": 9
+        },
+        {
+          "txid": "613d456c41bbfb8fa82a0cf90a8509d2940ee39cfd64c62710e8dc0eaec505a5",
+          "vout": 4
+        },
+        {
+          "txid": "4544ec1d3810d4891bfbf53ca437d5dc7dc0d5290328e1b3ded346a55325ae5b",
+          "vout": 11
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "caseId": "P6-C5-L1-go",
+      "language": "go",
+      "operation": "amm.remove",
+      "txid": "ab524cf0b1f0c0a62885419956aef330d12bbe2769d6a799257ec079bb6c2147",
+      "fee": 1883,
+      "bytes": 23536,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "3ce10d5bb900d93399c2a0fcef151cd5675e43724b29f99a62a77d28f164003b",
+        "referenceScriptsVerified": true
+      },
+      "parents": [
+        {
+          "txid": "4544ec1d3810d4891bfbf53ca437d5dc7dc0d5290328e1b3ded346a55325ae5b",
+          "vout": 0
+        },
+        {
+          "txid": "d57326ff0ae3a250b75b6d14ea6092c7165aadff5e557ad6ce398f4158d99282",
+          "vout": 0
+        },
+        {
+          "txid": "4544ec1d3810d4891bfbf53ca437d5dc7dc0d5290328e1b3ded346a55325ae5b",
+          "vout": 7
+        },
+        {
+          "txid": "d57326ff0ae3a250b75b6d14ea6092c7165aadff5e557ad6ce398f4158d99282",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    }
+  ],
+  "totalFeesSat": 73322,
+  "status": "passed"
+}

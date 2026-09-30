@@ -1,6 +1,9 @@
 package util
 
 import (
+	"encoding/json"
+	bt "github.com/LoongYearMeta/tbc-lib-go"
+	"os"
 	"strings"
 	"testing"
 
@@ -35,5 +38,27 @@ func TestPoolLpCostUsesOpcodeContextJS166(t *testing.T) {
 	}
 	if _, err := GetLpCostAmount(duplicate.String()); err == nil || !strings.Contains(err.Error(), "exactly one") {
 		t.Fatalf("duplicate error = %v", err)
+	}
+}
+
+func TestPlanSixOmitsHistoricalEmptyLockLeaf(t *testing.T) {
+	raw, e := os.ReadFile("../contract/testdata/js-1.7.2/pool-v2-plan6-witness.json")
+	if e != nil {
+		t.Fatal(e)
+	}
+	var f struct{ Raw, Expected string }
+	if e = json.Unmarshal(raw, &f); e != nil {
+		t.Fatal(e)
+	}
+	tx, e := bt.NewTxFromString(f.Raw)
+	if e != nil {
+		t.Fatal(e)
+	}
+	actual, e := GetCurrentTxOutputsDataforPool2(tx, 1, 0, 0)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if actual != f.Expected {
+		t.Fatalf("plan 6 witness differs from JS 1.7.2: lengths %d %d", len(actual), len(f.Expected))
 	}
 }

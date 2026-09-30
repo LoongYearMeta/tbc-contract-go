@@ -422,6 +422,10 @@ func (p *PoolNFT2) GetPoolNftTape(lpPlan int, withLock, withLockTime bool) (*bsc
 	}
 	amountData := lpHex + aHex + tbcHex
 	feeRateHex := fmt.Sprintf("%02x", p.ServiceFeeRate)
+	// JS Script.fromASM pads odd-length hex to a whole number of bytes.
+	if len(feeRateHex)%2 != 0 {
+		feeRateHex = "0" + feeRateHex
+	}
 	lpPlanHex := fmt.Sprintf("%02x", lpPlan)
 	withLockHex := "00"
 	if withLock {
@@ -723,7 +727,7 @@ var poolNFT2ServiceFeeAddresses = map[int]string{
 	6: "1N7rf2AuAHB2aCrVgnbQhSWhaUVk3rGhjm",
 }
 
-var poolNFT2PlanFeeRates = map[int]int{1: 35, 2: 35, 3: 135, 4: 335, 5: 535, 6: 130}
+var poolNFT2PlanFeeRates = map[int]int{1: 35, 2: 35, 3: 135, 4: 335, 5: 535, 6: 330}
 
 type poolFeeConfig struct {
 	ServiceFeeRate int
@@ -738,7 +742,7 @@ func resolvePoolFeeConfig(serviceFeeRate, lpPlan int) (poolFeeConfig, error) {
 	if serviceFeeRate != want {
 		return poolFeeConfig{}, fmt.Errorf("invalid serviceFeeRate for lpPlan %d: expected %d", lpPlan, want)
 	}
-	return poolFeeConfig{ServiceFeeRate: want, LpPlan: lpPlan}, nil
+	return poolFeeConfig{ServiceFeeRate: serviceFeeRate, LpPlan: lpPlan}, nil
 }
 
 func getLpServiceFeeRate(lpPlan, serviceFeeRate int) int {
@@ -746,7 +750,7 @@ func getLpServiceFeeRate(lpPlan, serviceFeeRate int) int {
 		return serviceFeeRate - 10
 	}
 	if lpPlan == 6 {
-		return 80
+		return 200
 	}
 	return 5
 }
@@ -776,6 +780,9 @@ func classifyPoolFTCode(codeHex string) (ftVersion int, isCoin bool, err error) 
 	info, err := util.ClassifyFTScriptHex(codeHex)
 	if err != nil {
 		return 0, false, err
+	}
+	if info.IsCoin {
+		return 0, false, fmt.Errorf("stablecoin pools are not supported")
 	}
 	return int(info.Version), info.IsCoin, nil
 }
@@ -1556,6 +1563,7 @@ func (p *PoolNFT2) getPoolNftUnlock(
 	withLock int,
 	option int,
 	swapOption int,
+	localTXs ...*bt.Tx,
 ) (*bscript.Script, error) {
 	preTX, err := api.FetchTXRaw(preTxID, p.Network)
 	if err != nil {
@@ -1574,6 +1582,15 @@ func (p *PoolNFT2) getPoolNftUnlock(
 	inputsTXs := make([]*bt.Tx, len(currentTX.Inputs)-1)
 	for i := 1; i < len(currentTX.Inputs); i++ {
 		prevTxID := hex.EncodeToString(currentTX.Inputs[i].PreviousTxID())
+		for _, local := range localTXs {
+			if local != nil && local.TxID() == prevTxID {
+				inputsTXs[i-1] = local
+				break
+			}
+		}
+		if inputsTXs[i-1] != nil {
+			continue
+		}
 		inputsTXs[i-1], err = api.FetchTXRaw(prevTxID, p.Network)
 		if err != nil {
 			return nil, fmt.Errorf("getPoolNftUnlock fetchInputTX[%d]: %w", i, err)
@@ -2304,7 +2321,7 @@ func buildFTTransferCodeHex(codeHex, address string) (string, error) {
 }
 
 // signP2PKHAtIdx signs tx input at the given index.
-func signP2PKHAtIdx(tx *bt.Tx, privKey *bec.PrivateKey, idx uint32) error {
+func signP2PKHAtIdx(tx *bt.Tx, privKey TransactionSigner, idx uint32) error {
 	sh, err := tx.CalcInputSignatureHash(idx, sighash.AllForkID)
 	if err != nil {
 		return err
@@ -2761,16 +2778,42 @@ func (p *PoolNFT2) ConsumeLP(
 		return nil, err
 	}
 
-	// Fetch FT-LP UTXO
-	fttxoLP, err := p.fetchFtlpUTXO(addr.AddressString, changeData.FtLpDifference)
-	if err != nil {
-		return nil, fmt.Errorf("ConsumeLP fetchFtlpUTXO: %w", err)
+	// A pending unlock consumes the original LP inputs. The consume must spend
+	// its new LP output, with ancestry built locally before either tx is sent.
+	var fttxoLP *api.LpUTXO
+	var lpPreTX *bt.Tx
+	var lpPrePreTxData string
+	if unlockRaw != "" {
+		lpPreTX, err = bt.NewTxFromString(unlockRaw)
+		if err != nil {
+			return nil, err
+		}
+		balance, balanceErr := util.GetFtBalanceFromTape(hex.EncodeToString(lpPreTX.Outputs[1].LockingScript.Bytes()))
+		if balanceErr != nil {
+			return nil, balanceErr
+		}
+		fttxoLP = &api.LpUTXO{TxID: lpPreTX.TxID(), Vout: 0,
+			Script:   hex.EncodeToString(lpPreTX.Outputs[0].LockingScript.Bytes()),
+			Satoshis: lpPreTX.Outputs[0].Satoshis, FtBalance: balance}
+		parents := make([]*bt.Tx, len(lpPreTX.Inputs))
+		for i, input := range lpPreTX.Inputs {
+			parents[i], err = api.FetchTXRaw(hex.EncodeToString(input.PreviousTxID()), p.Network)
+			if err != nil {
+				return nil, err
+			}
+		}
+		lpPrePreTxData, err = util.BuildFtPrePreTxData(lpPreTX, 0, parents)
+	} else {
+		fttxoLP, err = p.fetchFtlpUTXO(addr.AddressString, changeData.FtLpDifference)
+		if err != nil {
+			return nil, fmt.Errorf("ConsumeLP fetchFtlpUTXO: %w", err)
+		}
+		lpPreTX, err = api.FetchTXRaw(fttxoLP.TxID, p.Network)
+		if err != nil {
+			return nil, err
+		}
+		lpPrePreTxData, err = api.FetchFtPrePreTxData(lpPreTX, int(fttxoLP.Vout), p.Network)
 	}
-	lpPreTX, err := api.FetchTXRaw(fttxoLP.TxID, p.Network)
-	if err != nil {
-		return nil, err
-	}
-	lpPrePreTxData, err := api.FetchFtPrePreTxData(lpPreTX, int(fttxoLP.Vout), p.Network)
 	if err != nil {
 		return nil, err
 	}
@@ -2975,7 +3018,7 @@ func (p *PoolNFT2) ConsumeLP(
 	feeIdx := len(fttxosC) + 2
 
 	signAll := func() error {
-		poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), withLockInt, 2, 0)
+		poolUnlock, err := p.getPoolNftUnlock(privKey, tx, 0, hex.EncodeToString(poolnft.TxID), int(poolnft.Vout), withLockInt, 2, 0, lpPreTX)
 		if err != nil {
 			return err
 		}

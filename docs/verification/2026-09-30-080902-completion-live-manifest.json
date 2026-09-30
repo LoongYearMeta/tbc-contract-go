@@ -1,0 +1,69 @@
+{
+  "reference": {
+    "contract": "1.7.2",
+    "lib": "1.0.31"
+  },
+  "network": "testnet",
+  "externalSigning": true,
+  "nativeValidation": true,
+  "status": "passed",
+  "phases": [
+    {
+      "phase": "amm",
+      "report": "2026-09-30-080902-completion-live-amm.json",
+      "status": "passed",
+      "transactions": 72,
+      "feesSat": 73026
+    },
+    {
+      "phase": "locks",
+      "report": "2026-09-30-080902-completion-live-locks.json",
+      "status": "passed",
+      "transactions": 54,
+      "feesSat": 14344
+    },
+    {
+      "phase": "lop",
+      "report": "2026-09-30-080902-completion-live-lop.json",
+      "status": "passed",
+      "transactions": 264,
+      "feesSat": 92541
+    },
+    {
+      "phase": "legacy-stable",
+      "report": "2026-09-30-080902-completion-live-legacy-stable.json",
+      "status": "passed",
+      "transactions": 24,
+      "feesSat": 7040
+    }
+  ],
+  "address": "143KgKGcse57nXBnXyJwtQrf2KP4KWto59",
+  "summary": {
+    "transactions": 414,
+    "uniqueTransactions": 414,
+    "minerFeesSat": 186951,
+    "verifiedInputs": 771,
+    "sameInputJSComparisons": 136,
+    "transactionsByLanguage": {
+      "js": 230,
+      "rust": 92,
+      "go": 92
+    }
+  },
+  "excluded": [
+    "Stablecoin pools",
+    "Deprecated PoolNFT v1"
+  ],
+  "acceptance": "Broadcast accepted and exact raw refetched; block confirmation not asserted",
+  "regression": {
+    "rust": {
+      "command": "cargo test --all-targets --quiet",
+      "passed": 454
+    },
+    "go": {
+      "command": "go test ./...",
+      "status": "passed"
+    },
+    "offlineManifest": "2026-09-30-completion-offline-manifest.json"
+  }
+}

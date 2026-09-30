@@ -1,0 +1,358 @@
+{
+  "network": "testnet",
+  "tokenDecimal": 6,
+  "reference": "tbc-contract@1.7.2",
+  "transactions": [
+    {
+      "language": "rust",
+      "operation": "pool_ft_source",
+      "txid": "db7d1477a587d68757bfd031980bbb884333141e6131e574101ca2e64a4e3d48",
+      "bytes": 328,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "broadcast": true,
+      "parents": [
+        {
+          "txid": "a4d7d0e1039a9603e385e2e81eb8d6e12f63b45401a70bf71ca5adc974fcac8b",
+          "vout": 4
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_ft_mint",
+      "txid": "8fc1d69763a4a4a760aa0a47d5d260134ce8b2dbd857a10df3b600b55ffeaafb",
+      "bytes": 2369,
+      "fee": 190,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "broadcast": true,
+      "parents": [
+        {
+          "txid": "db7d1477a587d68757bfd031980bbb884333141e6131e574101ca2e64a4e3d48",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_source",
+      "txid": "0eb7259b5052d3feb85fe90c3ff2e3face0def4dd17e039c60ab05932df2a5e7",
+      "bytes": 244,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "broadcast": true,
+      "parents": [
+        {
+          "txid": "db7d1477a587d68757bfd031980bbb884333141e6131e574101ca2e64a4e3d48",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_mint",
+      "txid": "5f601a2f67a2d60b0a538c74b701c9b67d3028ec326b8c9e2dc3e9953b51ba7a",
+      "bytes": 4107,
+      "fee": 329,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "broadcast": true,
+      "parents": [
+        {
+          "txid": "0eb7259b5052d3feb85fe90c3ff2e3face0def4dd17e039c60ab05932df2a5e7",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_init",
+      "txid": "25f5c853740ecad17fa65aa01bf8a71a657736480d90cbad4c28f32b92d2abdd",
+      "bytes": 13785,
+      "fee": 1103,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "broadcast": true,
+      "parents": [
+        {
+          "txid": "5f601a2f67a2d60b0a538c74b701c9b67d3028ec326b8c9e2dc3e9953b51ba7a",
+          "vout": 0
+        },
+        {
+          "txid": "8fc1d69763a4a4a760aa0a47d5d260134ce8b2dbd857a10df3b600b55ffeaafb",
+          "vout": 0
+        },
+        {
+          "txid": "0eb7259b5052d3feb85fe90c3ff2e3face0def4dd17e039c60ab05932df2a5e7",
+          "vout": 1
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_increase_lp_1",
+      "txid": "25be158521e47343de573b4573c3063f07e7ee4c1e68467bf4f758f2b7beed55",
+      "bytes": 15017,
+      "fee": 1202,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "broadcast": true,
+      "parents": [
+        {
+          "txid": "25f5c853740ecad17fa65aa01bf8a71a657736480d90cbad4c28f32b92d2abdd",
+          "vout": 0
+        },
+        {
+          "txid": "25f5c853740ecad17fa65aa01bf8a71a657736480d90cbad4c28f32b92d2abdd",
+          "vout": 6
+        },
+        {
+          "txid": "25f5c853740ecad17fa65aa01bf8a71a657736480d90cbad4c28f32b92d2abdd",
+          "vout": 8
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_increase_lp_2",
+      "txid": "21304d00bb86a03055eda7ea6851b2f15b2ef07cd1a8e8d665b39c6f50f12141",
+      "bytes": 15500,
+      "fee": 1240,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "broadcast": true,
+      "parents": [
+        {
+          "txid": "25be158521e47343de573b4573c3063f07e7ee4c1e68467bf4f758f2b7beed55",
+          "vout": 0
+        },
+        {
+          "txid": "25be158521e47343de573b4573c3063f07e7ee4c1e68467bf4f758f2b7beed55",
+          "vout": 6
+        },
+        {
+          "txid": "25be158521e47343de573b4573c3063f07e7ee4c1e68467bf4f758f2b7beed55",
+          "vout": 8
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_swap_tbc_to_ft",
+      "txid": "12ca271ab9dbb980f389929275e4d256e9d500b8207e4e1256f15c13beb9d1c9",
+      "bytes": 13399,
+      "fee": 1072,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "broadcast": true,
+      "parents": [
+        {
+          "txid": "21304d00bb86a03055eda7ea6851b2f15b2ef07cd1a8e8d665b39c6f50f12141",
+          "vout": 0
+        },
+        {
+          "txid": "21304d00bb86a03055eda7ea6851b2f15b2ef07cd1a8e8d665b39c6f50f12141",
+          "vout": 8
+        },
+        {
+          "txid": "25f5c853740ecad17fa65aa01bf8a71a657736480d90cbad4c28f32b92d2abdd",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_swap_ft_to_tbc_online",
+      "txid": "be2a10f03c1984fcd8fed22e3d71fb105f46b3c4524446ca15e0574ff0c6c9b2",
+      "bytes": 12832,
+      "fee": 1027,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "broadcast": true,
+      "parents": [
+        {
+          "txid": "12ca271ab9dbb980f389929275e4d256e9d500b8207e4e1256f15c13beb9d1c9",
+          "vout": 0
+        },
+        {
+          "txid": "12ca271ab9dbb980f389929275e4d256e9d500b8207e4e1256f15c13beb9d1c9",
+          "vout": 2
+        },
+        {
+          "txid": "12ca271ab9dbb980f389929275e4d256e9d500b8207e4e1256f15c13beb9d1c9",
+          "vout": 6
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_swap_ft_to_tbc_local",
+      "txid": "c431448fc5ce80a7cdbf32208929c41394db59beb98f665948df3f859730413f",
+      "bytes": 12830,
+      "fee": 1027,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "broadcast": true,
+      "parents": [
+        {
+          "txid": "be2a10f03c1984fcd8fed22e3d71fb105f46b3c4524446ca15e0574ff0c6c9b2",
+          "vout": 0
+        },
+        {
+          "txid": "be2a10f03c1984fcd8fed22e3d71fb105f46b3c4524446ca15e0574ff0c6c9b2",
+          "vout": 5
+        },
+        {
+          "txid": "be2a10f03c1984fcd8fed22e3d71fb105f46b3c4524446ca15e0574ff0c6c9b2",
+          "vout": 7
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_consume_lp",
+      "txid": "9fb8a1d8b1ee371c50501fbda9d44a057755873c1b5655853db49d185bb4e880",
+      "bytes": 21043,
+      "fee": 1684,
+      "verifiedInputs": 4,
+      "refetched": true,
+      "broadcast": true,
+      "parents": [
+        {
+          "txid": "c431448fc5ce80a7cdbf32208929c41394db59beb98f665948df3f859730413f",
+          "vout": 0
+        },
+        {
+          "txid": "25f5c853740ecad17fa65aa01bf8a71a657736480d90cbad4c28f32b92d2abdd",
+          "vout": 4
+        },
+        {
+          "txid": "21304d00bb86a03055eda7ea6851b2f15b2ef07cd1a8e8d665b39c6f50f12141",
+          "vout": 2
+        },
+        {
+          "txid": "c431448fc5ce80a7cdbf32208929c41394db59beb98f665948df3f859730413f",
+          "vout": 7
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_merge_ftlp",
+      "txid": "aaba23d5c58d4dd4c7dcdc6159bb6d55702a94860d3204e7fb6323f4fd3d703d",
+      "bytes": 5324,
+      "fee": 427,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "broadcast": true,
+      "parents": [
+        {
+          "txid": "25be158521e47343de573b4573c3063f07e7ee4c1e68467bf4f758f2b7beed55",
+          "vout": 4
+        },
+        {
+          "txid": "21304d00bb86a03055eda7ea6851b2f15b2ef07cd1a8e8d665b39c6f50f12141",
+          "vout": 4
+        },
+        {
+          "txid": "9fb8a1d8b1ee371c50501fbda9d44a057755873c1b5655853db49d185bb4e880",
+          "vout": 11
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_burn_ftlp",
+      "txid": "3ccdfe70837c0a33508d785f69fe62bfc95ddc2712f43d68b47c5be9c5281873",
+      "bytes": 4071,
+      "fee": 326,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "broadcast": true,
+      "parents": [
+        {
+          "txid": "aaba23d5c58d4dd4c7dcdc6159bb6d55702a94860d3204e7fb6323f4fd3d703d",
+          "vout": 0
+        },
+        {
+          "txid": "aaba23d5c58d4dd4c7dcdc6159bb6d55702a94860d3204e7fb6323f4fd3d703d",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_merge_held_ft",
+      "txid": "059021307d6340bc36f7fba98775bc21e8d3aa7ec2eea212e92e50b682bfc70a",
+      "bytes": 13844,
+      "fee": 1108,
+      "verifiedInputs": 4,
+      "refetched": true,
+      "broadcast": true,
+      "parents": [
+        {
+          "txid": "9fb8a1d8b1ee371c50501fbda9d44a057755873c1b5655853db49d185bb4e880",
+          "vout": 0
+        },
+        {
+          "txid": "25be158521e47343de573b4573c3063f07e7ee4c1e68467bf4f758f2b7beed55",
+          "vout": 2
+        },
+        {
+          "txid": "12ca271ab9dbb980f389929275e4d256e9d500b8207e4e1256f15c13beb9d1c9",
+          "vout": 4
+        },
+        {
+          "txid": "3ccdfe70837c0a33508d785f69fe62bfc95ddc2712f43d68b47c5be9c5281873",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "locked_pool_source",
+      "txid": "02d3c8f54cca0660cd2170e502c80d6b811dac83f1172e324d6438b5e3f9163d",
+      "bytes": 244,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "broadcast": true,
+      "parents": [
+        {
+          "txid": "059021307d6340bc36f7fba98775bc21e8d3aa7ec2eea212e92e50b682bfc70a",
+          "vout": 4
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "locked_pool_mint",
+      "txid": "ba2f639ae2e8c36f767dcafe0758a0fd22f0b80baaa078b32727767bae21c7be",
+      "bytes": 4285,
+      "fee": 343,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "broadcast": true,
+      "parents": [
+        {
+          "txid": "02d3c8f54cca0660cd2170e502c80d6b811dac83f1172e324d6438b5e3f9163d",
+          "vout": 0
+        }
+      ]
+    }
+  ],
+  "totalFeesSat": 11318,
+  "blocked": {
+    "operation": "locked_pool_init_lock_time",
+    "txid": "ee3fca8140ded0e903dfe3ecee229edc5342a80443b2732d8d71666851c723cf",
+    "bytes": 14889,
+    "fee": 1192,
+    "verifiedInputs": 3,
+    "broadcast": false,
+    "reason": "index-gate/A3: lp: neither mint nor transfer"
+  },
+  "status": "passed-with-recorded-gateway-rejection"
+}

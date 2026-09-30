@@ -1,0 +1,625 @@
+{
+  "reference": "tbc-contract@1.7.2",
+  "status": "passed",
+  "cases": [
+    {
+      "name": "true",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "false",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "clean-stack",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "alt-stack-allowed",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "return-terminates",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "return-false",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "conditional-return",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "bin2num-eight",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "bin2num-nine",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "big-arithmetic",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "unbalanced",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "minimal-push",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "unlock-evaluation",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "cltv-satisfied",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "csv-satisfied",
+      "js": false,
+      "rust": true,
+      "referenceDefect": "JS BN.and(number) throws; native checks BIP68 sequence correctly",
+      "go": true
+    },
+    {
+      "name": "cltv-unmet",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "csv-unmet",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "checkdatasig-1-0",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "checkdatasig-2-0",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "checkdatasig-1-1",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "checkdatasig-invalid-1-1",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "checkdatasig-2-1",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "checkdatasig-invalid-2-1",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "checkdatasig-1-2",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "checkdatasig-invalid-1-2",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "checkdatasig-2-2",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "checkdatasig-invalid-2-2",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "standard.mint.0",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "standard.mint.0-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "standard.mint.0-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "standard.mint.0-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "standard.mint.1",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "standard.mint.1-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "standard.mint.1-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "standard.mint.1-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.mint.0",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "amm.mint.0-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.mint.0-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.mint.0-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.mint.1",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "amm.mint.1-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.mint.1-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.mint.1-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.add",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "amm.add-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.add-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.add-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.swap_ft",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "amm.swap_ft-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.swap_ft-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.swap_ft-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.remove",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "amm.remove-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.remove-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.remove-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.swap_tbc",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "amm.swap_tbc-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.swap_tbc-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.swap_tbc-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.lp_transfer",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "amm.lp_transfer-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.lp_transfer-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "amm.lp_transfer-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "stable.create.0",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "stable.create.0-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "stable.create.0-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "stable.create.0-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "stable.create.1",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "stable.create.1-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "stable.create.1-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "stable.create.1-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "funding.rotate",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "funding.rotate-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "funding.rotate-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "funding.rotate-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "lop.make",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "lop.make-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "lop.make-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "lop.make-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "lop.match",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "lop.match-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "lop.match-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "lop.match-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "lop.cancel",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "lop.cancel-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "lop.cancel-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "lop.cancel-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "legacy_stable.create.0",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "legacy_stable.create.0-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "legacy_stable.create.0-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "legacy_stable.create.0-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "legacy_stable.create.1",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "legacy_stable.create.1-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "legacy_stable.create.1-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "legacy_stable.create.1-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "legacy_stable.freeze",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "legacy_stable.freeze-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "legacy_stable.freeze-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "legacy_stable.freeze-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "legacy_stable.unfreeze",
+      "js": true,
+      "rust": true,
+      "go": true
+    },
+    {
+      "name": "legacy_stable.unfreeze-alter-output",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "legacy_stable.unfreeze-alter-unlock",
+      "js": false,
+      "rust": false,
+      "go": false
+    },
+    {
+      "name": "legacy_stable.unfreeze-duplicate",
+      "js": false,
+      "rust": false,
+      "go": false
+    }
+  ]
+}

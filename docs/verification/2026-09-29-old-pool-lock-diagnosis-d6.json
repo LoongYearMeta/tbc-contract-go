@@ -1,0 +1,1521 @@
+{
+  "status": "verified-against-local-source",
+  "network": "testnet",
+  "remoteBuildNotIdentified": true,
+  "localSource": "tbc-index/internal/contract/detect.go:352 and ft_lp.go:83",
+  "explanation": "Locked FT v4 LP embeds the Pool SHA256 at offset 314. Local indexer reads 258/280, so mint matching fails; initialization has no prior LP inputs for transfer fallback.",
+  "cases": [
+    {
+      "caseId": "P1-K0-L1-js",
+      "txid": "52c39ccda84de349ef1c073bf7315a61009d718921f5129d90b5e253c8438f84",
+      "poolId": "3e70ce58b4553f469872857982477e7b71130388b2758cd021a67a6a9439278c",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "bb81f79504810dcbc66f572285f1e6808bd6db448d6b6375e9839f786d8b0b4a",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P1-K0-L1-rust",
+      "txid": "5534fd3d6b167da3264ac3d3501f9fa5965eeee21128845162360568d3e76fc2",
+      "poolId": "4e5d92e0439ce5bc2395e07cd2b016e92fc9abbfcd1825eeee0a85df8a225a48",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "e31c714a5d626889e9213a3e9870bb89a75d397d14663a3e26bd60112032a562",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P1-K0-L1-go",
+      "txid": "25a6b772334c9758989bcb0b4b36c4db66d23e3e40168ac463a9fdb1063123d4",
+      "poolId": "ffc43d31e893d7b68099223ac51872fd5189f8f2c6a824a98777d20df9ad9c25",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "f73e3345acd5a39e160420657762e98738456f107a599bcc2e09a4407469d896",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P2-K0-L1-js",
+      "txid": "102f93b97b93f806c5eac13e1386572e8e14bf2b9b966f2a6383d79b005598c6",
+      "poolId": "a61cf850b4657a52bf3f333f16f527b4b2ea03b49e6e91366ae98ec8343c7a3f",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "9745af2c90ae9e67b753df23c5194f7bae32f415dfbc583e49acd5c4cd5015c7",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P2-K0-L1-rust",
+      "txid": "1d12ac043dcbab82ffae625271dce3b03cb33e6dbb92a6e70ded72f7ce968117",
+      "poolId": "67e019bbaf0ba1685b189216191cc9013155510e7fe5fd62e8c26b5b79050737",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "53bb1c17cdc937924718545dfafe76bc04a488daa22b0ee02ea1c3f2913fc1cd",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P2-K0-L1-go",
+      "txid": "d0a1b2bc3a863f4fa4febdfdf3ac5ea7d8053ed39eb07a69d880f4933ed2ed6d",
+      "poolId": "29d4c5051a34528b95e3750b16f52693c284484ef04d71d3c3b51c09e5cb6661",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "92c64f076d8aae9ae1f721f0929bd9cced7c6801a398134822fd6c49aabf8b75",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P3-K0-L1-js",
+      "txid": "618a0992fd245af3a4c0a619104f027f1cf4e8e1cb819fc39ad21b8ec715f13e",
+      "poolId": "12e760b7a70b2c95dedbfc4807e91c2648d8fe114121e84ea8a48b80af60377e",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "a023bd7645809e69aafcb6f2a922d7981e219909c2b4c1d2d5b21c5a7c3ff85f",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P3-K0-L1-rust",
+      "txid": "8b775c15b7122b7c72f210eab6876f671983a6bbde8aa617606e60ec369c7ceb",
+      "poolId": "dd7063e75e6e58329f6f13c952c892f1178d5d32680ea4faac175d8f812a35d6",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "bce2e1bcd2dd48e07ed411b2c0df9c5da87e2bae207a1c7ce643783d27bcbbbf",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P3-K0-L1-go",
+      "txid": "27f5db029a2c475f93f28923a8ababc8bcb7e7d1596d50e6da9923784553b7da",
+      "poolId": "87c522727a543845337ccdb52df2ff0c3a6266efcf4a4e0630a498e2702c0202",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "e5692965688d5a23b8e84d7c450d21c9e446f502ff160b54c1d72607bd16fcc6",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P4-K0-L1-js",
+      "txid": "88de5eb6d2c280a46c766424683b2ae287f1ec1ca20d884e1d9f0bb138507499",
+      "poolId": "d1cfb886a0564408162754ded1c3865744d8dd9ec25902e4dd7d29ab42149b6d",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "458217f4e0be638a2ed29fd024e3b24fd131cab965ce2d537a3f95e87ac33fe0",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P4-K0-L1-rust",
+      "txid": "c73b422a6755405059e3f563c7a2ef12f9e9d040f66c9da86cb79700fea8bdd1",
+      "poolId": "afcb15362c2122ca410fae4cd17074d86583a9c8bd751d08ff45f500f276c1ac",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "fdb16d2c3ab40845b68c48438be87e61023012f153ece3c9a9fd5eb6623fc6fa",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P4-K0-L1-go",
+      "txid": "bdcc500a9ae368bb2d03d3bfeda6188e3945d2d0303ab3dcb2b30e0a129facee",
+      "poolId": "3f58b65fca3e4e8942ac90385524a958f2151224b636046f20b935f3c3c3a499",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "1aaea17ce92811308b7dd47b65e0719be830e63a2b45704afaacefa718f246f5",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P5-K0-L1-js",
+      "txid": "ffbac9034e6a250d95fb38d4a86a8dcca54629a822e1a697a016605bb661e05c",
+      "poolId": "2bd172a91f69cf6ebf08bb1d8d4a652fe9a60cc075a0e50b0237adf6056a6ece",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "a9beeb5494a1b58162576b69ffad5acd540d91b83b0263372c0cb1285fbe6ba0",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P5-K0-L1-rust",
+      "txid": "dd2b79020f1a6022aec13cfea41dbcbd0736c7bb1e6d20381171b623e4c961e7",
+      "poolId": "d8bbf4bb3aa8ce389a346fa72200051b81e26b92aee674868601ab3335c2a136",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "7a01b7f198d5819c969c1d60ed27d7e6196939375aae504d9b299d678cd5e2fb",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P5-K0-L1-go",
+      "txid": "e1e35426238d4934964e66e7966f16453dec3182faade8f1212244d771acccaf",
+      "poolId": "fbfb5f0d30105f7370e915f5efd07a4183c647e8426b7dc1f8c71723821a2c1e",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "116478b2dbcecc56a3b9409f3349f631ae8693fbc4db547d863563d954de35c2",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P6-K0-L1-js",
+      "txid": "dcf1ee4da5b6ee77005323b93819638f7d87dd6f282aa99d6e890ef901af58e8",
+      "poolId": "9de4e94c461270b0ce97774251094fdf3f7d29598d788a256cf0e44bb66aaeb4",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "041e46571411080d7fc7593b658a0d62399e86963b1a0ef5afbb735c3ccc1486",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P6-K0-L1-rust",
+      "txid": "3d392ad5a24f972b5ca2507580cf280858031a4df424a3a5c908b6d816a49e28",
+      "poolId": "3fcc11589a92748de40bbc6f24e1b615b1953868a3f9d1caa65f70b98c6951f9",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "255c7c299586af23df64dd9a9c5f5b04626e8531d7f97cc66bd9ab8eea7df741",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P6-K0-L1-go",
+      "txid": "aa101352152fb3475992ec95ce6eea81985a3c91b2104cbb94d8adbfc4468ed6",
+      "poolId": "8f6a0f5fe8364d2222de9ee153cb1b1063e98d323e448e8fd96259158af7291e",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "51c672471e41c89b8adaa51add1f0b763870fa5746e0d5b0dc1781c7bdc52364",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P1-K3-L1-js",
+      "txid": "8163984800657a16cbd21aa88fd63eb6b32dad45fccc9a069dfe4763db53e3f2",
+      "poolId": "28f60dcc0b680f7a196621c46924c6c9cd1bef14cbeb369023f232b0a8f726d2",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "3d010fcd7891425e33ce0ff7c058234e882a8c4c3e0ab10777f9c2ff1197a32b",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P1-K3-L1-rust",
+      "txid": "b235113799db59c4b8d925cb155d33ca9711bfb7b0cdbec1554e016d9f7fc196",
+      "poolId": "265da896d10b9ed0deb91dc146c8b8c530a3f9909185dbeda2d468ab19953766",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "385b15ca61c6f5338db9413180aa5a312243da70204f4981a183cbe42e6c1555",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P1-K3-L1-go",
+      "txid": "8e1c15205173c48bbcc541116e6064403b9f1d6439144f8ad0aee54d549c2151",
+      "poolId": "9ec51a2999f09bdb005ba65c2cb91f1aa17bf625953b25b904829e0ef2d09bf8",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "ca1453f729fa2361531632873aa4675908a87d1dfa025d6ca980f54148b7df24",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P2-K3-L1-js",
+      "txid": "a2297a8e218c411ed19dc6df1a7ee73e6ff4f3a3bed8ed427a3d8c6acf352673",
+      "poolId": "401c1fcb26c66b163bec5b8f2aa2562d82f14bb431c3b5dae82aa5978584b0eb",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "b9c1e9905882e8de12afbd66ce93c3eb739930d5956e24d132057dc97ebcf36b",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P2-K3-L1-rust",
+      "txid": "a4049fb74cfffe783bb78bfd0bf47fa647d10b0097a3b6071b0966be0179c4f1",
+      "poolId": "f6c0cdaea52bef501c832ad5a1ca64bf5e52e4e444607d75c3510beea56c5690",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "2619f4829720d35d9b24f1e0a5e1d622783da3deb419f82fd354a5399f693a27",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P2-K3-L1-go",
+      "txid": "4437f24339677319082010688febab0bed0bfafaf1e2e832060979716fb91219",
+      "poolId": "f29645602222b72e0fedfbd2d0dc41351d8622dbb71c2c69488900e6d1937634",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "9aa645e91c6d87f324f8aa253f8c1f9644b3a072d4172588df9a68ebcd5aae56",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P3-K3-L1-js",
+      "txid": "7f61e2b34d420f1aa1642c16a609d57b7dbb80f3cb96eba5fee9c76a4fe7482b",
+      "poolId": "c7ba78d5d4812dad7cbea410719618976cb474cf16110a2a5899314d4c7f3eca",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "a906a86be942fe70ada7dcb76e6456c51fd6ee506d477d27c31ed04af11c6b98",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P3-K3-L1-rust",
+      "txid": "bde91d5cd428699e54032d099b831f6b834c4bb3cf8b9487c3de23d44065b7f7",
+      "poolId": "4f214f2ef94a9f507f36606044629cdb405b2670224898dfcafc9f31180a5c31",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "cb49bd689078183b9fc236dec224e0861af034a80ac1847fe43efe8c036f807b",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P3-K3-L1-go",
+      "txid": "d9949fccb1b03110012dcccdb5cc83eb7ccf540befd75a9d502fd5508fa92017",
+      "poolId": "552504d77cf9d4bb46408c79d6c18f6562f599210347ddcdce7de12aeb720ade",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "36170465cf587701807c2bccfca82e73237e294fc6cf2fef4d8a2c0ff19d64cb",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P4-K3-L1-js",
+      "txid": "084cc1dbcd6620e1bfef21a1c975c3e5f5b993b22493954fd83004e2939a8f6d",
+      "poolId": "2283a8b8977d5bbdcc8f77adc84a76178fd10887ea6fa4a4c9c4ce325e055a9a",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "015b050fa1725e2e214e63170884a036a832f972dec0dc19f3d278761a196ab5",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P4-K3-L1-rust",
+      "txid": "0dfc68ed925724fae9e289162d0653f1c8fb111787b6ccdcd637efbcc88b9fc6",
+      "poolId": "b12c1f19fc3e250f7d83213b099d0feaf1b1c7f88d997f64875f3a4f3953866d",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "7f20240f8b1a9818b4ce9deab53ea1ee8abe63575a78122ed067aa693603532f",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P4-K3-L1-go",
+      "txid": "8df3cc7a57f36f0587dbcc37fab4e87cc62fc06e73c28ba9172a0c185c640d56",
+      "poolId": "dcff953e82e218fc9f3670ba71d4446aa593f35593c43a8a3670b05f90393a58",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "d51be20d93e4e06b94337628b6545292dc90bab3fc4bd7558cd388b5391d30c1",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P5-K3-L1-js",
+      "txid": "906592faa447a001afbf1ed7eca071463edcaa3a1f5018d6d17cf993d4046daf",
+      "poolId": "c6cb339363a58f3392ed2e1cfc3b93ac5b84b95d4ce7290548317d1c48259fb3",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "c5c0c5920f490f95a3c76b4b3297af48b04c8e534006456bc3d7862a41ce38c5",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P5-K3-L1-rust",
+      "txid": "74aa8b1bf6f1724e1575f8a412d0c07cac9baa0a3aeb51bfdb861d51b7f70d6f",
+      "poolId": "0cd342e29d05818d9ba4a55c30dd95995b3244548471d68f59a81a664397d036",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "95f43b29b0d299735c1c6c9695bd76fcf3d84dd8f941259b74a67dbd9090efd9",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P5-K3-L1-go",
+      "txid": "28deb207b6bd7930c2239ecc7f0b34031ddd0280305d2fe83582ef877087e56f",
+      "poolId": "c8a4d069367f11748cfe0ff75923ea32de773c17ce4e526d9c45f6b60c959c63",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "cc81c04438b33bb98f258499871b9eaa4772245a14d9e1cef634791203b9ee20",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P6-K3-L1-js",
+      "txid": "f98b152be1720b2cce40c3e8951b4a2cff2bb4f46e06fc40a02e370245703528",
+      "poolId": "4d7c0cd7a7b84fa94727cb4f522642ee1061d9a945120fe7c7ed57628f1c22c2",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "c3cbfaa149854ffc3907c763ddbb6e634842146f5287402db48fcd88c32f2cff",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P6-K3-L1-rust",
+      "txid": "4108cad9b46c6ed0264d1897d906517f6251e0779968581c8d81db5a0a7b40cb",
+      "poolId": "271001921848c609c78938c38ba4debd3e60e4c654e4be064ecc405ddf28cad1",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "db3a323321a8844c9661fd1b0e19019e5924d3b3842ebe0dfc852531c6547ab6",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P6-K3-L1-go",
+      "txid": "176282a470e274f8c54d1f84938f92fa7c249d5aea3125f4d0d3811a4b3a8aa0",
+      "poolId": "7eb6251e8918a20a81eae14cc17915c2ddd7e20c36255fbb94eeefda0d205bb7",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "46e0961b49653d1f238487954953a7905bef30176f60406622469c39811db6eb",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "index-gate/A3: lp: neither mint nor transfer"
+    },
+    {
+      "caseId": "P6-K1-L1-js",
+      "txid": "ba58950d42ad3ca306c05774cff70d48543abfc7be653af454cf50839cbd29bc",
+      "poolId": "d089effe2027a999e7845c4c0f7c52988038bdd757da30b0e1092f2f49559dd7",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "f13ec2f312f5a77172bd3793a96c47dbb0f26c763972ff4181e36239917d1527",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-5107424a\"}"
+    },
+    {
+      "caseId": "P6-K1-L1-rust",
+      "txid": "7d1ea10d84fb4e262f0cd0e18a8633793f6455d82cdba7642b5659ea40c04972",
+      "poolId": "549ec75caf8758838e8b734fa24d3de6141b152b6cffd3ee39f5edb3ef884d9c",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "0c318e29f1914de17647d12d830a808b5dfc886d6fbc893dd2484f150ae7e9a8",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-01b0ed2b\"}"
+    },
+    {
+      "caseId": "P6-K1-L1-go",
+      "txid": "bbf8e2cbba6f79d1397a996c09f77303ab164da4d2010f87ea165a4e107af711",
+      "poolId": "63027b7d2e4f08b01ca20b7d23b491e224bd34eb130b523b1ed8e362ef8e0789",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "5c1081393d3390f54e86ec20096f0aa08a9b786594eb158b7785ebb8f82c925f",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-63305077\"}"
+    },
+    {
+      "caseId": "P6-K2-L1-js",
+      "txid": "b7a38d06f41ac0a15b8abce52a205e13586df0c6c4631a6ae7001a96011398a0",
+      "poolId": "70884817b8a1dab05e4532819fe59a2cb3688b96324259759ad1d87feb7125ec",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "dbdbbe6fb2eb96c04a2c473a41a38d716976f31e1f6e7f73716216ca92a087a8",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-034d64ee\"}"
+    },
+    {
+      "caseId": "P6-K2-L1-rust",
+      "txid": "385136a7759dfa87f9144529708d04c8fa1765507f0b7014434ef61d0081eab6",
+      "poolId": "41c29d22df523049f1b7ba3d400991df08989864e9641db50247ebbac2cdbc0a",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "46a12ea461eecda70dd5e7787cc4285a96b11e3b57a52bf882d8e554ced1a971",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-aaec28d8\"}"
+    },
+    {
+      "caseId": "P6-K2-L1-go",
+      "txid": "0be11282e78cd580378fbf46277deaf8934d1a779ad2916db599c680765c6a1f",
+      "poolId": "0098260e31cc828c681c2908b198b631cb27973a6c0b8bc755ab8d1710e9fa8f",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "ad11dec69bcba59afeb86d246a2299e130dee4bcbc3487ffc2a5f74ef6686453",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-cddbca85\"}"
+    },
+    {
+      "caseId": "P6-K4-L1-js",
+      "txid": "8c2e446d614ec2a495061473f0f3165be1869fdcd6bafd4e05a0d90c9a120f46",
+      "poolId": "0b75b7128bd7b4f7a2fd57ccf086231840d1adbd08cdacb4b6a7418a830d52e1",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "f459f64dcd4de7479d6219902e3ea311f90b43c4d30006fe5abdc49d6bb578bb",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-3e8a2156\"}"
+    },
+    {
+      "caseId": "P6-K4-L1-rust",
+      "txid": "c0c130ada5c26090f6bc87d4abe176f655d36666d0c071d275bf8a917a56d26e",
+      "poolId": "dc8962860ca63082ec911b463788193142f9d39d1c64a29fd7ddfc1e02ed4df9",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "3bcf8260688e8e6cf2b72033ea83c47a626e697e82cd71d9c9fca99d345d135a",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-fe82a732\"}"
+    },
+    {
+      "caseId": "P6-K4-L1-go",
+      "txid": "e7985a46063f2971f4c46fd6a90dce9f5b215dc769ea8e7e039794d8e01bd643",
+      "poolId": "0ebd025f66807b27ea3606835567ecec813ac0395307464a6a1385289ec84247",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "7ed1b85f96e6ed13ffa956506f0048f6e973432dd7cb28431aac869387e07eb1",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-47a30898\"}"
+    },
+    {
+      "caseId": "P6-K5-L1-js",
+      "txid": "0afc31ee643641c10935e08e7d6cdb12d76032eaec1d2ba42016b4d7b225f53b",
+      "poolId": "337521ef1856e392e7163b8d74b40013e142727ca0316c728d4450d2266ebc85",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "2fbdd3d28fd637d6d8accc9c1dde994a67a8bce94644667a2948cc698a616f0a",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-59b84a1b\"}"
+    },
+    {
+      "caseId": "P6-K5-L1-rust",
+      "txid": "793a2c003a2af389ffc4fda0a2afdedf2a970fe92585949a6cd86b7878a09050",
+      "poolId": "3167a8e45dd04853f59a2a56fa2464fdb7bd6f215d948541d40ae2f9289f71be",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "8838cb79bdf20994cd3f236f23cf98b84020dacb3f8d3879cada8aaed1262577",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-53c0ec8d\"}"
+    },
+    {
+      "caseId": "P6-K5-L1-go",
+      "txid": "f33defdbb283a3522199a52c53c7c18c98e89832b7d1b0b815ee03adb52e812b",
+      "poolId": "b6063b56cf22ccd2a9bceee8d9ffefb8c812484a47b10f3637ae9ff156d91b6a",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "e331eded6868a3a635d334a62f1d9eb059359b303e18a8cb3db782af4c524da6",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-2fa488d0\"}"
+    },
+    {
+      "caseId": "P6-K6-L1-js",
+      "txid": "1763ea2181a12f6c2a2ecb47efdfd11a5e7880ef08381f7ce5a8cccba62cf9a7",
+      "poolId": "061359cbbe244b51e723d8ea6080985345b281f0ad968a463185cdb0a4a6937c",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "b05d165b04d0ef3597e125b19b14b00c77b3b3f73413daa693b9059bf9707090",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-0297f2c6\"}"
+    },
+    {
+      "caseId": "P6-K6-L1-rust",
+      "txid": "6caf16dd094be14374239e9ed89fa90d819b525267663a292eb239c99c741ab7",
+      "poolId": "1cae48eef55014be6f40ecf19bc2320223e28e732c08514c83f3face64f6e2c9",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "b252d507c5ebf25f6585efa2131a668e5c29a040e72f059d76463c2d5ec0f0c1",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-e50fa2f5\"}"
+    },
+    {
+      "caseId": "P6-K6-L1-go",
+      "txid": "f89df88674b39a9faecd48d01a19821b4a1de14cea12e78646a034dc14143a7b",
+      "poolId": "d7200963fb304a1140afefdbfedb675c8e5f8688d70038c598cec74819fb656f",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "0c22c0da9366f1e498ff74882ad5d4d3855e41adfecf7c83a773a62ef7a6a22c",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-f92945ec\"}"
+    },
+    {
+      "caseId": "P6-K7-L1-js",
+      "txid": "65546ad5aba223d941a764c09658db6e6ed6d16feb7784080015b2b0121c25bc",
+      "poolId": "efa4b21e11645256cbb626d7e38ef95610c578ebd367098e6045cb20b553a4a6",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "9c62cf939e295fa93f4d79dcd565e91d649e06761d781406872a9e3b552ba840",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-ba8a175a\"}"
+    },
+    {
+      "caseId": "P6-K7-L1-rust",
+      "txid": "f4f352e7ae3bcd307d267c85943bf77198f6aa26d5517baea1fa6bf4338e58ef",
+      "poolId": "66adefb9c25f4d344ed88b0ec3d34336e0774434329c94117b654a4ce25a6443",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "33ea7df6888f086676b1dc3166bfe459704477cd1905240f7276cba1adbc02aa",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-7d876c55\"}"
+    },
+    {
+      "caseId": "P6-K7-L1-go",
+      "txid": "5f6964415520169555aac97a2d979882f011f7d2db189eb2cf3b2faff134afac",
+      "poolId": "ea80bed4ff75c9a580696b37bc6436afb83ccaa881b900efb8b535d43d07f0c0",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "1968ab7a9033fe44f589d2d6be6331688d92e2df37c129e9090f029e823a9020",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-fc7470b8\"}"
+    },
+    {
+      "caseId": "P6-K8-L1-js",
+      "txid": "41625750b9079cdad068b85f3b0d5390e91670e6eb6b6fd0944c37d73cdc6080",
+      "poolId": "cb5840a1aeaa14f97e4de7646a383361a079bb1a5387f90787e29e1cf156372c",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "96cc1644ead23d15096f55c6d77a962d5e1560f68cd0dca167ab3fa53a29a97e",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-d77018fa\"}"
+    },
+    {
+      "caseId": "P6-K8-L1-rust",
+      "txid": "a3f1573d02b2a2d4c9d503fa8a62cf606ca8b9f919ae87979e2cc0ea1fdfef0e",
+      "poolId": "e10e9b41c4b244b6f1006c703eabe71cfc050d418fabf6223a3b02f2f65baf35",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "095341d093ea5d1ce2c333cf8c1632249bb4909c7d55d138eef3c52b7ff36257",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-a594634e\"}"
+    },
+    {
+      "caseId": "P6-K8-L1-go",
+      "txid": "a5059f112c42017d9a0ab0f920bbc7374d2160c0059ef375cbb0ed1cc216421a",
+      "poolId": "9ea8b1b77dc8bd8d563df05c46ec03d489857837332358e4a005402bd78e93fa",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "37cf0a481c1212028540c6801459edf1ba13ae108607176eae0e8afc6408b200",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-bac033b0\"}"
+    },
+    {
+      "caseId": "P6-K9-L1-js",
+      "txid": "8fa8df273165b8d51c5c066619d1015b94f248a2daed8ae1dd7066da17663d06",
+      "poolId": "7fb166ff334edcacc93666dee1d43ac99795288b1966c525e8ba81ae970cee2b",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "a6dadc98d5a5dabbfcd5cea047ee481889b788258435b32c74e30c75de5f4c37",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-f0fe1aec\"}"
+    },
+    {
+      "caseId": "P6-K9-L1-rust",
+      "txid": "db11cebdb1f5c1b9aa3c151700012f9edee01e4e556a02e62dc0d96fb488ccbb",
+      "poolId": "0d90f2fce3cda0ba991e703b3524eea5c15c9f0af3aa338b4719c8c7f899d9a9",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "5d5a896b2cb7db35e6dcf08ebce4c6ef4756a47c145b35574743ed186c2ef65e",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-73662eb4\"}"
+    },
+    {
+      "caseId": "P6-K9-L1-go",
+      "txid": "f41b64b9f4ae98db5e9b34be2efaf0d90982ae9679d023281cccb07a7d1ae82a",
+      "poolId": "1046c0db80abb1d24ff4b528ac3e36e469a0d8be743ab9626a544fdc996af17f",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "7f5cfd77eb1d444449e410065c837b70e9b15f21271789027dd4039a75026eb5",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-5f17b500\"}"
+    },
+    {
+      "caseId": "P6-K10-L1-js",
+      "txid": "19e95cb6f49b42c528f0d8bdf4030c4ad45d0b6753f6bae903645ac8642727f5",
+      "poolId": "99618a1dbf9ecfa5616a8301246bbd94852ae203e0840a8694aeda7121940bcd",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "ee6ff622d2e6cec2a3c5a563dba80c2f7af6a661e5ba5a4b42558de48ec2265c",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-6f15da8d\"}"
+    },
+    {
+      "caseId": "P6-K10-L1-rust",
+      "txid": "01909deec7af3fee04437ccccb40a80a76bb279dde27674b2045f7df78685829",
+      "poolId": "6ae25a16c5334dda3f5d78c1bcef863c8f77b126fe8a13ac8ea6218ad3621109",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "3e90d2548e1b2b0526770eedbe83645f88dcc618f86f313f6432f305740f303a",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-265e32b5\"}"
+    },
+    {
+      "caseId": "P6-K10-L1-go",
+      "txid": "f22f284cb5f945cdafa09bd77724e43ef8ceacb64353c7e787604a02b6ced411",
+      "poolId": "ce9c3c80dfffb637a21ef3528d5d3e6da02e98368be9827305ce0cde51d0f361",
+      "lpVout": 4,
+      "lpCodeBytes": 2076,
+      "poolHash": "bd4721050950e2022cbc607bd7bf6a5f023f68c80a4dbd1a60667eca07136a22",
+      "correctEmbeddedOffset": 314,
+      "localIndexerSelectedOffset": 258,
+      "localIndexerExtractions": [
+        {
+          "offset": 258,
+          "hash": "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+          "matches": false
+        },
+        {
+          "offset": 280,
+          "hash": "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb",
+          "matches": false
+        }
+      ],
+      "preflightInputs": 3,
+      "rejection": "{\"code\":\"400\",\"error\":\"BROADCAST_REJECTED\",\"message\":\"broadcast transaction failed\",\"data\":{\"error\":\"index-gate/A3: lp: neither mint nor transfer\",\"gate\":{\"rule\":\"A3\",\"contract_type\":10,\"contract_hash\":\"\",\"contract_id\":\"\",\"sum_in\":0,\"sum_out\":0,\"rules_version\":2}},\"request_id\":\"r-e43942f1\"}"
+    }
+  ]
+}

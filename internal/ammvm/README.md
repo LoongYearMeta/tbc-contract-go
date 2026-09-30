@@ -1,0 +1,1 @@
+AMM validation interpreter derived from github.com/LoongYearMeta/tbc-lib-go v1.0.0 (ISC; see LICENSE). Kept internal to avoid changing process-wide validation policy. Local changes: BIP340 CHECKSIG, TBC CHECKDATASIG, eight-byte BIN2NUM limit independent of arithmetic, clean main stack without P2SH, CLTV/CSV enabled after genesis, and execution reports without debugger snapshots.

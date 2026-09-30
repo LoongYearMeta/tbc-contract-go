@@ -1,0 +1,33 @@
+{
+  "repository": "tbc-index",
+  "branch": "main",
+  "commit": "e7ef05c349927441071d5f9335edb233e5a59ba1",
+  "tag": "0.9.2",
+  "previousLocalMain": "998c95d",
+  "fastForwardCommits": 64,
+  "preservedExplorer": "ab1978a94836a66dfd7e4e53772244cc9ba2a459",
+  "worktreeClean": true,
+  "deployed": false,
+  "graphRefreshed": true,
+  "readOnlyReplay": {
+    "legacySamples": 63,
+    "legacyHashMismatch": 63,
+    "legacyMintRecognitionFailed": 63,
+    "legacyDecodeError": "lp: neither mint nor transfer",
+    "legacyActualOffset": 314,
+    "legacySelectedOffset": 258,
+    "modernSamples": 1,
+    "modernHashAndMintRecognitionPassed": 1,
+    "modernCase": "P1-C0-L1-js",
+    "modernHashExtraction": "LPTBC20CODE2 suffix + marker + 32-byte push"
+  },
+  "tests": {
+    "sampleProbe": "passed (failure reproduction, not a fix)",
+    "offlineContractTests": "passed",
+    "networkReplayTests": "5 tests failed because the local node does not have the required mainnet transactions"
+  },
+  "commands": [
+    "go test -overlay=/tmp/tbc-index-lp-overlay.json ./internal/contract -run ^TestCurrentMainLPBroadcastSamples$ -v",
+    "go test ./internal/contract -skip ^(TestConservationMainnetReplay|TestCorpusReplayDetect|TestCorpusSC2012TransferSamplesAreMints|TestCorpusOrderBookLocksHaveNoFT1564Fence|TestPoolBarePrefixIndexesLP)$"
+  ]
+}

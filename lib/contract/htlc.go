@@ -15,7 +15,6 @@ import (
 
 	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
-	"github.com/LoongYearMeta/tbc-lib-go/bec"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
 	"github.com/LoongYearMeta/tbc-lib-go/sighash"
 )
@@ -223,7 +222,7 @@ func FillSigRefund(refundTxRaw, sig, publicKey string) (string, error) {
 
 // htlcSign computes a DER+sighash signature for an HTLC input.
 // prevScript must be the locking script of the HTLC UTXO.
-func htlcSign(tx *bt.Tx, inputIdx uint32, prevScript *bscript.Script, satoshis uint64, privKey *bec.PrivateKey) (string, error) {
+func htlcSign(tx *bt.Tx, inputIdx uint32, prevScript *bscript.Script, satoshis uint64, privKey TransactionSigner) (string, error) {
 	tx.Inputs[inputIdx].PreviousTxScript = prevScript
 	tx.Inputs[inputIdx].PreviousTxSatoshis = satoshis
 	sh, err := tx.CalcInputSignatureHash(inputIdx, sighash.AllForkID)
@@ -246,7 +245,7 @@ func DeployHTLCWithSign(
 	timelock uint32,
 	amountSat uint64,
 	utxo *bt.UTXO,
-	privKey *bec.PrivateKey,
+	privKey TransactionSigner,
 ) (string, error) {
 	if !util.IsValidSHA256Hash(hashlock) {
 		return "", fmt.Errorf("DeployHTLCWithSign: invalid hashlock")
@@ -284,7 +283,7 @@ func DeployHTLCWithSign(
 // WithdrawWithSign builds the withdrawal tx and signs it with the secret.
 // Mirrors htlc.ts withdrawWithSign.
 func WithdrawWithSign(
-	privKey *bec.PrivateKey,
+	privKey TransactionSigner,
 	receiver string,
 	htlcUtxo *bt.UTXO,
 	secret string,
@@ -328,7 +327,7 @@ func WithdrawWithSign(
 func RefundWithSign(
 	sender string,
 	htlcUtxo *bt.UTXO,
-	privKey *bec.PrivateKey,
+	privKey TransactionSigner,
 	timelock uint32,
 ) (string, error) {
 	tx := newFTTx()

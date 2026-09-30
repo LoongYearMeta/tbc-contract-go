@@ -3,6 +3,7 @@ package contract
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"strings"
 	"testing"
 
 	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
@@ -71,7 +72,7 @@ func TestPoolPlan6AndV4ScriptsMatchJS166(t *testing.T) {
 	}
 }
 
-func TestResolvePoolFeeConfigJS166Plans(t *testing.T) {
+func TestResolvePoolFeeConfigJS172Plans(t *testing.T) {
 	plans := []struct {
 		plan, rate, lpRate int
 		address            string
@@ -81,7 +82,7 @@ func TestResolvePoolFeeConfigJS166Plans(t *testing.T) {
 		{3, 135, 5, "125fTLNsraQxTYqT4EeQNF2ggzcqicveKL"},
 		{4, 335, 5, "19DetoaaohQkjFVJ6oGXd83xhZYQSbpE1g"},
 		{5, 535, 5, "15EKrhuD8Yf3SfhjAgbizYqfnBbKh9ZMZ7"},
-		{6, 130, 80, "1N7rf2AuAHB2aCrVgnbQhSWhaUVk3rGhjm"},
+		{6, 330, 200, "1N7rf2AuAHB2aCrVgnbQhSWhaUVk3rGhjm"},
 	}
 	for _, want := range plans {
 		config, err := resolvePoolFeeConfig(want.rate, want.plan)
@@ -96,7 +97,7 @@ func TestResolvePoolFeeConfigJS166Plans(t *testing.T) {
 			t.Fatalf("plan %d address = %q, err=%v", want.plan, address, err)
 		}
 	}
-	for _, invalid := range [][2]int{{0, 35}, {7, 35}, {6, 35}, {3, 35}} {
+	for _, invalid := range [][2]int{{6, 130}, {0, 35}, {7, 35}, {6, 35}, {3, 35}} {
 		if _, err := resolvePoolFeeConfig(invalid[1], invalid[0]); err == nil {
 			t.Fatalf("accepted plan/rate %v", invalid)
 		}
@@ -114,5 +115,24 @@ func TestParsePoolTapeExtraAcceptsSmallIntegerOpcodesJS166(t *testing.T) {
 	}
 	if extra.LpPlan != 6 || !extra.WithLock || extra.WithLockTime {
 		t.Fatalf("extra = %+v", extra)
+	}
+}
+
+// The JS ASM parser pads 335/535/330 bp to 014f/0217/014a.
+func TestPoolTapeAllCurrentPlanRatesRoundTrip(t *testing.T) {
+	for plan, rate := range poolNFT2PlanFeeRates {
+		p := NewPoolNFT2(&PoolNFT2Config{Network: "testnet"})
+		p.FtLpPartialHash = strings.Repeat("11", 32)
+		p.FtAPartialHash = strings.Repeat("22", 32)
+		p.FtAContractTxID = strings.Repeat("33", 32)
+		p.ServiceFeeRate = rate
+		tape, err := p.GetPoolNftTape(plan, false, false)
+		if err != nil {
+			t.Fatalf("plan %d: %v", plan, err)
+		}
+		extra, err := parsePoolNftTapeExtra(tape)
+		if err != nil || extra.ServiceFeeRate != rate || extra.LpPlan != plan {
+			t.Fatalf("plan %d: %+v, %v", plan, extra, err)
+		}
 	}
 }

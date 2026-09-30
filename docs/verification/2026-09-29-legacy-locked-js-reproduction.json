@@ -1,0 +1,194 @@
+{
+  "network": "testnet",
+  "reference": "tbc-contract@1.7.2",
+  "rustTxid": "40bd5e947b8fe0eaf5902b7c25b01c88b293b6e7a03ea240879437360d977ee9",
+  "results": [
+    {
+      "method": "initPoolNFT",
+      "txid": "37522e2b94fbca4a56c9f03fb3140aec4a768357a2d177a9dcb9f818d3b986c7",
+      "sameInputs": true,
+      "sameContractOutputs": true,
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 5976,
+          "scriptBytes": 3935,
+          "scriptSha256": "62c8331ce1be17595aa9cd0f3b5e041d6e2ec67d539852935af7779709f114bc"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptBytes": 139,
+          "scriptSha256": "d7d860ebe76cfa6c026802ffbb65328704071f1f86a92bc8f1038d2758e2e887"
+        },
+        {
+          "vout": 2,
+          "satoshis": 500,
+          "scriptBytes": 2076,
+          "scriptSha256": "a88b7d4dd7c9a0850f3a3397fc7d8fe28770fe05612c46df553c8f215a3831c8"
+        },
+        {
+          "vout": 3,
+          "satoshis": 0,
+          "scriptBytes": 81,
+          "scriptSha256": "4c0803e82228be6d1a459bb1953c93d6d082311712a1a15f3d3da96c90d62d8e"
+        },
+        {
+          "vout": 4,
+          "satoshis": 500,
+          "scriptBytes": 2076,
+          "scriptSha256": "bd52e387edf9c7e92287cda2b87782e975f068fb9d912872710f7f239fd0b62e"
+        },
+        {
+          "vout": 5,
+          "satoshis": 0,
+          "scriptBytes": 81,
+          "scriptSha256": "4faa8a757ef0ab6686ecb5616a1ce14eba2de4f0341a315bc56caac63fe7fc8b"
+        },
+        {
+          "vout": 6,
+          "satoshis": 24,
+          "scriptBytes": 25,
+          "scriptSha256": "742c0cee8470a888d4b9f4bc329eed4a103ea8c83eef29c285862ed158ce817c"
+        },
+        {
+          "vout": 7,
+          "satoshis": 500,
+          "scriptBytes": 2076,
+          "scriptSha256": "a82f7134afba82b04d7aa38e3750a410a17c0130edd4e13bd9db9538a7aa42f8"
+        },
+        {
+          "vout": 8,
+          "satoshis": 0,
+          "scriptBytes": 81,
+          "scriptSha256": "788304d53dccd0ed43d9c986355e7c8c64da790ca25c140832297299e021de5a"
+        },
+        {
+          "vout": 9,
+          "satoshis": 96662329799,
+          "scriptBytes": 25,
+          "scriptSha256": "742c0cee8470a888d4b9f4bc329eed4a103ea8c83eef29c285862ed158ce817c"
+        }
+      ],
+      "preflight": {
+        "txid": "37522e2b94fbca4a56c9f03fb3140aec4a768357a2d177a9dcb9f818d3b986c7",
+        "bytes": 14889,
+        "fee": 1194,
+        "verifiedInputs": 3
+      },
+      "response": {
+        "code": "400",
+        "error": "BROADCAST_REJECTED",
+        "message": "broadcast transaction failed",
+        "data": {
+          "error": "index-gate/A3: lp: neither mint nor transfer",
+          "gate": {
+            "rule": "A3",
+            "contract_type": 10,
+            "contract_hash": "",
+            "contract_id": "",
+            "sum_in": 0,
+            "sum_out": 0,
+            "rules_version": 2
+          }
+        },
+        "request_id": "r-02869da3"
+      }
+    },
+    {
+      "method": "initPoolNFTWithLockTime",
+      "txid": "6b50765e8a2e27efcbd09f9c9be5d80dfaf049cd13207975b427d3a140451339",
+      "sameInputs": true,
+      "sameContractOutputs": false,
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 5976,
+          "scriptBytes": 3935,
+          "scriptSha256": "62c8331ce1be17595aa9cd0f3b5e041d6e2ec67d539852935af7779709f114bc"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptBytes": 139,
+          "scriptSha256": "d7d860ebe76cfa6c026802ffbb65328704071f1f86a92bc8f1038d2758e2e887"
+        },
+        {
+          "vout": 2,
+          "satoshis": 500,
+          "scriptBytes": 2076,
+          "scriptSha256": "a88b7d4dd7c9a0850f3a3397fc7d8fe28770fe05612c46df553c8f215a3831c8"
+        },
+        {
+          "vout": 3,
+          "satoshis": 0,
+          "scriptBytes": 81,
+          "scriptSha256": "4c0803e82228be6d1a459bb1953c93d6d082311712a1a15f3d3da96c90d62d8e"
+        },
+        {
+          "vout": 4,
+          "satoshis": 500,
+          "scriptBytes": 1564,
+          "scriptSha256": "470da53703dcd4ae0678edbe983516af9421d78c38b04f7c96c04fd4fed95102"
+        },
+        {
+          "vout": 5,
+          "satoshis": 0,
+          "scriptBytes": 81,
+          "scriptSha256": "4faa8a757ef0ab6686ecb5616a1ce14eba2de4f0341a315bc56caac63fe7fc8b"
+        },
+        {
+          "vout": 6,
+          "satoshis": 24,
+          "scriptBytes": 25,
+          "scriptSha256": "742c0cee8470a888d4b9f4bc329eed4a103ea8c83eef29c285862ed158ce817c"
+        },
+        {
+          "vout": 7,
+          "satoshis": 500,
+          "scriptBytes": 2076,
+          "scriptSha256": "a82f7134afba82b04d7aa38e3750a410a17c0130edd4e13bd9db9538a7aa42f8"
+        },
+        {
+          "vout": 8,
+          "satoshis": 0,
+          "scriptBytes": 81,
+          "scriptSha256": "788304d53dccd0ed43d9c986355e7c8c64da790ca25c140832297299e021de5a"
+        },
+        {
+          "vout": 9,
+          "satoshis": 96662329840,
+          "scriptBytes": 25,
+          "scriptSha256": "742c0cee8470a888d4b9f4bc329eed4a103ea8c83eef29c285862ed158ce817c"
+        }
+      ],
+      "error": "/home/ubuntu/projects/tbc-sdk/scripts/reference-172/verify.js:15\n  if (!result?.success) { if(process.env.TBC_VERIFY_DEBUG_PATH)fs.writeFileSync(process.env.TBC_VERIFY_DEBUG_PATH,JSON.stringify({raw,parents,input:i})); throw new Error(`input ${i}: ${result?.error}`); }\n                                                                                                                                                          ^\n\nError: input 0: SCRIPT_ERR_EQUALVERIFY\n    at Object.<anonymous> (/home/ubuntu/projects/tbc-sdk/scripts/reference-172/verify.js:15:161)\n    at Module._compile (node:internal/modules/cjs/loader:1705:14)\n    at Object..js (node:internal/modules/cjs/loader:1838:10)\n    at Module.load (node:internal/modules/cjs/loader:1441:32)\n    at Function._load (node:internal/modules/cjs/loader:1263:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)\n    at node:internal/main/run_main_module:36:49\n\nNode.js v22.22.2\n"
+    }
+  ],
+  "diagnosis": {
+    "tokenFamily": "legacy FT v4",
+    "tokenName": "RustPoolLiveFlow",
+    "tokenSymbol": "RPLF",
+    "tokenDecimals": 2,
+    "tokenId": "52b4c60a6e516e7a899954e751a475cabcbac94cb2e21d15309684b29b3ed411",
+    "poolFamily": "PoolNFT v2",
+    "plan": 6,
+    "totalFeeBps": 130,
+    "controllerCount": 3,
+    "lpTimelocked": true,
+    "poolTxid": "1caeff2cb5736d6a6455828554842689b3d7e3334ae0328e69fd04bdd11549a2",
+    "lpCodeBytes": 2076,
+    "correctPoolHash": "62c8331ce1be17595aa9cd0f3b5e041d6e2ec67d539852935af7779709f114bc",
+    "embeddedPoolHashOffset": 314,
+    "indexerOffsets": [
+      258,
+      280
+    ],
+    "indexerExtractedHashes": [
+      "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+      "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb"
+    ],
+    "localIndexerSource": "tbc-index/internal/contract/detect.go extractLPPoolHash + ft_lp.go tryLPMint",
+    "remoteBuildNotIdentified": true
+  }
+}

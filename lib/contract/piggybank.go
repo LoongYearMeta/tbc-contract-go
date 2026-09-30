@@ -268,7 +268,10 @@ func FetchTBCLockTimeFromScript(lockingScript *bscript.Script) (uint32, error) {
 // --------------------------------------------------------------------------
 
 // privKeyToAddress derives the mainnet P2PKH address string from a private key.
-func privKeyToAddress(privKey *bec.PrivateKey) (string, error) {
+func privKeyToAddress(privKey TransactionSigner) (string, error) {
+	if signerMissing(privKey) {
+		return "", modernError("missing signer")
+	}
 	a, err := bscript.NewAddressFromPublicKey(privKey.PubKey(), true)
 	if err != nil {
 		return "", fmt.Errorf("privKeyToAddress: %w", err)

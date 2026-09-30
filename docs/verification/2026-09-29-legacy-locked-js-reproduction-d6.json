@@ -1,0 +1,188 @@
+{
+  "diagnosis": {
+    "lpCodeBytes": 2076,
+    "correctPoolHash": "91c051d5b30d727cbafa54b860611ddc0988673fe9e684f27342b0c2f5b59255",
+    "embeddedPoolHashOffset": 314,
+    "indexerOffsets": [
+      258,
+      280
+    ],
+    "indexerExtractedHashes": [
+      "a87e6ba86c7e7eaa56ba01207f547f8104ffffffff819e5188816c888876a96c",
+      "9e5188816c888876a96c88ad7652876375527952797e6c766b87636bbb676bbb"
+    ],
+    "remoteBuildNotIdentified": true
+  },
+  "network": "testnet",
+  "reference": "tbc-contract@1.7.2",
+  "rustTxid": "ee3fca8140ded0e903dfe3ecee229edc5342a80443b2732d8d71666851c723cf",
+  "results": [
+    {
+      "method": "initPoolNFT",
+      "tokenId": "8fc1d69763a4a4a760aa0a47d5d260134ce8b2dbd857a10df3b600b55ffeaafb",
+      "tokenDecimal": 6,
+      "fundingReplaced": true,
+      "txid": "f5c0a3ddb66dba875cb6c43fb8220e279dc7f753c41e0ea6a9eb297dc3fd818d",
+      "sameInputs": false,
+      "sameContractOutputs": true,
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 5976,
+          "scriptBytes": 3935,
+          "scriptSha256": "91c051d5b30d727cbafa54b860611ddc0988673fe9e684f27342b0c2f5b59255"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptBytes": 139,
+          "scriptSha256": "4881ed8c6a2ee1c6f7973a7b830c19ffe94c4256969041075ae0408e22f0bcd7"
+        },
+        {
+          "vout": 2,
+          "satoshis": 500,
+          "scriptBytes": 2076,
+          "scriptSha256": "83fcd47ae1ced1585b0ef53e738adc9b23eda07bb974d371e8e4b529f49fa332"
+        },
+        {
+          "vout": 3,
+          "satoshis": 0,
+          "scriptBytes": 81,
+          "scriptSha256": "ab23c3b1c656c0f5970af8c6e9543097d2ca68b634413683e2c133e8f3c04294"
+        },
+        {
+          "vout": 4,
+          "satoshis": 500,
+          "scriptBytes": 2076,
+          "scriptSha256": "ebc3b72d2832105b67846f10398d6910ed67040e23c78ef5f5c40571ecb5fa06"
+        },
+        {
+          "vout": 5,
+          "satoshis": 0,
+          "scriptBytes": 81,
+          "scriptSha256": "3260f30729cda463eaf28425136cd9a586bc378d50dd8a4a553bcf9e21689741"
+        },
+        {
+          "vout": 6,
+          "satoshis": 24,
+          "scriptBytes": 25,
+          "scriptSha256": "742c0cee8470a888d4b9f4bc329eed4a103ea8c83eef29c285862ed158ce817c"
+        },
+        {
+          "vout": 7,
+          "satoshis": 500,
+          "scriptBytes": 2076,
+          "scriptSha256": "eb4247b56332958a32960633d679214ceb8cd48faed5b3b1322b19595d8a4c38"
+        },
+        {
+          "vout": 8,
+          "satoshis": 0,
+          "scriptBytes": 81,
+          "scriptSha256": "2de32860912a419aa1f0aedbb2be28e46a4edaccb524a26687fce495325a3c0e"
+        },
+        {
+          "vout": 9,
+          "satoshis": 96594423721,
+          "scriptBytes": 25,
+          "scriptSha256": "742c0cee8470a888d4b9f4bc329eed4a103ea8c83eef29c285862ed158ce817c"
+        }
+      ],
+      "preflight": {
+        "txid": "f5c0a3ddb66dba875cb6c43fb8220e279dc7f753c41e0ea6a9eb297dc3fd818d",
+        "bytes": 14971,
+        "fee": 1201,
+        "verifiedInputs": 3
+      },
+      "response": {
+        "code": "400",
+        "error": "BROADCAST_REJECTED",
+        "message": "broadcast transaction failed",
+        "data": {
+          "error": "index-gate/A3: lp: neither mint nor transfer",
+          "gate": {
+            "rule": "A3",
+            "contract_type": 10,
+            "contract_hash": "",
+            "contract_id": "",
+            "sum_in": 0,
+            "sum_out": 0,
+            "rules_version": 2
+          }
+        },
+        "request_id": "r-8f703e3a"
+      }
+    },
+    {
+      "method": "initPoolNFTWithLockTime",
+      "tokenId": "8fc1d69763a4a4a760aa0a47d5d260134ce8b2dbd857a10df3b600b55ffeaafb",
+      "tokenDecimal": 6,
+      "fundingReplaced": true,
+      "txid": "2cb01da2969df3c6f153fb955a032f619f8d96d8d2a8354f3f8dfc6e4850fbf6",
+      "sameInputs": false,
+      "sameContractOutputs": false,
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 5976,
+          "scriptBytes": 3935,
+          "scriptSha256": "91c051d5b30d727cbafa54b860611ddc0988673fe9e684f27342b0c2f5b59255"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptBytes": 139,
+          "scriptSha256": "4881ed8c6a2ee1c6f7973a7b830c19ffe94c4256969041075ae0408e22f0bcd7"
+        },
+        {
+          "vout": 2,
+          "satoshis": 500,
+          "scriptBytes": 2076,
+          "scriptSha256": "83fcd47ae1ced1585b0ef53e738adc9b23eda07bb974d371e8e4b529f49fa332"
+        },
+        {
+          "vout": 3,
+          "satoshis": 0,
+          "scriptBytes": 81,
+          "scriptSha256": "ab23c3b1c656c0f5970af8c6e9543097d2ca68b634413683e2c133e8f3c04294"
+        },
+        {
+          "vout": 4,
+          "satoshis": 500,
+          "scriptBytes": 1564,
+          "scriptSha256": "c0c148df2bc2a8db24d338e14e48175a1b75c3107a13ec6010523d6bc67ec38e"
+        },
+        {
+          "vout": 5,
+          "satoshis": 0,
+          "scriptBytes": 81,
+          "scriptSha256": "3260f30729cda463eaf28425136cd9a586bc378d50dd8a4a553bcf9e21689741"
+        },
+        {
+          "vout": 6,
+          "satoshis": 24,
+          "scriptBytes": 25,
+          "scriptSha256": "742c0cee8470a888d4b9f4bc329eed4a103ea8c83eef29c285862ed158ce817c"
+        },
+        {
+          "vout": 7,
+          "satoshis": 500,
+          "scriptBytes": 2076,
+          "scriptSha256": "eb4247b56332958a32960633d679214ceb8cd48faed5b3b1322b19595d8a4c38"
+        },
+        {
+          "vout": 8,
+          "satoshis": 0,
+          "scriptBytes": 81,
+          "scriptSha256": "2de32860912a419aa1f0aedbb2be28e46a4edaccb524a26687fce495325a3c0e"
+        },
+        {
+          "vout": 9,
+          "satoshis": 96594423762,
+          "scriptBytes": 25,
+          "scriptSha256": "742c0cee8470a888d4b9f4bc329eed4a103ea8c83eef29c285862ed158ce817c"
+        }
+      ],
+      "error": "/home/ubuntu/projects/tbc-sdk/scripts/reference-172/verify.js:15\n  if (!result?.success) { if(process.env.TBC_VERIFY_DEBUG_PATH)fs.writeFileSync(process.env.TBC_VERIFY_DEBUG_PATH,JSON.stringify({raw,parents,input:i})); throw new Error(`input ${i}: ${result?.error}`); }\n                                                                                                                                                          ^\n\nError: input 0: SCRIPT_ERR_EQUALVERIFY\n    at Object.<anonymous> (/home/ubuntu/projects/tbc-sdk/scripts/reference-172/verify.js:15:161)\n    at Module._compile (node:internal/modules/cjs/loader:1705:14)\n    at Object..js (node:internal/modules/cjs/loader:1838:10)\n    at Module.load (node:internal/modules/cjs/loader:1441:32)\n    at Function._load (node:internal/modules/cjs/loader:1263:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)\n    at node:internal/main/run_main_module:36:49\n\nNode.js v22.22.2\n"
+    }
+  ]
+}

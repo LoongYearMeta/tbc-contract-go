@@ -1,0 +1,30 @@
+{
+  "network": "testnet",
+  "decimal": 6,
+  "sources": [
+    {
+      "npmVersion": "1.4.0",
+      "FTVersion": 1,
+      "npmIntegrity": "sha512-FHZsh2M72P4IzwX0ED1tEaNFR7idWUfSgc+6b4hRKg2w2TV4isxSqWImEyWmcPY4+j+G7ixFofDZig7tY3oVAw==",
+      "npmShasum": "133ac3d8b2daf5702ece4567249c925cf819029a",
+      "mintCodeSourceSHA256": "798d2b3510feb6994fa60f32d1c653307b55fe7a3bea5af439077127343d9af3",
+      "use": "published getFTmintCode called from JS 1.7.2 MintFT; runtime-signed ordinary FT testnet bootstrap, then native JS/Rust/Go Pool builders"
+    },
+    {
+      "npmVersion": "1.5.0",
+      "FTVersion": 2,
+      "npmIntegrity": "sha512-Uch6+CLhr7rm74BIg5/xV+AFsAr6zVZ+48hgOtJWM1X+2gpUofUG7RVkhx78D9ymCF+n5HPQEm/1hZTpE0dgvw==",
+      "npmShasum": "a0ed5bd552c1482a5c40d667ca3bb15d3957f34c",
+      "mintCodeSourceSHA256": "259b7b1ecf1eb9fd66bf3ca560a1d7cf95798b8a6b11b15fa4024c0573a7f769",
+      "use": "published getFTmintCode called from JS 1.7.2 MintFT; runtime-signed ordinary FT testnet bootstrap, then native JS/Rust/Go Pool builders"
+    },
+    {
+      "npmVersion": "1.6.5",
+      "FTVersion": 3,
+      "npmIntegrity": "sha512-3MBIe+MmfqgwkC8xPLLBothlkYwoLKqvDPRV47LrcB/VG3g9tPE1fijee9es0ea00PWvovzWnITT4BG6yNsHQA==",
+      "npmShasum": "38ef404072f18fccdcdecc383689588de1585889",
+      "mintCodeSourceSHA256": "e8187c94694becaae85788eab0c529838e3e10119782ade4eb5599ed9622b100",
+      "use": "published getFTmintCode called from JS 1.7.2 MintFT; runtime-signed ordinary FT testnet bootstrap, then native JS/Rust/Go Pool builders"
+    }
+  ]
+}

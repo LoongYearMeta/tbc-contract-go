@@ -1,0 +1,3735 @@
+{
+  "reference": "tbc-contract@1.7.2",
+  "network": "testnet",
+  "token": {
+    "family": "ordinary FT v4",
+    "mintTemplatePackage": "1.7.2",
+    "decimal": 6,
+    "supplyHuman": "1000000"
+  },
+  "excluded": [
+    "stablecoin creation",
+    "historical plan6 130bp"
+  ],
+  "cases": [
+    {
+      "id": "P1-K0-L1-js-cost1000",
+      "plan": 1,
+      "rate": 35,
+      "keys": 0,
+      "lpCostSat": 0,
+      "directLockedConsume": true,
+      "lockedLP": true,
+      "language": "js",
+      "status": "passed",
+      "steps": [
+        {
+          "operation": "ft.mint",
+          "txids": [
+            "f46de87afa672e952aaf9f28a333273342aafb37fc9eae34632f351116c41f0b",
+            "a32f26b93a41a91c15b3cedb91650422d217c41aeb1be226003d3da1570c2ee7"
+          ]
+        },
+        {
+          "operation": "pool.create",
+          "txids": [
+            "c93eaadef084912f9e44114396ac2b19674a5abaab59964c4a764ef33c50186a",
+            "80427b6aa4bd55adbdab446f8ac012cd3a4623472235c6716694764cb6d252be"
+          ]
+        },
+        {
+          "operation": "pool.init",
+          "amount": "0.01",
+          "txids": [
+            "66acf2018c1616162be22f48c4b23c6e989f11bcfaf2ead79ad7f4ea6a0a098d"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.002",
+          "txids": [
+            "a6febe3a76313c77c9402681e41af1a89573d678e2ec01b13fd75b278c2bbcdd"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.003",
+          "txids": [
+            "e88183b06fb85ef0a28cda6daa8ea23fe6544bfb8774eaeb79500217dc3ef4c4"
+          ]
+        },
+        {
+          "operation": "pool.swap_ft",
+          "amount": "0.001",
+          "txids": [
+            "093cc5d7e4443b7238b17f79eba9b6f32d23a8c944d1e78e03c8032f5d3dccde"
+          ]
+        },
+        {
+          "operation": "pool.swap_tbc",
+          "amount": "5",
+          "txids": [
+            "5cff5fe6ac1d8557775cd689fb70be905c71741fd494afcabd5e98302ccf5ad4"
+          ]
+        },
+        {
+          "operation": "pool.merge_ft",
+          "txids": [
+            "9fcace29336d7f3e5b032258c044363a68aa12ba03646150093100827c93b021"
+          ]
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.0005",
+          "txids": [
+            "22f5e651bc5276edb3e8bb2dfe3233e1fd159635559ca88720171e4462683058",
+            "e2e6e835706aa61eccd999172c09aed908ab57b3f7a9e0ddc4fcee18e2407b89"
+          ]
+        },
+        {
+          "operation": "pool.merge_lp",
+          "txids": []
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.002",
+          "txids": [
+            "a122d6cdb88904155151d95717b7d443c713d1fb42ee7846e8d6ccc648ba6e83"
+          ]
+        },
+        {
+          "operation": "pool.burn_lp",
+          "txids": [
+            "57633e8b141a5b04b09a49d8179d10ab8271f511b2fd003775169dd0c81e9281"
+          ]
+        }
+      ],
+      "startFunding": {
+        "txid": "31cbaa32941d7b34ddd7f7429b74df362c062b9598861bdef732fe24c2165de5",
+        "vout": 38
+      },
+      "tokenId": "a32f26b93a41a91c15b3cedb91650422d217c41aeb1be226003d3da1570c2ee7",
+      "poolId": "80427b6aa4bd55adbdab446f8ac012cd3a4623472235c6716694764cb6d252be"
+    },
+    {
+      "id": "P1-K0-L1-rust-cost1000",
+      "plan": 1,
+      "rate": 35,
+      "keys": 0,
+      "lpCostSat": 0,
+      "directLockedConsume": true,
+      "lockedLP": true,
+      "language": "rust",
+      "status": "passed",
+      "steps": [
+        {
+          "operation": "ft.mint",
+          "txids": [
+            "2c1bf3fc62fa2d201fe33a9c3f6cca06d4f3176ef0129e69675b4e853a788dfe",
+            "c0c553d8ea685f9fc6ed3f122bb0241d1cb47562d0bb3b1c83b6d9bc9232ebce"
+          ]
+        },
+        {
+          "operation": "pool.create",
+          "txids": [
+            "094d542f28d8bf5bfb95e8646de451ac0cf3d755deed83e7315295d65920be31",
+            "8dbbc1a0b8f4ca05ccf60028f2761a2cccbf94f282ce5ef185c8a91cc7f06a9d"
+          ]
+        },
+        {
+          "operation": "pool.init",
+          "amount": "0.01",
+          "txids": [
+            "76d0cb0fadc21f17c75286ae135b83fb2318efa3e6d002ec505a86956fc287a4"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.002",
+          "txids": [
+            "452d86451a6c73b5fff4d7046f8c0f345e63f1fc18896c2811038fc0432854b8"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.003",
+          "txids": [
+            "425f2c85a7b2ca565e36fb1032fc8b8b99b9866034085992599432ee9d500c77"
+          ]
+        },
+        {
+          "operation": "pool.swap_ft",
+          "amount": "0.001",
+          "txids": [
+            "ebca8b54e544d7c3b2a94e1e5b7cfe1071f5e1b7f3340df1875876bf40f11aa6"
+          ]
+        },
+        {
+          "operation": "pool.swap_tbc",
+          "amount": "5",
+          "txids": [
+            "724c97309da590700fe7ae5f7f59cc13ef4f02d30eebfa9199a45f3ad9dfdf45"
+          ]
+        },
+        {
+          "operation": "pool.merge_ft",
+          "txids": [
+            "3978e99c23e4a245fd470664f269ac0a7feb3dcf0036b50e6f8d0cb0c34aef01"
+          ]
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.0005",
+          "txids": [
+            "98ba13ad81abedb92d3798fc3b77ad9c0cb0b8ba482996da42fcca4d729bf07c",
+            "bd9472fc8e4d051651b9e8d9a0d0cf42dd6b6c50a9d7668adc877053d93e6fbc"
+          ]
+        },
+        {
+          "operation": "pool.merge_lp",
+          "txids": []
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.002",
+          "txids": [
+            "f8bd952887d4052acb93fbb8a51591387c2c6d6c79a3f80b24066f442e55be00"
+          ]
+        },
+        {
+          "operation": "pool.burn_lp",
+          "txids": [
+            "6def9dda790f3d39ac1881d3e33ce021dcb0a27952eb3f7a4a3b00d63335ef63"
+          ]
+        }
+      ],
+      "startFunding": {
+        "txid": "57633e8b141a5b04b09a49d8179d10ab8271f511b2fd003775169dd0c81e9281",
+        "vout": 2
+      },
+      "tokenId": "c0c553d8ea685f9fc6ed3f122bb0241d1cb47562d0bb3b1c83b6d9bc9232ebce",
+      "poolId": "8dbbc1a0b8f4ca05ccf60028f2761a2cccbf94f282ce5ef185c8a91cc7f06a9d"
+    },
+    {
+      "id": "P1-K0-L1-go-cost1000",
+      "plan": 1,
+      "rate": 35,
+      "keys": 0,
+      "lpCostSat": 0,
+      "directLockedConsume": true,
+      "lockedLP": true,
+      "language": "go",
+      "status": "passed",
+      "steps": [
+        {
+          "operation": "ft.mint",
+          "txids": [
+            "080c302a6687aff323a82b0401d23d545bcd2f4cba698a20c34770bf18a89381",
+            "7bd8be08525845af870e661ad1f91dc5d0b59bec831e3651a9037c7d429ad348"
+          ]
+        },
+        {
+          "operation": "pool.create",
+          "txids": [
+            "c4b3dfc047068af1af99d359572124662271b6191254fa0b94918ae0c1b1d2c2",
+            "1f2032533a9a9191a49aec5d380e642ab9ee036ac151af9a4edc404af8539254"
+          ]
+        },
+        {
+          "operation": "pool.init",
+          "amount": "0.01",
+          "txids": [
+            "b2e29cb9cd1d36e4755a2e46d46c436f2e8f31129d4d9209805165173da61a73"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.002",
+          "txids": [
+            "adf07295659c7565b4468fbfa496dc72a1bf24a7dda4aafbcde717e89beeba54"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.003",
+          "txids": [
+            "0544781973689dbc3197924a52558c4e692cf5859a7734053c25de67c70cbea8"
+          ]
+        },
+        {
+          "operation": "pool.swap_ft",
+          "amount": "0.001",
+          "txids": [
+            "4a34c368e2dcdb0f586a7ef677778bdc9bd7301e362a95267a3e71eaaee6f74e"
+          ]
+        },
+        {
+          "operation": "pool.swap_tbc",
+          "amount": "5",
+          "txids": [
+            "091ff56386f3c0912caa05297e671f17e3f1bdf0364e07e64e355bd2db230a84"
+          ]
+        },
+        {
+          "operation": "pool.merge_ft",
+          "txids": [
+            "49385ffe48db6389bc0407a908df82782370ffceb0a4ac78d9f3c45561009da9"
+          ]
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.0005",
+          "txids": [
+            "9054799a12bd132c2e0ee5cc984e0aaafc278a67ba3429f106723825d5e5c699",
+            "3328dc40e7ea0b81a5f3a21d069530e4074f4d2d060cf91e3a727036d792c824"
+          ]
+        },
+        {
+          "operation": "pool.merge_lp",
+          "txids": []
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.002",
+          "txids": [
+            "58738460e8685f205e3d1fe9c74ccc35c5d0a40b125033bbbd89ff3de62dbb3a"
+          ]
+        },
+        {
+          "operation": "pool.burn_lp",
+          "txids": [
+            "d9dddb33e42c258183819d3354ab4dcd65ed042e6d8906dcc98e28478fc03811"
+          ]
+        }
+      ],
+      "startFunding": {
+        "txid": "6def9dda790f3d39ac1881d3e33ce021dcb0a27952eb3f7a4a3b00d63335ef63",
+        "vout": 2
+      },
+      "tokenId": "7bd8be08525845af870e661ad1f91dc5d0b59bec831e3651a9037c7d429ad348",
+      "poolId": "1f2032533a9a9191a49aec5d380e642ab9ee036ac151af9a4edc404af8539254"
+    },
+    {
+      "id": "P6-K0-L1-js-cost1000",
+      "plan": 6,
+      "rate": 330,
+      "keys": 0,
+      "lpCostSat": 0,
+      "directLockedConsume": true,
+      "lockedLP": true,
+      "language": "js",
+      "status": "passed",
+      "steps": [
+        {
+          "operation": "ft.mint",
+          "txids": [
+            "7b7041a9795a30bd07690ff45b7c09413bfc4f8f77ffc3320b5b80ad80c11eee",
+            "71404b8341b9ad6ab90d9aeda24828dd4f80ed513bba3d8aeaf55598db4684db"
+          ]
+        },
+        {
+          "operation": "pool.create",
+          "txids": [
+            "6bb070b09672c50b8fea7faef569100efbf0041ef15f869e49f579f45b4b3d96",
+            "1e65c183cf375fb55adf2b3a27685fb503dfe3dd19a3643a29ad5163b895a19b"
+          ]
+        },
+        {
+          "operation": "pool.init",
+          "amount": "0.01",
+          "txids": [
+            "f04200349ca8dc33abfdaf376f379aae1b3fea5d73cdd33bd4e6b81e9e4135c9"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.002",
+          "txids": [
+            "314f8b2028f5da3735745aa4e934da9119d642a6a5d8db08bbeb8fd1bde8b163"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.003",
+          "txids": [
+            "2a5be4c81a58444292539c20c3f0c6c9ba82cca4a70c3ad635e43dc83c91b37c"
+          ]
+        },
+        {
+          "operation": "pool.swap_ft",
+          "amount": "0.001",
+          "txids": [
+            "b4b2179baf6dbaa2ce71cf85d86a9407b5422cbdbd784292ca2e819b9e5118e6"
+          ]
+        },
+        {
+          "operation": "pool.swap_tbc",
+          "amount": "5",
+          "txids": [
+            "05a5dac8bb593836dfe8b03fa0aeeeb22b687d559af813db72d34a97d959c35f"
+          ]
+        },
+        {
+          "operation": "pool.merge_ft",
+          "txids": [
+            "9546ec760a3f0e63d762516b3c7d228f82581167238e4afc2fbc4866d11e25ab"
+          ]
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.0005",
+          "txids": [
+            "82438e0dddc129a6e5e22f3d038b0efa7a92bdcd876ef46ede812550dc7b567b",
+            "9fda9f0372fda1c6f2ff1be6dad09a7a6a71738f54596d947f5f7586e7b0bf75"
+          ]
+        },
+        {
+          "operation": "pool.merge_lp",
+          "txids": []
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.002",
+          "txids": [
+            "a40a9496f10348bfe8bfcb5f2f6e7deeee12cba91289939eebe16cff47dd5390"
+          ]
+        },
+        {
+          "operation": "pool.burn_lp",
+          "txids": [
+            "b6ccd268607e6d3c0b92953ef04aa1886d60db714f7575a2c4f363d5e4196321"
+          ]
+        }
+      ],
+      "startFunding": {
+        "txid": "d9dddb33e42c258183819d3354ab4dcd65ed042e6d8906dcc98e28478fc03811",
+        "vout": 2
+      },
+      "tokenId": "71404b8341b9ad6ab90d9aeda24828dd4f80ed513bba3d8aeaf55598db4684db",
+      "poolId": "1e65c183cf375fb55adf2b3a27685fb503dfe3dd19a3643a29ad5163b895a19b"
+    },
+    {
+      "id": "P6-K0-L1-rust-cost1000",
+      "plan": 6,
+      "rate": 330,
+      "keys": 0,
+      "lpCostSat": 0,
+      "directLockedConsume": true,
+      "lockedLP": true,
+      "language": "rust",
+      "status": "passed",
+      "steps": [
+        {
+          "operation": "ft.mint",
+          "txids": [
+            "8e131801921d22ab82fafbff3115fbd1c167570a39af2ea06eb3c8558f775fd5",
+            "9508d2368dc4727b05287c935eaf47774ebc46b559f400d4658fdb3f430d061c"
+          ]
+        },
+        {
+          "operation": "pool.create",
+          "txids": [
+            "6866775f8b20f707246c24e0ef13241c84cef58aef74ecf8c8e191fd784da14c",
+            "e3adf547723841c4396e3e874074836633fc8fde126c86ca9482e8661b1b52bd"
+          ]
+        },
+        {
+          "operation": "pool.init",
+          "amount": "0.01",
+          "txids": [
+            "d56c73764641068eac4cfddfb58e36def7cbc9b18ca24772344d3e6aaa622e14"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.002",
+          "txids": [
+            "6ee1aba0d42d059634cea286787dc0c3368b62a0e6bb5ca6630695d5ebe792de"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.003",
+          "txids": [
+            "837a622ef4c66ff4ab52bcd767f163200033dc3f9c264f20f66be68f4d254b94"
+          ]
+        },
+        {
+          "operation": "pool.swap_ft",
+          "amount": "0.001",
+          "txids": [
+            "b5b4ec6513dd88c0de3e05a64a28d99a3f8be5d5d7e6715526d9f1b0081c6cf8"
+          ]
+        },
+        {
+          "operation": "pool.swap_tbc",
+          "amount": "5",
+          "txids": [
+            "13b4e93f8451928681d132a8dd766735362b9082e7cd7e70eee34e97ac2d2f38"
+          ]
+        },
+        {
+          "operation": "pool.merge_ft",
+          "txids": [
+            "551a58fc9fbfafd3b5d917e99aa19ea55e6b6860e05832a2f6e900d4c51ff9d1"
+          ]
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.0005",
+          "txids": [
+            "a6bf2ea5a050ebecb8c8fdc45a2f228ad5841e0f0c58db05fca9c4dd9efdab08",
+            "26bed7f06eaac0d9e1a64432dca4dcb56cc7d1bbee1a9be6e2e506f72653cfdf"
+          ]
+        },
+        {
+          "operation": "pool.merge_lp",
+          "txids": []
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.002",
+          "txids": [
+            "64bdd454b5f9527cdf3b305da89b7d9e88bacd724566b9c21342b278744aa96b"
+          ]
+        },
+        {
+          "operation": "pool.burn_lp",
+          "txids": [
+            "19bc47cbbbd616593bc53711ada34fb124302e14a6e1475accc5f516a9ea5134"
+          ]
+        }
+      ],
+      "startFunding": {
+        "txid": "b6ccd268607e6d3c0b92953ef04aa1886d60db714f7575a2c4f363d5e4196321",
+        "vout": 2
+      },
+      "tokenId": "9508d2368dc4727b05287c935eaf47774ebc46b559f400d4658fdb3f430d061c",
+      "poolId": "e3adf547723841c4396e3e874074836633fc8fde126c86ca9482e8661b1b52bd"
+    },
+    {
+      "id": "P6-K0-L1-go-cost1000",
+      "plan": 6,
+      "rate": 330,
+      "keys": 0,
+      "lpCostSat": 0,
+      "directLockedConsume": true,
+      "lockedLP": true,
+      "language": "go",
+      "status": "passed",
+      "steps": [
+        {
+          "operation": "ft.mint",
+          "txids": [
+            "17356520700a8869a3e5353586a0249cb1871b8a3e012596ef80d31ff48fb210",
+            "b12895b8e40ffbfa63bffc1a24065d059b0331507a8551ee116f45daa58351d1"
+          ]
+        },
+        {
+          "operation": "pool.create",
+          "txids": [
+            "86e2ae933b08c6e866734acac3e370874abe1b79850f7950b360a142b9263ef1",
+            "d9e07b638fc75de115d17b1769c5661d1f6e56a467100e52874a4baa02c1b1e9"
+          ]
+        },
+        {
+          "operation": "pool.init",
+          "amount": "0.01",
+          "txids": [
+            "57f35625ed216a8b7087aadb3af11484f2dba0b080ba79c851329a8dacfe35db"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.002",
+          "txids": [
+            "9b8aa80b811904179fa7cbeee324c66c92692d1dce0d2800b0b7fb499c40cfe5"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.003",
+          "txids": [
+            "15d1558c24160b5a402a651c4ec9b9d1c8555dd9feaa8c16f5e03d1e6c261909"
+          ]
+        },
+        {
+          "operation": "pool.swap_ft",
+          "amount": "0.001",
+          "txids": [
+            "2810861c9fa969de14189595fdc9fe12d93c33bc0f394c51449bfa7f23dc509d"
+          ]
+        },
+        {
+          "operation": "pool.swap_tbc",
+          "amount": "5",
+          "txids": [
+            "5760be71b060d89ef7e663d7b1be6c830dbd92cc1b818451468a5d6d657f063d"
+          ]
+        },
+        {
+          "operation": "pool.merge_ft",
+          "txids": [
+            "8f0b05677908ad73cc739705a7d1a86802fdb4e8f3cc4e8fe02cf1e9af0537e1"
+          ]
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.0005",
+          "txids": [
+            "81cbe214f56dee012935eeba560e752dc1db281ae423437875421cc73dc747e0",
+            "0c12b503d482de6fab2aa7468eb6ce57ccb7e405643799a139f214113a3fd8e6"
+          ]
+        },
+        {
+          "operation": "pool.merge_lp",
+          "txids": []
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.002",
+          "txids": [
+            "7fde700764f7f3868ded8a514e81c7af5bad6ebc0c32276d902274c8a3da61fc"
+          ]
+        },
+        {
+          "operation": "pool.burn_lp",
+          "txids": [
+            "4651fa0732def22e85b812cdc2aff01a85ae578fc1ffc891123dd4eff838c687"
+          ]
+        }
+      ],
+      "startFunding": {
+        "txid": "19bc47cbbbd616593bc53711ada34fb124302e14a6e1475accc5f516a9ea5134",
+        "vout": 2
+      },
+      "tokenId": "b12895b8e40ffbfa63bffc1a24065d059b0331507a8551ee116f45daa58351d1",
+      "poolId": "d9e07b638fc75de115d17b1769c5661d1f6e56a467100e52874a4baa02c1b1e9"
+    },
+    {
+      "id": "P1-K3-L1-js-cost1000",
+      "plan": 1,
+      "rate": 35,
+      "keys": 3,
+      "lpCostSat": 1000,
+      "directLockedConsume": true,
+      "lockedLP": true,
+      "language": "js",
+      "status": "passed",
+      "steps": [
+        {
+          "operation": "ft.mint",
+          "txids": [
+            "016d5ef9da57c05fab0efb0bd563ba928fdd2a8b07fc2c0a84e7dab4d1b657ef",
+            "73a5909982e6e14b712a3400b1351639355ac124bb4c72b65584727a9a663167"
+          ]
+        },
+        {
+          "operation": "pool.create",
+          "txids": [
+            "c34dadc553fef53ff9b6771793dc2271ea5634d6920ad3423b2217558a356fda",
+            "d46f781d548003246bbb6716a644e13c6a7a88f37eec5ba7c5053f3b0d4dc3a7"
+          ]
+        },
+        {
+          "operation": "pool.init",
+          "amount": "0.01",
+          "txids": [
+            "ff0e0136a57d433cfa74c9e8e06a789eaa2f5a3753c3a76fe8de8e2a27a35acd"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.002",
+          "txids": [
+            "afc28c7e9d4a4118173ecaff8ec37793fda822b6bf0b78245ebead49ffd20d69"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.003",
+          "txids": [
+            "075b9b2cc49721753bc439323c3c89512285d43bae2b20d37dbab83dfc3ad41a"
+          ]
+        },
+        {
+          "operation": "pool.swap_ft",
+          "amount": "0.001",
+          "txids": [
+            "90d5b9e7bf8ad688b0099a1e3005a49ab0d6933c509337f21332c938fff75e2b"
+          ]
+        },
+        {
+          "operation": "pool.swap_tbc",
+          "amount": "5",
+          "txids": [
+            "1a9d82635d3816d77e0b80fa33d3d2a4ebe475e0dc176a3fb25226a846544285"
+          ]
+        },
+        {
+          "operation": "pool.merge_ft",
+          "txids": [
+            "b7f94c0d34b14cbfbd58f7179b12a7e5ee0d2f3962a4eac6a6f45dcb3ee5d56b"
+          ]
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.0005",
+          "txids": [
+            "3214df0c430f05bae9732772b750bab3613f5ef3970c2dbe59c2720c50f48c00",
+            "9a45cd24b693f1226242adb6eddff88f4e83fd22f75dc5b3104d08ea9ca864f2"
+          ]
+        },
+        {
+          "operation": "pool.merge_lp",
+          "txids": []
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.002",
+          "txids": [
+            "337986519dea9cf1fa3ff944729ad01e54c22f59b217420f9c1e14df84b7842e"
+          ]
+        },
+        {
+          "operation": "pool.burn_lp",
+          "txids": [
+            "9b4478c989d6eddc948456ff18c5b555286ec47683ded23985226539f51752a0"
+          ]
+        }
+      ],
+      "startFunding": {
+        "txid": "4651fa0732def22e85b812cdc2aff01a85ae578fc1ffc891123dd4eff838c687",
+        "vout": 2
+      },
+      "tokenId": "73a5909982e6e14b712a3400b1351639355ac124bb4c72b65584727a9a663167",
+      "poolId": "d46f781d548003246bbb6716a644e13c6a7a88f37eec5ba7c5053f3b0d4dc3a7"
+    },
+    {
+      "id": "P1-K3-L1-rust-cost1000",
+      "plan": 1,
+      "rate": 35,
+      "keys": 3,
+      "lpCostSat": 1000,
+      "directLockedConsume": true,
+      "lockedLP": true,
+      "language": "rust",
+      "status": "passed",
+      "steps": [
+        {
+          "operation": "ft.mint",
+          "txids": [
+            "42b65cb63e102144ea5d05c4f02e326718f2178099080ac3a69b473bb0bac87a",
+            "2a6de4f403a8d721b908f0623ae59fe1c8123cc9406a5bb8dbeb805d004d50f9"
+          ]
+        },
+        {
+          "operation": "pool.create",
+          "txids": [
+            "1d252158b520bf5e7cee87f96aa00c7a14fa072e29f44aff118e77dc01c553df",
+            "8bbab434452281ec70608eb4d1e9af5598dbfb6e101f80cf5c691543980508f7"
+          ]
+        },
+        {
+          "operation": "pool.init",
+          "amount": "0.01",
+          "txids": [
+            "0447bc226677e76df67fb6fb66efe308848ae135978841f4e5e3ffb012f77f98"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.002",
+          "txids": [
+            "9d2e0ff06eada84aad7f6013802f6c26817f37ae12cd33273724c3ce9a19e34d"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.003",
+          "txids": [
+            "9c6d488ec871bca6d8cdb448adceae2678dd3636d6cd2b42ca34e33b1bed690e"
+          ]
+        },
+        {
+          "operation": "pool.swap_ft",
+          "amount": "0.001",
+          "txids": [
+            "d3f46eba948a387cfeff4f875c3d01df10330e4c2b256c53d97e66ccd6d8351c"
+          ]
+        },
+        {
+          "operation": "pool.swap_tbc",
+          "amount": "5",
+          "txids": [
+            "21624bcc5cf267494f33f4b3e0386735eaa69b432ba083b61434f49b6634e41c"
+          ]
+        },
+        {
+          "operation": "pool.merge_ft",
+          "txids": [
+            "f6fedefc15c81770e4d5b1fcda0fd4efe2fdabffe7c5024dc5ff86c8cac8ee17"
+          ]
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.0005",
+          "txids": [
+            "0fc3403fc7a38cfb76e58da1415decc6bcf3495420461ef495efc6347cb4da02",
+            "4190511fbf67d50a028623fc2fa8d4c9b044fcbad03a69900b33c7793665f3b2"
+          ]
+        },
+        {
+          "operation": "pool.merge_lp",
+          "txids": []
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.002",
+          "txids": [
+            "9fc9b17e4fd071fa4bd9cddeeee1474d2e6604e19cca0fe067a5efe1e9ff354e"
+          ]
+        },
+        {
+          "operation": "pool.burn_lp",
+          "txids": [
+            "4979652042ce59035a74f411ae6277e030b5d41fa1c5f32e6f0d158241233d7e"
+          ]
+        }
+      ],
+      "startFunding": {
+        "txid": "9b4478c989d6eddc948456ff18c5b555286ec47683ded23985226539f51752a0",
+        "vout": 2
+      },
+      "tokenId": "2a6de4f403a8d721b908f0623ae59fe1c8123cc9406a5bb8dbeb805d004d50f9",
+      "poolId": "8bbab434452281ec70608eb4d1e9af5598dbfb6e101f80cf5c691543980508f7"
+    },
+    {
+      "id": "P1-K3-L1-go-cost1000",
+      "plan": 1,
+      "rate": 35,
+      "keys": 3,
+      "lpCostSat": 1000,
+      "directLockedConsume": true,
+      "lockedLP": true,
+      "language": "go",
+      "status": "passed",
+      "steps": [
+        {
+          "operation": "ft.mint",
+          "txids": [
+            "244884f1496bbb5584827bec91942ff9e368ac22e924381e01481ff13f7205e6",
+            "98f5f288066a83c1a72784c4fbd148486182bff04dbba79cc8d250b2dec576f1"
+          ]
+        },
+        {
+          "operation": "pool.create",
+          "txids": [
+            "7e1e62b59f99c64dc37c8c2f1060c3a68ed525046aee435f44be17fdb7a775b3",
+            "f02e83b01c490bdc9a73e13f010cedf64067d5edefd6ec2839c445516641cd48"
+          ]
+        },
+        {
+          "operation": "pool.init",
+          "amount": "0.01",
+          "txids": [
+            "85fc79ec1b87b4ac18b05c5be0a7badf6e4277da82320681e240a6fca54ccf1a"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.002",
+          "txids": [
+            "63bc3f266e973fbe207d5c0ee3e5cb57745840b71c12ee06e5831eddcb56332b"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.003",
+          "txids": [
+            "c68f3070dd8925c506ec34c0d586fe2bbf2ac25944aea3c18b50fd98369ecb91"
+          ]
+        },
+        {
+          "operation": "pool.swap_ft",
+          "amount": "0.001",
+          "txids": [
+            "a2a28f6f5e9421d31283b672481c3ce06337c0a7c47353601fe0cb6468853be4"
+          ]
+        },
+        {
+          "operation": "pool.swap_tbc",
+          "amount": "5",
+          "txids": [
+            "bd58684bea3d9131ba94ca9d8696e6d6518f48392653620a753ac506a46a7f77"
+          ]
+        },
+        {
+          "operation": "pool.merge_ft",
+          "txids": [
+            "09fd1b0668f61877ad02a978445f201e46a3f5e3534cb95588c14d9fb12f9da4"
+          ]
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.0005",
+          "txids": [
+            "879926823c7e1380c9482c7b73dcd7a92b5cd49e3a3998b8a85b67e45667830c",
+            "7b21fbc6227a2ee39e3f694df502434b7a7f231ca9db21968540d757c4115613"
+          ]
+        },
+        {
+          "operation": "pool.merge_lp",
+          "txids": []
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.002",
+          "txids": [
+            "d423e4ee4391e3ce02893ce97e1a4a4e7d0fd0862f058b79bc15543a5e742d51"
+          ]
+        },
+        {
+          "operation": "pool.burn_lp",
+          "txids": [
+            "6e19c0c2b8f502e240104c2c1a3746f8b19cc4a7697af98480176fc56cc54f1e"
+          ]
+        }
+      ],
+      "startFunding": {
+        "txid": "4979652042ce59035a74f411ae6277e030b5d41fa1c5f32e6f0d158241233d7e",
+        "vout": 2
+      },
+      "tokenId": "98f5f288066a83c1a72784c4fbd148486182bff04dbba79cc8d250b2dec576f1",
+      "poolId": "f02e83b01c490bdc9a73e13f010cedf64067d5edefd6ec2839c445516641cd48"
+    },
+    {
+      "id": "P6-K3-L1-js-cost1000",
+      "plan": 6,
+      "rate": 330,
+      "keys": 3,
+      "lpCostSat": 1000,
+      "directLockedConsume": true,
+      "lockedLP": true,
+      "language": "js",
+      "status": "passed",
+      "steps": [
+        {
+          "operation": "ft.mint",
+          "txids": [
+            "5b46741ca1cbe6cf0847c8f0e9e5720424d11b5bddbec9f086811f879cc7236a",
+            "5db095d71e1acdd98401713a623458e6d285665608eb2d34a11f009d7eaa1196"
+          ]
+        },
+        {
+          "operation": "pool.create",
+          "txids": [
+            "de6472119808725c5c681d653ba9066fa7c9a7476c3b64512c0907895e4477dc",
+            "acbeaa6fee7d967ea5a4496416ed9ac5395d75ff40dbf5e01c5414dd406acdb9"
+          ]
+        },
+        {
+          "operation": "pool.init",
+          "amount": "0.01",
+          "txids": [
+            "4fe2f6b142c9ff46bcdf78a42c4f23a102bf2af4faf4888d8b68883cf9151a31"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.002",
+          "txids": [
+            "42e437ab219286b62544cf463cf5fef63386b1d25b00190274e95c8018822ea2"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.003",
+          "txids": [
+            "edfbf8454360ab509da82ba4712194615f4447544479e0b902e1cf8bfb4bb2aa"
+          ]
+        },
+        {
+          "operation": "pool.swap_ft",
+          "amount": "0.001",
+          "txids": [
+            "0411b6c45a33cc260cc5aabb3d2b7cd6af4aaa860383cbd56b6ef70b8e6eebc7"
+          ]
+        },
+        {
+          "operation": "pool.swap_tbc",
+          "amount": "5",
+          "txids": [
+            "89c07653ec97fa6163c2a02f28f21e3e13846adb5e9e102d58904a845840b330"
+          ]
+        },
+        {
+          "operation": "pool.merge_ft",
+          "txids": [
+            "fafd88d4765f49a047a799206da9dfc62de1c07a05f6d3f160b9582b288afaa6"
+          ]
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.0005",
+          "txids": [
+            "36c7773fe47a756ddb26f2fd0e0e8320d1cb7f8963abbd18a26f6477d232d49f",
+            "dd9631e9f5077b3f01b1b2ceacf06daaf398966f8ba180a82b377fb487b2c5dc"
+          ]
+        },
+        {
+          "operation": "pool.merge_lp",
+          "txids": []
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.002",
+          "txids": [
+            "fb2f9e59816b474abb82bb3ff4e908ff0a5880ac5ee882d39b62f5fa41ef6399"
+          ]
+        },
+        {
+          "operation": "pool.burn_lp",
+          "txids": [
+            "f740d59682db3cdeaa4e8aef8609ecfe1750566e7dc45f788eef17cf991cfe94"
+          ]
+        }
+      ],
+      "startFunding": {
+        "txid": "6e19c0c2b8f502e240104c2c1a3746f8b19cc4a7697af98480176fc56cc54f1e",
+        "vout": 2
+      },
+      "tokenId": "5db095d71e1acdd98401713a623458e6d285665608eb2d34a11f009d7eaa1196",
+      "poolId": "acbeaa6fee7d967ea5a4496416ed9ac5395d75ff40dbf5e01c5414dd406acdb9"
+    },
+    {
+      "id": "P6-K3-L1-rust-cost1000",
+      "plan": 6,
+      "rate": 330,
+      "keys": 3,
+      "lpCostSat": 1000,
+      "directLockedConsume": true,
+      "lockedLP": true,
+      "language": "rust",
+      "status": "passed",
+      "steps": [
+        {
+          "operation": "ft.mint",
+          "txids": [
+            "135d179a73e2a9c774bf8d20bcf81b6eb3695027f398e8b59f172c2160110c7f",
+            "cdb5f6268d222ca97188f258d2c99059015bea6ee440a75866837d5dc2f73624"
+          ]
+        },
+        {
+          "operation": "pool.create",
+          "txids": [
+            "67df19f8f14bb6278af9113105b9a8c02d26b1f15131dedfaaa156502231ce66",
+            "f26bd99ad6e580b4404224ba79c8acc98faf83cf20350248112ffded4037cbd8"
+          ]
+        },
+        {
+          "operation": "pool.init",
+          "amount": "0.01",
+          "txids": [
+            "c90b58481be095857a740e541d786fb56b475473c1552ee3cfe7dccc64f9bf36"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.002",
+          "txids": [
+            "28d5f84a6284f1ecce1a3cd047785e0101d0f033fc65e5751c92326d9cd60fed"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.003",
+          "txids": [
+            "9366a5e6a34aabeb1f9e037ae8ff8ca727cd70fea3a177d025dba79cc9b37e0c"
+          ]
+        },
+        {
+          "operation": "pool.swap_ft",
+          "amount": "0.001",
+          "txids": [
+            "abdb8e67453e4d76464268d823672a7ad0edb94dc9e36e753b94a918c6042d93"
+          ]
+        },
+        {
+          "operation": "pool.swap_tbc",
+          "amount": "5",
+          "txids": [
+            "af2e767b2766f8993545504e87f8cc7ee3c3e06b6d9011fc97719c532638aaa4"
+          ]
+        },
+        {
+          "operation": "pool.merge_ft",
+          "txids": [
+            "0f3223557c993a64aab274f36f8c9c99079417804c54eb3d62e6cf9056ee4d04"
+          ]
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.0005",
+          "txids": [
+            "46652e8a09699f23169e81f8aacc6182374f4c082f5c2c9ef7983a763055e148",
+            "056fecc572226b72cf645201b1c7fb06f8ec61f4b1926b7e158ed19e26e2acd1"
+          ]
+        },
+        {
+          "operation": "pool.merge_lp",
+          "txids": []
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.002",
+          "txids": [
+            "448b509af93067895df6decf17dba461b85ca5c01fb372077ff1291a19cd01ed"
+          ]
+        },
+        {
+          "operation": "pool.burn_lp",
+          "txids": [
+            "c306b54b30023fda9fe2bbf751c0b435906e56b3f58e7f5a230a2eef2dc7bb22"
+          ]
+        }
+      ],
+      "startFunding": {
+        "txid": "f740d59682db3cdeaa4e8aef8609ecfe1750566e7dc45f788eef17cf991cfe94",
+        "vout": 2
+      },
+      "tokenId": "cdb5f6268d222ca97188f258d2c99059015bea6ee440a75866837d5dc2f73624",
+      "poolId": "f26bd99ad6e580b4404224ba79c8acc98faf83cf20350248112ffded4037cbd8"
+    },
+    {
+      "id": "P6-K3-L1-go-cost1000",
+      "plan": 6,
+      "rate": 330,
+      "keys": 3,
+      "lpCostSat": 1000,
+      "directLockedConsume": true,
+      "lockedLP": true,
+      "language": "go",
+      "status": "passed",
+      "steps": [
+        {
+          "operation": "ft.mint",
+          "txids": [
+            "b098f8ba4d29b8689030e471e5380680663f8cd4d9a9cd35575c22075f3f8ae9",
+            "6c2c2cba6f801e99796ac2fcb76cb74303a4bb3f11bf77ede9ea03c37c46c40e"
+          ]
+        },
+        {
+          "operation": "pool.create",
+          "txids": [
+            "d64c0be863cf63367f968c4b8a8804c87d671d5e5da97c9e6015317041abf0d9",
+            "7bab78f9f4c86c7687243663b2563e3029db19883f6fa84c9b046a74a3a49353"
+          ]
+        },
+        {
+          "operation": "pool.init",
+          "amount": "0.01",
+          "txids": [
+            "d6843523feb13b54c865ce24fc7b39747aac116618327fe37df7eba99d3f1def"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.002",
+          "txids": [
+            "97216b8f688d47f13dd4c26a78f0ecc6f8f4f1f74ebad47c8fc7bd51917eb22b"
+          ]
+        },
+        {
+          "operation": "pool.add",
+          "amount": "0.003",
+          "txids": [
+            "a0c8f899d3d054d344fe6c58599798a3b6600bf3910b8866e8c8d837ea1b0e13"
+          ]
+        },
+        {
+          "operation": "pool.swap_ft",
+          "amount": "0.001",
+          "txids": [
+            "4768c897ccdd3db1b758586a5c32d0c0e09e90450d60460dd265a626be3b0911"
+          ]
+        },
+        {
+          "operation": "pool.swap_tbc",
+          "amount": "5",
+          "txids": [
+            "035157a9c29d1962d7e74052d506ed2cad77c6992bf6987e67f9df579167fe2d"
+          ]
+        },
+        {
+          "operation": "pool.merge_ft",
+          "txids": [
+            "2e050c246958b68935bca776aeab64f99f6c252eb7db7e90dd26ff02ed81f3dc"
+          ]
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.0005",
+          "txids": [
+            "252294abf7eb4ba68264e5e8628e835ab7cd85f4cc76b62f5266c64283fb599c",
+            "b43229727c9e2f51841f035a934cc987bcee07ff98fc3166e1af5a10f3112562"
+          ]
+        },
+        {
+          "operation": "pool.merge_lp",
+          "txids": []
+        },
+        {
+          "operation": "pool.remove",
+          "amount": "0.002",
+          "txids": [
+            "e233d1a982511a5c27272297dd1194da76eae6c48d17bfa3a6b99fc2d32b0f96"
+          ]
+        },
+        {
+          "operation": "pool.burn_lp",
+          "txids": [
+            "c498f5a0df8a2bfc9ea5db347be8356ff834c3942214ca017a6307c7eca0d6fd"
+          ]
+        }
+      ],
+      "startFunding": {
+        "txid": "c306b54b30023fda9fe2bbf751c0b435906e56b3f58e7f5a230a2eef2dc7bb22",
+        "vout": 2
+      },
+      "tokenId": "6c2c2cba6f801e99796ac2fcb76cb74303a4bb3f11bf77ede9ea03c37c46c40e",
+      "poolId": "7bab78f9f4c86c7687243663b2563e3029db19883f6fa84c9b046a74a3a49353"
+    }
+  ],
+  "transactions": [
+    {
+      "caseId": "P1-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "ft.mint",
+      "txid": "f46de87afa672e952aaf9f28a333273342aafb37fc9eae34632f351116c41f0b",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "ft.mint",
+      "txid": "a32f26b93a41a91c15b3cedb91650422d217c41aeb1be226003d3da1570c2ee7",
+      "feeSat": 190,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.create",
+      "txid": "c93eaadef084912f9e44114396ac2b19674a5abaab59964c4a764ef33c50186a",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.create",
+      "txid": "80427b6aa4bd55adbdab446f8ac012cd3a4623472235c6716694764cb6d252be",
+      "feeSat": 329,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.init",
+      "txid": "66acf2018c1616162be22f48c4b23c6e989f11bcfaf2ead79ad7f4ea6a0a098d",
+      "feeSat": 1101,
+      "verifiedInputs": 3,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.add",
+      "txid": "a6febe3a76313c77c9402681e41af1a89573d678e2ec01b13fd75b278c2bbcdd",
+      "feeSat": 1200,
+      "verifiedInputs": 3,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.add",
+      "txid": "e88183b06fb85ef0a28cda6daa8ea23fe6544bfb8774eaeb79500217dc3ef4c4",
+      "feeSat": 1239,
+      "verifiedInputs": 3,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.swap_ft",
+      "txid": "093cc5d7e4443b7238b17f79eba9b6f32d23a8c944d1e78e03c8032f5d3dccde",
+      "feeSat": 1312,
+      "verifiedInputs": 4,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.swap_tbc",
+      "txid": "5cff5fe6ac1d8557775cd689fb70be905c71741fd494afcabd5e98302ccf5ad4",
+      "feeSat": 1042,
+      "verifiedInputs": 3,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.merge_ft",
+      "txid": "9fcace29336d7f3e5b032258c044363a68aa12ba03646150093100827c93b021",
+      "feeSat": 1341,
+      "verifiedInputs": 5,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.remove",
+      "txid": "22f5e651bc5276edb3e8bb2dfe3233e1fd159635559ca88720171e4462683058",
+      "feeSat": 524,
+      "verifiedInputs": 4,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.remove",
+      "txid": "e2e6e835706aa61eccd999172c09aed908ab57b3f7a9e0ddc4fcee18e2407b89",
+      "feeSat": 1758,
+      "verifiedInputs": 4,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.remove",
+      "txid": "a122d6cdb88904155151d95717b7d443c713d1fb42ee7846e8d6ccc648ba6e83",
+      "feeSat": 1742,
+      "verifiedInputs": 4,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.burn_lp",
+      "txid": "57633e8b141a5b04b09a49d8179d10ab8271f511b2fd003775169dd0c81e9281",
+      "feeSat": 331,
+      "verifiedInputs": 2,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "ft.mint",
+      "txid": "2c1bf3fc62fa2d201fe33a9c3f6cca06d4f3176ef0129e69675b4e853a788dfe",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "ft.mint",
+      "txid": "c0c553d8ea685f9fc6ed3f122bb0241d1cb47562d0bb3b1c83b6d9bc9232ebce",
+      "feeSat": 190,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.create",
+      "txid": "094d542f28d8bf5bfb95e8646de451ac0cf3d755deed83e7315295d65920be31",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.create",
+      "txid": "8dbbc1a0b8f4ca05ccf60028f2761a2cccbf94f282ce5ef185c8a91cc7f06a9d",
+      "feeSat": 329,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.init",
+      "txid": "76d0cb0fadc21f17c75286ae135b83fb2318efa3e6d002ec505a86956fc287a4",
+      "feeSat": 1099,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "9b3d06c7438c199a9394826120eafa6aab19da026bd38e397c13e28a5849b2f8"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.add",
+      "txid": "452d86451a6c73b5fff4d7046f8c0f345e63f1fc18896c2811038fc0432854b8",
+      "feeSat": 1197,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "af28a824938381099f0793d896c7c3f1f92e77cb37227f81acf5c931380d515d"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.add",
+      "txid": "425f2c85a7b2ca565e36fb1032fc8b8b99b9866034085992599432ee9d500c77",
+      "feeSat": 1236,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "78a11ea143e7fffe8a4e9b4858a0fbd0cbeff29f1d3cc172b9644ad9be67d595"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.swap_ft",
+      "txid": "ebca8b54e544d7c3b2a94e1e5b7cfe1071f5e1b7f3340df1875876bf40f11aa6",
+      "feeSat": 1309,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "6469ffbd93fe1df219aa0c671681eb5e6aaaf5e39cc796d9cd0b52a3ed590885"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.swap_tbc",
+      "txid": "724c97309da590700fe7ae5f7f59cc13ef4f02d30eebfa9199a45f3ad9dfdf45",
+      "feeSat": 1039,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "65674b94019d8518ac700201a8dd7edc8eb720ee9763eb2b4d8da79d4e1988a0"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.merge_ft",
+      "txid": "3978e99c23e4a245fd470664f269ac0a7feb3dcf0036b50e6f8d0cb0c34aef01",
+      "feeSat": 1338,
+      "verifiedInputs": 5,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "8bc83ad57010de59a27ab13e1313b109f437fc452ccd897c2c15e1f734679c3f"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.remove",
+      "txid": "98ba13ad81abedb92d3798fc3b77ad9c0cb0b8ba482996da42fcca4d729bf07c",
+      "feeSat": 522,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "8c46a160beb134dbef3f2c84dadac6c61b7c4fe112e7178df4e28055cf46fb06",
+          "d261058ead02fcbd60c4f55c6d33293e45c6a39f395b8a9fa1df271cdda56580"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.remove",
+      "txid": "bd9472fc8e4d051651b9e8d9a0d0cf42dd6b6c50a9d7668adc877053d93e6fbc",
+      "feeSat": 1755,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "8c46a160beb134dbef3f2c84dadac6c61b7c4fe112e7178df4e28055cf46fb06",
+          "d261058ead02fcbd60c4f55c6d33293e45c6a39f395b8a9fa1df271cdda56580"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.remove",
+      "txid": "f8bd952887d4052acb93fbb8a51591387c2c6d6c79a3f80b24066f442e55be00",
+      "feeSat": 1739,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "0f2b7c2ca05b51986f57ee7d53fddaba4d7996d4ee8849e8e92b6b588b7e53ad"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.burn_lp",
+      "txid": "6def9dda790f3d39ac1881d3e33ce021dcb0a27952eb3f7a4a3b00d63335ef63",
+      "feeSat": 328,
+      "verifiedInputs": 2,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "9698b21e31e2fcd10f1cc4336e66fc2d714711d29a706372347a4a04ee7a7ec2"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "ft.mint",
+      "txid": "080c302a6687aff323a82b0401d23d545bcd2f4cba698a20c34770bf18a89381",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "ft.mint",
+      "txid": "7bd8be08525845af870e661ad1f91dc5d0b59bec831e3651a9037c7d429ad348",
+      "feeSat": 190,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.create",
+      "txid": "c4b3dfc047068af1af99d359572124662271b6191254fa0b94918ae0c1b1d2c2",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.create",
+      "txid": "1f2032533a9a9191a49aec5d380e642ab9ee036ac151af9a4edc404af8539254",
+      "feeSat": 329,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.init",
+      "txid": "b2e29cb9cd1d36e4755a2e46d46c436f2e8f31129d4d9209805165173da61a73",
+      "feeSat": 1099,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "641e6b0463615fef9bcf05642675da5c6d8b2deb12ff89dc2fbe96c51d60cae6"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.add",
+      "txid": "adf07295659c7565b4468fbfa496dc72a1bf24a7dda4aafbcde717e89beeba54",
+      "feeSat": 1197,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "a143f1ef8ae53255f8e954e4c81f14f91e48ff0b6e12b8f12f20d9767a7ed6a6"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.add",
+      "txid": "0544781973689dbc3197924a52558c4e692cf5859a7734053c25de67c70cbea8",
+      "feeSat": 1236,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "b600abf80342adc2abd6ee3a1d5522fadda12f8a7534f5d80f892693e9eb0198"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.swap_ft",
+      "txid": "4a34c368e2dcdb0f586a7ef677778bdc9bd7301e362a95267a3e71eaaee6f74e",
+      "feeSat": 1309,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "444f9dd54b3f5e728c251e0c5b744f2c61b65ccc8ac5c848fdabbce46581598c"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.swap_tbc",
+      "txid": "091ff56386f3c0912caa05297e671f17e3f1bdf0364e07e64e355bd2db230a84",
+      "feeSat": 1039,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "b25cd8ea651c25539878f13d06275179dbe18a1f07bec6b76be84a0455105115"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.merge_ft",
+      "txid": "49385ffe48db6389bc0407a908df82782370ffceb0a4ac78d9f3c45561009da9",
+      "feeSat": 1338,
+      "verifiedInputs": 5,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "c39c8e0e197348ea0b9a4f5b9d948cada43eea9696fbffdfd3c2b236e5c42ced"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.remove",
+      "txid": "9054799a12bd132c2e0ee5cc984e0aaafc278a67ba3429f106723825d5e5c699",
+      "feeSat": 522,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "d980846ad5d0185b577a0c88ee0cdf48220389a5855aa38c32cc3fa3676771ce",
+          "32d59280586721547ed3b517119a773bdb57bd9ef66da6af88ccf8ce7b8cefcc"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.remove",
+      "txid": "3328dc40e7ea0b81a5f3a21d069530e4074f4d2d060cf91e3a727036d792c824",
+      "feeSat": 1755,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "d980846ad5d0185b577a0c88ee0cdf48220389a5855aa38c32cc3fa3676771ce",
+          "32d59280586721547ed3b517119a773bdb57bd9ef66da6af88ccf8ce7b8cefcc"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.remove",
+      "txid": "58738460e8685f205e3d1fe9c74ccc35c5d0a40b125033bbbd89ff3de62dbb3a",
+      "feeSat": 1739,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "0bca63d2dc103766e4ee45759bf3692e7f4634ee5e1ed518b5b5892c23ea57c5"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.burn_lp",
+      "txid": "d9dddb33e42c258183819d3354ab4dcd65ed042e6d8906dcc98e28478fc03811",
+      "feeSat": 328,
+      "verifiedInputs": 2,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "9d365337a82e324f206259fe0a48d80fa08b44d91c5117a4e4b9a74b444c6424"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "ft.mint",
+      "txid": "7b7041a9795a30bd07690ff45b7c09413bfc4f8f77ffc3320b5b80ad80c11eee",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "ft.mint",
+      "txid": "71404b8341b9ad6ab90d9aeda24828dd4f80ed513bba3d8aeaf55598db4684db",
+      "feeSat": 190,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.create",
+      "txid": "6bb070b09672c50b8fea7faef569100efbf0041ef15f869e49f579f45b4b3d96",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.create",
+      "txid": "1e65c183cf375fb55adf2b3a27685fb503dfe3dd19a3643a29ad5163b895a19b",
+      "feeSat": 329,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.init",
+      "txid": "f04200349ca8dc33abfdaf376f379aae1b3fea5d73cdd33bd4e6b81e9e4135c9",
+      "feeSat": 1102,
+      "verifiedInputs": 3,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.add",
+      "txid": "314f8b2028f5da3735745aa4e934da9119d642a6a5d8db08bbeb8fd1bde8b163",
+      "feeSat": 1200,
+      "verifiedInputs": 3,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.add",
+      "txid": "2a5be4c81a58444292539c20c3f0c6c9ba82cca4a70c3ad635e43dc83c91b37c",
+      "feeSat": 1239,
+      "verifiedInputs": 3,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.swap_ft",
+      "txid": "b4b2179baf6dbaa2ce71cf85d86a9407b5422cbdbd784292ca2e819b9e5118e6",
+      "feeSat": 1324,
+      "verifiedInputs": 4,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.swap_tbc",
+      "txid": "05a5dac8bb593836dfe8b03fa0aeeeb22b687d559af813db72d34a97d959c35f",
+      "feeSat": 1049,
+      "verifiedInputs": 3,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.merge_ft",
+      "txid": "9546ec760a3f0e63d762516b3c7d228f82581167238e4afc2fbc4866d11e25ab",
+      "feeSat": 1351,
+      "verifiedInputs": 5,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.remove",
+      "txid": "82438e0dddc129a6e5e22f3d038b0efa7a92bdcd876ef46ede812550dc7b567b",
+      "feeSat": 525,
+      "verifiedInputs": 4,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.remove",
+      "txid": "9fda9f0372fda1c6f2ff1be6dad09a7a6a71738f54596d947f5f7586e7b0bf75",
+      "feeSat": 1761,
+      "verifiedInputs": 4,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.remove",
+      "txid": "a40a9496f10348bfe8bfcb5f2f6e7deeee12cba91289939eebe16cff47dd5390",
+      "feeSat": 1742,
+      "verifiedInputs": 4,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.burn_lp",
+      "txid": "b6ccd268607e6d3c0b92953ef04aa1886d60db714f7575a2c4f363d5e4196321",
+      "feeSat": 331,
+      "verifiedInputs": 2,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "ft.mint",
+      "txid": "8e131801921d22ab82fafbff3115fbd1c167570a39af2ea06eb3c8558f775fd5",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "ft.mint",
+      "txid": "9508d2368dc4727b05287c935eaf47774ebc46b559f400d4658fdb3f430d061c",
+      "feeSat": 190,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.create",
+      "txid": "6866775f8b20f707246c24e0ef13241c84cef58aef74ecf8c8e191fd784da14c",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.create",
+      "txid": "e3adf547723841c4396e3e874074836633fc8fde126c86ca9482e8661b1b52bd",
+      "feeSat": 329,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.init",
+      "txid": "d56c73764641068eac4cfddfb58e36def7cbc9b18ca24772344d3e6aaa622e14",
+      "feeSat": 1099,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "564d7cc4ac6687722e7c421b69646aa5d00865128bc4d2d35461f0555be8bbc9"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.add",
+      "txid": "6ee1aba0d42d059634cea286787dc0c3368b62a0e6bb5ca6630695d5ebe792de",
+      "feeSat": 1198,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "b4b00a6a06908154fe8df192daecd2fab3df1621fccc66d225a07a2231e00dcb"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.add",
+      "txid": "837a622ef4c66ff4ab52bcd767f163200033dc3f9c264f20f66be68f4d254b94",
+      "feeSat": 1236,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "0f9e1a2c1075da4e156137c95c2ff593563ad91a72ec5386e2c362de03869f91"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.swap_ft",
+      "txid": "b5b4ec6513dd88c0de3e05a64a28d99a3f8be5d5d7e6715526d9f1b0081c6cf8",
+      "feeSat": 1321,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "2222bc3d2a2a1c9a9cc061d5705f58a85dbd485626cd9e3d4e34dfaa6737c60f"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.swap_tbc",
+      "txid": "13b4e93f8451928681d132a8dd766735362b9082e7cd7e70eee34e97ac2d2f38",
+      "feeSat": 1046,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "cb6f2e549ba74165b7c996708beceec66a8f6d12f7c1bd5926d2cc88138b2099"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.merge_ft",
+      "txid": "551a58fc9fbfafd3b5d917e99aa19ea55e6b6860e05832a2f6e900d4c51ff9d1",
+      "feeSat": 1348,
+      "verifiedInputs": 5,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "0a4d7fc70e18e1069a883412e61fe2d6fdd0cc37b18e509e0c36bc0c945f781b"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.remove",
+      "txid": "a6bf2ea5a050ebecb8c8fdc45a2f228ad5841e0f0c58db05fca9c4dd9efdab08",
+      "feeSat": 522,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "a8b4d7574ee6b73cf5e343052601a2621ad8a2125e285388a367cc69f1e37b4c",
+          "93a142547e643fbf8390a01465c5dbeb31af8acf846312ddd8dc830cd9dd7224"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.remove",
+      "txid": "26bed7f06eaac0d9e1a64432dca4dcb56cc7d1bbee1a9be6e2e506f72653cfdf",
+      "feeSat": 1759,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "a8b4d7574ee6b73cf5e343052601a2621ad8a2125e285388a367cc69f1e37b4c",
+          "93a142547e643fbf8390a01465c5dbeb31af8acf846312ddd8dc830cd9dd7224"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.remove",
+      "txid": "64bdd454b5f9527cdf3b305da89b7d9e88bacd724566b9c21342b278744aa96b",
+      "feeSat": 1739,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "7ce7f6ec4bfbc08846557051e0ab85162ae8fed29d27400ceb66fe2da8761bbd"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.burn_lp",
+      "txid": "19bc47cbbbd616593bc53711ada34fb124302e14a6e1475accc5f516a9ea5134",
+      "feeSat": 328,
+      "verifiedInputs": 2,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "fb11b33882d022954a3c10a58665d42f19d26bd90917b0903b14a7b897bae0b3"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "ft.mint",
+      "txid": "17356520700a8869a3e5353586a0249cb1871b8a3e012596ef80d31ff48fb210",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "ft.mint",
+      "txid": "b12895b8e40ffbfa63bffc1a24065d059b0331507a8551ee116f45daa58351d1",
+      "feeSat": 190,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.create",
+      "txid": "86e2ae933b08c6e866734acac3e370874abe1b79850f7950b360a142b9263ef1",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.create",
+      "txid": "d9e07b638fc75de115d17b1769c5661d1f6e56a467100e52874a4baa02c1b1e9",
+      "feeSat": 329,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.init",
+      "txid": "57f35625ed216a8b7087aadb3af11484f2dba0b080ba79c851329a8dacfe35db",
+      "feeSat": 1099,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "c6d7f203c7fd5384901c1ef869c5691c35951d5d20ea91132088c9ac597ff2e6"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.add",
+      "txid": "9b8aa80b811904179fa7cbeee324c66c92692d1dce0d2800b0b7fb499c40cfe5",
+      "feeSat": 1198,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "b94744cd177e071920fe0af24cacada37c808677e3a294604b97f9edb5e47414"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.add",
+      "txid": "15d1558c24160b5a402a651c4ec9b9d1c8555dd9feaa8c16f5e03d1e6c261909",
+      "feeSat": 1236,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "e5d663be28539847c72fee2aa750bedd5e694b7b61822efb2ea62756a4a81d3b"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.swap_ft",
+      "txid": "2810861c9fa969de14189595fdc9fe12d93c33bc0f394c51449bfa7f23dc509d",
+      "feeSat": 1321,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "bfa4cbd6e92395cb956ed83c307b7426ddeade50dbbe12479311e4f121e3b5c7"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.swap_tbc",
+      "txid": "5760be71b060d89ef7e663d7b1be6c830dbd92cc1b818451468a5d6d657f063d",
+      "feeSat": 1046,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "e257eaf50863e32efc241b9111228d134cc2a1bc47657f50c97fda4420692a15"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.merge_ft",
+      "txid": "8f0b05677908ad73cc739705a7d1a86802fdb4e8f3cc4e8fe02cf1e9af0537e1",
+      "feeSat": 1348,
+      "verifiedInputs": 5,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "da369bab829b0b380f29927bf6902c5e0f47c48317bd59b97ee3c92529a6ae10"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.remove",
+      "txid": "81cbe214f56dee012935eeba560e752dc1db281ae423437875421cc73dc747e0",
+      "feeSat": 522,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "af9f514e139be38e25acada893eab23aa11d449c55271668b855b283a7f620fe",
+          "1ebbaec3775af8c10a2e0848c8819b47041e61de021ae6776c017483414db366"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.remove",
+      "txid": "0c12b503d482de6fab2aa7468eb6ce57ccb7e405643799a139f214113a3fd8e6",
+      "feeSat": 1759,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "af9f514e139be38e25acada893eab23aa11d449c55271668b855b283a7f620fe",
+          "1ebbaec3775af8c10a2e0848c8819b47041e61de021ae6776c017483414db366"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.remove",
+      "txid": "7fde700764f7f3868ded8a514e81c7af5bad6ebc0c32276d902274c8a3da61fc",
+      "feeSat": 1739,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "6e448cd36009b3b2f59e072c5e6dfbd508da81437c5916d6c5c9f9ad6ca744c9"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K0-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.burn_lp",
+      "txid": "4651fa0732def22e85b812cdc2aff01a85ae578fc1ffc891123dd4eff838c687",
+      "feeSat": 328,
+      "verifiedInputs": 2,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "efcd949597e38cf6a2d329a2ed2abdb23247488f06640defc17038ca9907a682"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "ft.mint",
+      "txid": "016d5ef9da57c05fab0efb0bd563ba928fdd2a8b07fc2c0a84e7dab4d1b657ef",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "ft.mint",
+      "txid": "73a5909982e6e14b712a3400b1351639355ac124bb4c72b65584727a9a663167",
+      "feeSat": 190,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.create",
+      "txid": "c34dadc553fef53ff9b6771793dc2271ea5634d6920ad3423b2217558a356fda",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.create",
+      "txid": "d46f781d548003246bbb6716a644e13c6a7a88f37eec5ba7c5053f3b0d4dc3a7",
+      "feeSat": 342,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.init",
+      "txid": "ff0e0136a57d433cfa74c9e8e06a789eaa2f5a3753c3a76fe8de8e2a27a35acd",
+      "feeSat": 1122,
+      "verifiedInputs": 3,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.add",
+      "txid": "afc28c7e9d4a4118173ecaff8ec37793fda822b6bf0b78245ebead49ffd20d69",
+      "feeSat": 1234,
+      "verifiedInputs": 3,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.add",
+      "txid": "075b9b2cc49721753bc439323c3c89512285d43bae2b20d37dbab83dfc3ad41a",
+      "feeSat": 1279,
+      "verifiedInputs": 3,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.swap_ft",
+      "txid": "90d5b9e7bf8ad688b0099a1e3005a49ab0d6933c509337f21332c938fff75e2b",
+      "feeSat": 1363,
+      "verifiedInputs": 4,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.swap_tbc",
+      "txid": "1a9d82635d3816d77e0b80fa33d3d2a4ebe475e0dc176a3fb25226a846544285",
+      "feeSat": 1076,
+      "verifiedInputs": 3,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.merge_ft",
+      "txid": "b7f94c0d34b14cbfbd58f7179b12a7e5ee0d2f3962a4eac6a6f45dcb3ee5d56b",
+      "feeSat": 1369,
+      "verifiedInputs": 5,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.remove",
+      "txid": "3214df0c430f05bae9732772b750bab3613f5ef3970c2dbe59c2720c50f48c00",
+      "feeSat": 536,
+      "verifiedInputs": 4,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.remove",
+      "txid": "9a45cd24b693f1226242adb6eddff88f4e83fd22f75dc5b3104d08ea9ca864f2",
+      "feeSat": 1781,
+      "verifiedInputs": 4,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.remove",
+      "txid": "337986519dea9cf1fa3ff944729ad01e54c22f59b217420f9c1e14df84b7842e",
+      "feeSat": 1752,
+      "verifiedInputs": 4,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.burn_lp",
+      "txid": "9b4478c989d6eddc948456ff18c5b555286ec47683ded23985226539f51752a0",
+      "feeSat": 331,
+      "verifiedInputs": 2,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "ft.mint",
+      "txid": "42b65cb63e102144ea5d05c4f02e326718f2178099080ac3a69b473bb0bac87a",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "ft.mint",
+      "txid": "2a6de4f403a8d721b908f0623ae59fe1c8123cc9406a5bb8dbeb805d004d50f9",
+      "feeSat": 190,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.create",
+      "txid": "1d252158b520bf5e7cee87f96aa00c7a14fa072e29f44aff118e77dc01c553df",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.create",
+      "txid": "8bbab434452281ec70608eb4d1e9af5598dbfb6e101f80cf5c691543980508f7",
+      "feeSat": 343,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.init",
+      "txid": "0447bc226677e76df67fb6fb66efe308848ae135978841f4e5e3ffb012f77f98",
+      "feeSat": 1120,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "60958666373adc64f0b81977d87148b07b4f645506f1ffd505da2995ab53d465"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.add",
+      "txid": "9d2e0ff06eada84aad7f6013802f6c26817f37ae12cd33273724c3ce9a19e34d",
+      "feeSat": 1231,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "19cb723e99579b7abbe331eef2e7b1edb2f8d7004c7aa9fd93ce277c529048c5"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.add",
+      "txid": "9c6d488ec871bca6d8cdb448adceae2678dd3636d6cd2b42ca34e33b1bed690e",
+      "feeSat": 1276,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "21151b8750c0b5ebaddbafac7c7ead8ff047d2db4b2dccde61328eb4023eab32"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.swap_ft",
+      "txid": "d3f46eba948a387cfeff4f875c3d01df10330e4c2b256c53d97e66ccd6d8351c",
+      "feeSat": 1360,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "673f41d31a9f94f4aa3d0b5e2fd32b0faa420084ccdaf483f15951dc095d892f"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.swap_tbc",
+      "txid": "21624bcc5cf267494f33f4b3e0386735eaa69b432ba083b61434f49b6634e41c",
+      "feeSat": 1073,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "184b0209efa701075cebf755036fbc08086081bd1e08b305bfcef01c5a4f0f3c"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.merge_ft",
+      "txid": "f6fedefc15c81770e4d5b1fcda0fd4efe2fdabffe7c5024dc5ff86c8cac8ee17",
+      "feeSat": 1367,
+      "verifiedInputs": 5,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "fb163113540f8d85c5391733a4e74611b477371dffea07f5c0742e05bd1aa1a9"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.remove",
+      "txid": "0fc3403fc7a38cfb76e58da1415decc6bcf3495420461ef495efc6347cb4da02",
+      "feeSat": 533,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "ed254d540aeb570bc0c00d3a943f23d82bb0b0fe8c0d9528d092f0f956a30783",
+          "4614da0873a70045fdd0710201459d48c714cc5c10f78288f60965cc25319066"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.remove",
+      "txid": "4190511fbf67d50a028623fc2fa8d4c9b044fcbad03a69900b33c7793665f3b2",
+      "feeSat": 1779,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "ed254d540aeb570bc0c00d3a943f23d82bb0b0fe8c0d9528d092f0f956a30783",
+          "4614da0873a70045fdd0710201459d48c714cc5c10f78288f60965cc25319066"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.remove",
+      "txid": "9fc9b17e4fd071fa4bd9cddeeee1474d2e6604e19cca0fe067a5efe1e9ff354e",
+      "feeSat": 1750,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "5a83941c95965e263361167a67cb3d4d5b4e58f6faf738ea6820ae6c25c70ed4"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.burn_lp",
+      "txid": "4979652042ce59035a74f411ae6277e030b5d41fa1c5f32e6f0d158241233d7e",
+      "feeSat": 328,
+      "verifiedInputs": 2,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "7b7532626d74ecc7376ac6d7d4b1df07235ffef05e8e17f5f221d2f75dfb934f"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "ft.mint",
+      "txid": "244884f1496bbb5584827bec91942ff9e368ac22e924381e01481ff13f7205e6",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "ft.mint",
+      "txid": "98f5f288066a83c1a72784c4fbd148486182bff04dbba79cc8d250b2dec576f1",
+      "feeSat": 190,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.create",
+      "txid": "7e1e62b59f99c64dc37c8c2f1060c3a68ed525046aee435f44be17fdb7a775b3",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.create",
+      "txid": "f02e83b01c490bdc9a73e13f010cedf64067d5edefd6ec2839c445516641cd48",
+      "feeSat": 343,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.init",
+      "txid": "85fc79ec1b87b4ac18b05c5be0a7badf6e4277da82320681e240a6fca54ccf1a",
+      "feeSat": 1120,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "624d6714b9ea473998d7bab8cda0f7086055e4ef3dd061df61c6a1b74dff9de6"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.add",
+      "txid": "63bc3f266e973fbe207d5c0ee3e5cb57745840b71c12ee06e5831eddcb56332b",
+      "feeSat": 1231,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "b413f7a507004d210aa47ce86e8618d8faff2f0bd9b4335ba6df013bebf6be07"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.add",
+      "txid": "c68f3070dd8925c506ec34c0d586fe2bbf2ac25944aea3c18b50fd98369ecb91",
+      "feeSat": 1276,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "f5d37688235e0d6bbe61d31c4f57ea4ac8c44536f59fb8cb128cf6bc38ab4d8c"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.swap_ft",
+      "txid": "a2a28f6f5e9421d31283b672481c3ce06337c0a7c47353601fe0cb6468853be4",
+      "feeSat": 1360,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "1eb8139c98cd5dcf9f67f320e4983f8b09529de847e3d8dae5bb4d8d13c6be70"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.swap_tbc",
+      "txid": "bd58684bea3d9131ba94ca9d8696e6d6518f48392653620a753ac506a46a7f77",
+      "feeSat": 1073,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "faa5f3687bf367a73768e458afd833090e4a9c8c4eb4214aa7532fffd9dbb94f"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.merge_ft",
+      "txid": "09fd1b0668f61877ad02a978445f201e46a3f5e3534cb95588c14d9fb12f9da4",
+      "feeSat": 1367,
+      "verifiedInputs": 5,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "7d92170d9907e7ef7bd18552e7be71ac1097f2ce57f5e8ad217eae789673a666"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.remove",
+      "txid": "879926823c7e1380c9482c7b73dcd7a92b5cd49e3a3998b8a85b67e45667830c",
+      "feeSat": 533,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "2fcbc356922e1a81129dd000374a439bea489b76b2c97f5ee38ac99815e60623",
+          "820a71ab3d81af9737cbf23aad44cc7c3f053fe4970ccebd9fd96f59bcb9f3bf"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.remove",
+      "txid": "7b21fbc6227a2ee39e3f694df502434b7a7f231ca9db21968540d757c4115613",
+      "feeSat": 1779,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "2fcbc356922e1a81129dd000374a439bea489b76b2c97f5ee38ac99815e60623",
+          "820a71ab3d81af9737cbf23aad44cc7c3f053fe4970ccebd9fd96f59bcb9f3bf"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.remove",
+      "txid": "d423e4ee4391e3ce02893ce97e1a4a4e7d0fd0862f058b79bc15543a5e742d51",
+      "feeSat": 1750,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "2494492c9fc6f3d7e5bdb91bc67dfc4f20f39974be2f07495f9fdbbd54b454fc"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P1-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.burn_lp",
+      "txid": "6e19c0c2b8f502e240104c2c1a3746f8b19cc4a7697af98480176fc56cc54f1e",
+      "feeSat": 328,
+      "verifiedInputs": 2,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "ccedfa26d28de6c7d5138c1055cf29917df6cfa7f5d8db947f5f06f1e4317f7d"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "ft.mint",
+      "txid": "5b46741ca1cbe6cf0847c8f0e9e5720424d11b5bddbec9f086811f879cc7236a",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "ft.mint",
+      "txid": "5db095d71e1acdd98401713a623458e6d285665608eb2d34a11f009d7eaa1196",
+      "feeSat": 190,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.create",
+      "txid": "de6472119808725c5c681d653ba9066fa7c9a7476c3b64512c0907895e4477dc",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.create",
+      "txid": "acbeaa6fee7d967ea5a4496416ed9ac5395d75ff40dbf5e01c5414dd406acdb9",
+      "feeSat": 343,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.init",
+      "txid": "4fe2f6b142c9ff46bcdf78a42c4f23a102bf2af4faf4888d8b68883cf9151a31",
+      "feeSat": 1123,
+      "verifiedInputs": 3,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.add",
+      "txid": "42e437ab219286b62544cf463cf5fef63386b1d25b00190274e95c8018822ea2",
+      "feeSat": 1234,
+      "verifiedInputs": 3,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.add",
+      "txid": "edfbf8454360ab509da82ba4712194615f4447544479e0b902e1cf8bfb4bb2aa",
+      "feeSat": 1279,
+      "verifiedInputs": 3,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.swap_ft",
+      "txid": "0411b6c45a33cc260cc5aabb3d2b7cd6af4aaa860383cbd56b6ef70b8e6eebc7",
+      "feeSat": 1375,
+      "verifiedInputs": 4,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.swap_tbc",
+      "txid": "89c07653ec97fa6163c2a02f28f21e3e13846adb5e9e102d58904a845840b330",
+      "feeSat": 1082,
+      "verifiedInputs": 3,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.merge_ft",
+      "txid": "fafd88d4765f49a047a799206da9dfc62de1c07a05f6d3f160b9582b288afaa6",
+      "feeSat": 1379,
+      "verifiedInputs": 5,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.remove",
+      "txid": "36c7773fe47a756ddb26f2fd0e0e8320d1cb7f8963abbd18a26f6477d232d49f",
+      "feeSat": 536,
+      "verifiedInputs": 4,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.remove",
+      "txid": "dd9631e9f5077b3f01b1b2ceacf06daaf398966f8ba180a82b377fb487b2c5dc",
+      "feeSat": 1785,
+      "verifiedInputs": 4,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.remove",
+      "txid": "fb2f9e59816b474abb82bb3ff4e908ff0a5880ac5ee882d39b62f5fa41ef6399",
+      "feeSat": 1753,
+      "verifiedInputs": 4,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-js-cost1000",
+      "language": "js",
+      "poolSDK": "js",
+      "operation": "pool.burn_lp",
+      "txid": "f740d59682db3cdeaa4e8aef8609ecfe1750566e7dc45f788eef17cf991cfe94",
+      "feeSat": 331,
+      "verifiedInputs": 2,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "ft.mint",
+      "txid": "135d179a73e2a9c774bf8d20bcf81b6eb3695027f398e8b59f172c2160110c7f",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "ft.mint",
+      "txid": "cdb5f6268d222ca97188f258d2c99059015bea6ee440a75866837d5dc2f73624",
+      "feeSat": 190,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.create",
+      "txid": "67df19f8f14bb6278af9113105b9a8c02d26b1f15131dedfaaa156502231ce66",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.create",
+      "txid": "f26bd99ad6e580b4404224ba79c8acc98faf83cf20350248112ffded4037cbd8",
+      "feeSat": 343,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.init",
+      "txid": "c90b58481be095857a740e541d786fb56b475473c1552ee3cfe7dccc64f9bf36",
+      "feeSat": 1120,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "d4ef92cf451b998a8338dd769b1f1023c8f5d74957ea4e615a7a5948918ff666"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.add",
+      "txid": "28d5f84a6284f1ecce1a3cd047785e0101d0f033fc65e5751c92326d9cd60fed",
+      "feeSat": 1232,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "87a22c6e25e0368ba2a0ab9eabb936fd91d11e6f90df7cc322f93f939e6e375a"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.add",
+      "txid": "9366a5e6a34aabeb1f9e037ae8ff8ca727cd70fea3a177d025dba79cc9b37e0c",
+      "feeSat": 1277,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "24daad9cc0b1fa44f65c706fae946491dee68c2462e894fd870941d5797e8612"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.swap_ft",
+      "txid": "abdb8e67453e4d76464268d823672a7ad0edb94dc9e36e753b94a918c6042d93",
+      "feeSat": 1373,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "b2f3f94656fb4425633167ac2e8c99af49359d54648daee7a89c3ddd41fa91ce"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.swap_tbc",
+      "txid": "af2e767b2766f8993545504e87f8cc7ee3c3e06b6d9011fc97719c532638aaa4",
+      "feeSat": 1080,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "dca719f798e92512649aa10d7eebe0b5604566831a01517b2f5bc14cc500f6f9"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.merge_ft",
+      "txid": "0f3223557c993a64aab274f36f8c9c99079417804c54eb3d62e6cf9056ee4d04",
+      "feeSat": 1377,
+      "verifiedInputs": 5,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "124113a10dcc9e6ff95dd6d5a4459f98e2766272c1abf809d03c304e8b3cea63"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.remove",
+      "txid": "46652e8a09699f23169e81f8aacc6182374f4c082f5c2c9ef7983a763055e148",
+      "feeSat": 533,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "01bbe137f5f017ff426a2d4d0e908a14795ecd32f985a590d72e3c4e54a21c10",
+          "68a1b58ab05c9b42f9aae975ed52fd53b2dad82777d79eff7a144eef7b067888"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.remove",
+      "txid": "056fecc572226b72cf645201b1c7fb06f8ec61f4b1926b7e158ed19e26e2acd1",
+      "feeSat": 1782,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "01bbe137f5f017ff426a2d4d0e908a14795ecd32f985a590d72e3c4e54a21c10",
+          "68a1b58ab05c9b42f9aae975ed52fd53b2dad82777d79eff7a144eef7b067888"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.remove",
+      "txid": "448b509af93067895df6decf17dba461b85ca5c01fb372077ff1291a19cd01ed",
+      "feeSat": 1750,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "b0ebbe58f83d11351460d4c6419e24d682db7402d535ca377b2df6f53a61f68c"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-rust-cost1000",
+      "language": "rust",
+      "poolSDK": "rust",
+      "operation": "pool.burn_lp",
+      "txid": "c306b54b30023fda9fe2bbf751c0b435906e56b3f58e7f5a230a2eef2dc7bb22",
+      "feeSat": 328,
+      "verifiedInputs": 2,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "f806551e74a5b6ed0bb2bd954d44d6f1562c464be21fafa41506fab0267bed65"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "ft.mint",
+      "txid": "b098f8ba4d29b8689030e471e5380680663f8cd4d9a9cd35575c22075f3f8ae9",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "ft.mint",
+      "txid": "6c2c2cba6f801e99796ac2fcb76cb74303a4bb3f11bf77ede9ea03c37c46c40e",
+      "feeSat": 190,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.create",
+      "txid": "d64c0be863cf63367f968c4b8a8804c87d671d5e5da97c9e6015317041abf0d9",
+      "feeSat": 80,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.create",
+      "txid": "7bab78f9f4c86c7687243663b2563e3029db19883f6fa84c9b046a74a3a49353",
+      "feeSat": 343,
+      "verifiedInputs": 1,
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.init",
+      "txid": "d6843523feb13b54c865ce24fc7b39747aac116618327fe37df7eba99d3f1def",
+      "feeSat": 1120,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "86472db97eab219013890c40f86cb7f8248b6ca13dc18a0178682d82d56b9632"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.add",
+      "txid": "97216b8f688d47f13dd4c26a78f0ecc6f8f4f1f74ebad47c8fc7bd51917eb22b",
+      "feeSat": 1232,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "686d138eb009ad86dd124f87a18ad8ed722008beefb9935cf5ac5ec939096263"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.add",
+      "txid": "a0c8f899d3d054d344fe6c58599798a3b6600bf3910b8866e8c8d837ea1b0e13",
+      "feeSat": 1277,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "a3efb0bf829e8739a1b8c66febcd0f56135a2fac7814eb55ff58814162d53e3a"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.swap_ft",
+      "txid": "4768c897ccdd3db1b758586a5c32d0c0e09e90450d60460dd265a626be3b0911",
+      "feeSat": 1373,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "e20486a56ab58d1b805dd569a5664d89ee1b07ae4effde848d605fceb65e55df"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.swap_tbc",
+      "txid": "035157a9c29d1962d7e74052d506ed2cad77c6992bf6987e67f9df579167fe2d",
+      "feeSat": 1080,
+      "verifiedInputs": 3,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "388a9c65d6949226ede868a56a210494b92abaa80bfe5df855d4759c54fd8366"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.merge_ft",
+      "txid": "2e050c246958b68935bca776aeab64f99f6c252eb7db7e90dd26ff02ed81f3dc",
+      "feeSat": 1377,
+      "verifiedInputs": 5,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "1ed6ba316df9f37a2fd97717e94baa00d2dcac9fd5a9103053cb49a0ef7a0d77"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.remove",
+      "txid": "252294abf7eb4ba68264e5e8628e835ab7cd85f4cc76b62f5266c64283fb599c",
+      "feeSat": 533,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "6551e01e3e39deba74aa5cea8d4a49bd9200db7fb56c3eb8e312b877270f0d9e",
+          "67606256f43882280661c8f8544aad39f8622265a53ad0ce9985cdef1713e02b"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.remove",
+      "txid": "b43229727c9e2f51841f035a934cc987bcee07ff98fc3166e1af5a10f3112562",
+      "feeSat": 1782,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "6551e01e3e39deba74aa5cea8d4a49bd9200db7fb56c3eb8e312b877270f0d9e",
+          "67606256f43882280661c8f8544aad39f8622265a53ad0ce9985cdef1713e02b"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.remove",
+      "txid": "e233d1a982511a5c27272297dd1194da76eae6c48d17bfa3a6b99fc2d32b0f96",
+      "feeSat": 1750,
+      "verifiedInputs": 4,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "32df747090cc00f1af065e295945241607757d252e56eedca179d7965eb3d5f1"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    },
+    {
+      "caseId": "P6-K3-L1-go-cost1000",
+      "language": "go",
+      "poolSDK": "go",
+      "operation": "pool.burn_lp",
+      "txid": "c498f5a0df8a2bfc9ea5db347be8356ff834c3942214ca017a6307c7eca0d6fd",
+      "feeSat": 328,
+      "verifiedInputs": 2,
+      "jsComparison": {
+        "sameContractOutputs": true,
+        "referenceTxids": [
+          "a4a6e9ebbb8d002c4c8ffd413c839c718efde796df159f0669e839ae6dd99163"
+        ],
+        "referenceScriptsVerified": true
+      },
+      "broadcast": true,
+      "refetched": true
+    }
+  ],
+  "totalFeesSat": 148819,
+  "status": "passed",
+  "funding": {
+    "txid": "c498f5a0df8a2bfc9ea5db347be8356ff834c3942214ca017a6307c7eca0d6fd",
+    "vout": 2
+  },
+  "summary": {
+    "cases": 12,
+    "acceptedTransactions": 168,
+    "uniqueTransactions": 168,
+    "rejections": 0,
+    "minerFeesSat": 148819,
+    "verifiedInputs": 468,
+    "nativeJSComparisons": 80,
+    "byLanguage": {
+      "js": 56,
+      "rust": 56,
+      "go": 56
+    },
+    "initializations": [
+      {
+        "language": "js",
+        "caseId": "P1-K0-L1-js-cost1000",
+        "txid": "66acf2018c1616162be22f48c4b23c6e989f11bcfaf2ead79ad7f4ea6a0a098d"
+      },
+      {
+        "language": "rust",
+        "caseId": "P1-K0-L1-rust-cost1000",
+        "txid": "76d0cb0fadc21f17c75286ae135b83fb2318efa3e6d002ec505a86956fc287a4"
+      },
+      {
+        "language": "go",
+        "caseId": "P1-K0-L1-go-cost1000",
+        "txid": "b2e29cb9cd1d36e4755a2e46d46c436f2e8f31129d4d9209805165173da61a73"
+      },
+      {
+        "language": "js",
+        "caseId": "P6-K0-L1-js-cost1000",
+        "txid": "f04200349ca8dc33abfdaf376f379aae1b3fea5d73cdd33bd4e6b81e9e4135c9"
+      },
+      {
+        "language": "rust",
+        "caseId": "P6-K0-L1-rust-cost1000",
+        "txid": "d56c73764641068eac4cfddfb58e36def7cbc9b18ca24772344d3e6aaa622e14"
+      },
+      {
+        "language": "go",
+        "caseId": "P6-K0-L1-go-cost1000",
+        "txid": "57f35625ed216a8b7087aadb3af11484f2dba0b080ba79c851329a8dacfe35db"
+      },
+      {
+        "language": "js",
+        "caseId": "P1-K3-L1-js-cost1000",
+        "txid": "ff0e0136a57d433cfa74c9e8e06a789eaa2f5a3753c3a76fe8de8e2a27a35acd"
+      },
+      {
+        "language": "rust",
+        "caseId": "P1-K3-L1-rust-cost1000",
+        "txid": "0447bc226677e76df67fb6fb66efe308848ae135978841f4e5e3ffb012f77f98"
+      },
+      {
+        "language": "go",
+        "caseId": "P1-K3-L1-go-cost1000",
+        "txid": "85fc79ec1b87b4ac18b05c5be0a7badf6e4277da82320681e240a6fca54ccf1a"
+      },
+      {
+        "language": "js",
+        "caseId": "P6-K3-L1-js-cost1000",
+        "txid": "4fe2f6b142c9ff46bcdf78a42c4f23a102bf2af4faf4888d8b68883cf9151a31"
+      },
+      {
+        "language": "rust",
+        "caseId": "P6-K3-L1-rust-cost1000",
+        "txid": "c90b58481be095857a740e541d786fb56b475473c1552ee3cfe7dccc64f9bf36"
+      },
+      {
+        "language": "go",
+        "caseId": "P6-K3-L1-go-cost1000",
+        "txid": "d6843523feb13b54c865ce24fc7b39747aac116618327fe37df7eba99d3f1def"
+      }
+    ]
+  },
+  "completedAt": "2026-09-30T08:37:01.968603+00:00",
+  "recheck": {
+    "reason": "User reported the indexer may have been updated; fresh testnet verification of formerly rejected FT v4 time-locked PoolNFT v2",
+    "plans": [
+      1,
+      6
+    ],
+    "controllerKeyCounts": [
+      0,
+      3
+    ],
+    "lockTimes": [
+      1,
+      500000001
+    ],
+    "lockedLP": true,
+    "ftVersion": 4,
+    "tokenDecimal": 6,
+    "controllerCostSat": 1000,
+    "sdkCodeChangedForRecheck": false,
+    "deployedIndexerBuildIdentified": false,
+    "blockConfirmationAsserted": false
+  }
+}

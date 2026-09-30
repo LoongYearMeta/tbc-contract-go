@@ -1,0 +1,59 @@
+{
+  "reference": {
+    "contract": "1.7.2",
+    "lib": "1.0.31"
+  },
+  "status": "passed",
+  "transactions": 513,
+  "nativeValidators": [
+    "rust",
+    "go"
+  ],
+  "reports": [
+    {
+      "report": "2026-09-30-prepared-amm-offline.json",
+      "status": "passed",
+      "transactions": 72,
+      "verifiedInputs": 192
+    },
+    {
+      "report": "2026-09-30-prepared-interop-offline.json",
+      "status": "passed",
+      "transactions": 36,
+      "verifiedInputs": 75
+    },
+    {
+      "report": "2026-09-30-prepared-legacy-stable-offline.json",
+      "status": "passed",
+      "transactions": 24,
+      "verifiedInputs": 51
+    },
+    {
+      "report": "2026-09-30-prepared-locks-offline.json",
+      "status": "passed",
+      "transactions": 54,
+      "verifiedInputs": 96
+    },
+    {
+      "report": "2026-09-30-prepared-lop-offline.json",
+      "status": "passed",
+      "transactions": 264,
+      "verifiedInputs": 432
+    },
+    {
+      "report": "2026-09-30-prepared-stable-advanced-offline.json",
+      "status": "passed",
+      "transactions": 36,
+      "verifiedInputs": 72
+    },
+    {
+      "report": "2026-09-30-prepared-stable-offline.json",
+      "status": "passed",
+      "transactions": 27,
+      "verifiedInputs": 57
+    }
+  ],
+  "negativeAndOpcodeCases": 103,
+  "documentedReferenceDefects": 1,
+  "ammNoChangeCases": 20
+}

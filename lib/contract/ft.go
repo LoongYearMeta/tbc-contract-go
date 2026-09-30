@@ -1402,7 +1402,7 @@ func strip0xHexPushesInASM(asm string) string {
 // per fix H-1). For non-P2PKH-but-P2PKH-prefixed scripts the PKH-equality
 // check is skipped and signing proceeds; that's why the name does not strictly
 // claim "P2PKH only".
-func signP2PKHInput(tx *bt.Tx, privKey *bec.PrivateKey, inputIdx uint32) error {
+func signP2PKHInput(tx *bt.Tx, privKey TransactionSigner, inputIdx uint32) error {
 	in := tx.Inputs[inputIdx]
 	if in.PreviousTxScript != nil && in.PreviousTxScript.IsP2PKH() {
 		scriptPKH, err := in.PreviousTxScript.PublicKeyHash()

@@ -1,0 +1,519 @@
+{
+  "network": "testnet",
+  "readOnly": true,
+  "results": [
+    {
+      "creator": "js",
+      "reader": "js",
+      "stable": false,
+      "id": "9eb38fcabeb8524afe5b4372efad5916dcf10eac21382233596b4c6cd405deff",
+      "status": "passed",
+      "value": {
+        "name": "Interop172",
+        "symbol": "I172",
+        "decimal": 0,
+        "supply": "1000",
+        "utxos": [
+          {
+            "txid": "19d210144bb681ff9e50401c68e4df0caa1d0f35ae35de348ac3b5f8de55ad4d",
+            "vout": 0,
+            "balance": "1000",
+            "lockTime": 0,
+            "ancestors": [
+              "f0d7aa1fcb0d0caf0f9194be95bfca829cb5a7d791ef3cfdf4aaf57a2d146f24"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "creator": "js",
+      "reader": "rust",
+      "stable": false,
+      "id": "9eb38fcabeb8524afe5b4372efad5916dcf10eac21382233596b4c6cd405deff",
+      "status": "passed",
+      "value": {
+        "decimal": 0,
+        "name": "Interop172",
+        "supply": "1000",
+        "symbol": "I172",
+        "utxos": [
+          {
+            "ancestors": [
+              "f0d7aa1fcb0d0caf0f9194be95bfca829cb5a7d791ef3cfdf4aaf57a2d146f24"
+            ],
+            "balance": "1000",
+            "lockTime": 0,
+            "txid": "19d210144bb681ff9e50401c68e4df0caa1d0f35ae35de348ac3b5f8de55ad4d",
+            "vout": 0
+          }
+        ]
+      }
+    },
+    {
+      "creator": "js",
+      "reader": "go",
+      "stable": false,
+      "id": "9eb38fcabeb8524afe5b4372efad5916dcf10eac21382233596b4c6cd405deff",
+      "status": "passed",
+      "value": {
+        "decimal": 0,
+        "name": "Interop172",
+        "supply": "1000",
+        "symbol": "I172",
+        "utxos": [
+          {
+            "ancestors": [
+              "f0d7aa1fcb0d0caf0f9194be95bfca829cb5a7d791ef3cfdf4aaf57a2d146f24"
+            ],
+            "balance": "1000",
+            "lockTime": 0,
+            "txid": "19d210144bb681ff9e50401c68e4df0caa1d0f35ae35de348ac3b5f8de55ad4d",
+            "vout": 0
+          }
+        ]
+      }
+    },
+    {
+      "creator": "rust",
+      "reader": "js",
+      "stable": false,
+      "id": "09c3d4c19d3ffbb618df01ad2671ca1d85d1da6d9b6202fc3418bea26bf2fd10",
+      "status": "passed",
+      "value": {
+        "name": "Interop172",
+        "symbol": "I172",
+        "decimal": 0,
+        "supply": "1000",
+        "utxos": [
+          {
+            "txid": "6e92c2326a04d4a2711b891148d249bbeaff5c012e2e90f53e331ddbdfef94e1",
+            "vout": 0,
+            "balance": "1000",
+            "lockTime": 0,
+            "ancestors": [
+              "91610332984b58c119f5e2af82a183064792d98bc3b0b962bca2dfb2aaf758a8"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "creator": "rust",
+      "reader": "rust",
+      "stable": false,
+      "id": "09c3d4c19d3ffbb618df01ad2671ca1d85d1da6d9b6202fc3418bea26bf2fd10",
+      "status": "passed",
+      "value": {
+        "decimal": 0,
+        "name": "Interop172",
+        "supply": "1000",
+        "symbol": "I172",
+        "utxos": [
+          {
+            "ancestors": [
+              "91610332984b58c119f5e2af82a183064792d98bc3b0b962bca2dfb2aaf758a8"
+            ],
+            "balance": "1000",
+            "lockTime": 0,
+            "txid": "6e92c2326a04d4a2711b891148d249bbeaff5c012e2e90f53e331ddbdfef94e1",
+            "vout": 0
+          }
+        ]
+      }
+    },
+    {
+      "creator": "rust",
+      "reader": "go",
+      "stable": false,
+      "id": "09c3d4c19d3ffbb618df01ad2671ca1d85d1da6d9b6202fc3418bea26bf2fd10",
+      "status": "passed",
+      "value": {
+        "decimal": 0,
+        "name": "Interop172",
+        "supply": "1000",
+        "symbol": "I172",
+        "utxos": [
+          {
+            "ancestors": [
+              "91610332984b58c119f5e2af82a183064792d98bc3b0b962bca2dfb2aaf758a8"
+            ],
+            "balance": "1000",
+            "lockTime": 0,
+            "txid": "6e92c2326a04d4a2711b891148d249bbeaff5c012e2e90f53e331ddbdfef94e1",
+            "vout": 0
+          }
+        ]
+      }
+    },
+    {
+      "creator": "go",
+      "reader": "js",
+      "stable": false,
+      "id": "f8a84ac1919c8c6c6216a5c9116827296a008726d6ed2aecda842ac7baac1f18",
+      "status": "passed",
+      "value": {
+        "name": "Interop172",
+        "symbol": "I172",
+        "decimal": 0,
+        "supply": "1000",
+        "utxos": [
+          {
+            "txid": "1eaef701aaec53e5c4fecb3061eeed9409bbcc1b468b78948ddf8a87aae0663a",
+            "vout": 0,
+            "balance": "1000",
+            "lockTime": 0,
+            "ancestors": [
+              "0e0ee218d59acf8d5778ade3289cd986ee973b0978dbde26a97c0607113b05f6"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "creator": "go",
+      "reader": "rust",
+      "stable": false,
+      "id": "f8a84ac1919c8c6c6216a5c9116827296a008726d6ed2aecda842ac7baac1f18",
+      "status": "passed",
+      "value": {
+        "decimal": 0,
+        "name": "Interop172",
+        "supply": "1000",
+        "symbol": "I172",
+        "utxos": [
+          {
+            "ancestors": [
+              "0e0ee218d59acf8d5778ade3289cd986ee973b0978dbde26a97c0607113b05f6"
+            ],
+            "balance": "1000",
+            "lockTime": 0,
+            "txid": "1eaef701aaec53e5c4fecb3061eeed9409bbcc1b468b78948ddf8a87aae0663a",
+            "vout": 0
+          }
+        ]
+      }
+    },
+    {
+      "creator": "go",
+      "reader": "go",
+      "stable": false,
+      "id": "f8a84ac1919c8c6c6216a5c9116827296a008726d6ed2aecda842ac7baac1f18",
+      "status": "passed",
+      "value": {
+        "decimal": 0,
+        "name": "Interop172",
+        "supply": "1000",
+        "symbol": "I172",
+        "utxos": [
+          {
+            "ancestors": [
+              "0e0ee218d59acf8d5778ade3289cd986ee973b0978dbde26a97c0607113b05f6"
+            ],
+            "balance": "1000",
+            "lockTime": 0,
+            "txid": "1eaef701aaec53e5c4fecb3061eeed9409bbcc1b468b78948ddf8a87aae0663a",
+            "vout": 0
+          }
+        ]
+      }
+    },
+    {
+      "creator": "js",
+      "reader": "js",
+      "stable": true,
+      "id": "c9df7d614800641bd559ca028a1bf425c7aa56224a672cdf9e3c668966b578a1",
+      "status": "passed",
+      "value": {
+        "name": "Interop172",
+        "symbol": "I172",
+        "decimal": 0,
+        "supply": "1500",
+        "utxos": [
+          {
+            "txid": "49a6d7d7d57893902d70121eaa437594ea590485580c64799f0810890122dca5",
+            "vout": 3,
+            "balance": "500",
+            "lockTime": 0,
+            "ancestors": [
+              "9307bb18b9ba91194c7f497ecb6a526d50759e2296c590fe6645233c2cbecd98"
+            ]
+          },
+          {
+            "txid": "4a9bcbfed86f00e2ea0a9169424ebd461c807aca3c060d2bfe454dc24695fef3",
+            "vout": 0,
+            "balance": "1000",
+            "lockTime": 0,
+            "ancestors": [
+              "1c055341641b8264b2167012288081b7a2d4c42289469787c270f3ac48af0a89"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "creator": "js",
+      "reader": "rust",
+      "stable": true,
+      "id": "c9df7d614800641bd559ca028a1bf425c7aa56224a672cdf9e3c668966b578a1",
+      "status": "passed",
+      "value": {
+        "decimal": 0,
+        "name": "Interop172",
+        "supply": "1500",
+        "symbol": "I172",
+        "utxos": [
+          {
+            "ancestors": [
+              "9307bb18b9ba91194c7f497ecb6a526d50759e2296c590fe6645233c2cbecd98"
+            ],
+            "balance": "500",
+            "lockTime": 0,
+            "txid": "49a6d7d7d57893902d70121eaa437594ea590485580c64799f0810890122dca5",
+            "vout": 3
+          },
+          {
+            "ancestors": [
+              "1c055341641b8264b2167012288081b7a2d4c42289469787c270f3ac48af0a89"
+            ],
+            "balance": "1000",
+            "lockTime": 0,
+            "txid": "4a9bcbfed86f00e2ea0a9169424ebd461c807aca3c060d2bfe454dc24695fef3",
+            "vout": 0
+          }
+        ]
+      }
+    },
+    {
+      "creator": "js",
+      "reader": "go",
+      "stable": true,
+      "id": "c9df7d614800641bd559ca028a1bf425c7aa56224a672cdf9e3c668966b578a1",
+      "status": "passed",
+      "value": {
+        "decimal": 0,
+        "name": "Interop172",
+        "supply": "1500",
+        "symbol": "I172",
+        "utxos": [
+          {
+            "ancestors": [
+              "9307bb18b9ba91194c7f497ecb6a526d50759e2296c590fe6645233c2cbecd98"
+            ],
+            "balance": "500",
+            "lockTime": 0,
+            "txid": "49a6d7d7d57893902d70121eaa437594ea590485580c64799f0810890122dca5",
+            "vout": 3
+          },
+          {
+            "ancestors": [
+              "1c055341641b8264b2167012288081b7a2d4c42289469787c270f3ac48af0a89"
+            ],
+            "balance": "1000",
+            "lockTime": 0,
+            "txid": "4a9bcbfed86f00e2ea0a9169424ebd461c807aca3c060d2bfe454dc24695fef3",
+            "vout": 0
+          }
+        ]
+      }
+    },
+    {
+      "creator": "rust",
+      "reader": "js",
+      "stable": true,
+      "id": "d9a0153b00ee3fbdab239671ba2848711126d34b12afe636ce1db966239b8a28",
+      "status": "passed",
+      "value": {
+        "name": "Interop172",
+        "symbol": "I172",
+        "decimal": 0,
+        "supply": "1500",
+        "utxos": [
+          {
+            "txid": "727f39458b3891ab8091dca930425aa81e72b2b7aaa321d076a0b0fa09e5d464",
+            "vout": 0,
+            "balance": "1000",
+            "lockTime": 0,
+            "ancestors": [
+              "1488533e27e3e5e8d42a5ca2d2a17ced4f922b377c805c1df458d3c66c064935"
+            ]
+          },
+          {
+            "txid": "d296795e5e1f76c7738ba6ec6d4291697ffa7fab1bef70e9eb918f277da976ed",
+            "vout": 3,
+            "balance": "500",
+            "lockTime": 0,
+            "ancestors": [
+              "9b5483589c663710f7de08512c46cc296772d4f048b8373443d050efbb9e5034"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "creator": "rust",
+      "reader": "rust",
+      "stable": true,
+      "id": "d9a0153b00ee3fbdab239671ba2848711126d34b12afe636ce1db966239b8a28",
+      "status": "passed",
+      "value": {
+        "decimal": 0,
+        "name": "Interop172",
+        "supply": "1500",
+        "symbol": "I172",
+        "utxos": [
+          {
+            "ancestors": [
+              "1488533e27e3e5e8d42a5ca2d2a17ced4f922b377c805c1df458d3c66c064935"
+            ],
+            "balance": "1000",
+            "lockTime": 0,
+            "txid": "727f39458b3891ab8091dca930425aa81e72b2b7aaa321d076a0b0fa09e5d464",
+            "vout": 0
+          },
+          {
+            "ancestors": [
+              "9b5483589c663710f7de08512c46cc296772d4f048b8373443d050efbb9e5034"
+            ],
+            "balance": "500",
+            "lockTime": 0,
+            "txid": "d296795e5e1f76c7738ba6ec6d4291697ffa7fab1bef70e9eb918f277da976ed",
+            "vout": 3
+          }
+        ]
+      }
+    },
+    {
+      "creator": "rust",
+      "reader": "go",
+      "stable": true,
+      "id": "d9a0153b00ee3fbdab239671ba2848711126d34b12afe636ce1db966239b8a28",
+      "status": "passed",
+      "value": {
+        "decimal": 0,
+        "name": "Interop172",
+        "supply": "1500",
+        "symbol": "I172",
+        "utxos": [
+          {
+            "ancestors": [
+              "1488533e27e3e5e8d42a5ca2d2a17ced4f922b377c805c1df458d3c66c064935"
+            ],
+            "balance": "1000",
+            "lockTime": 0,
+            "txid": "727f39458b3891ab8091dca930425aa81e72b2b7aaa321d076a0b0fa09e5d464",
+            "vout": 0
+          },
+          {
+            "ancestors": [
+              "9b5483589c663710f7de08512c46cc296772d4f048b8373443d050efbb9e5034"
+            ],
+            "balance": "500",
+            "lockTime": 0,
+            "txid": "d296795e5e1f76c7738ba6ec6d4291697ffa7fab1bef70e9eb918f277da976ed",
+            "vout": 3
+          }
+        ]
+      }
+    },
+    {
+      "creator": "go",
+      "reader": "js",
+      "stable": true,
+      "id": "6c4e86fb7119b82a9bc234f1e8745ea33cb34f5b28716cccdf187eb3c06ffd35",
+      "status": "passed",
+      "value": {
+        "name": "Interop172",
+        "symbol": "I172",
+        "decimal": 0,
+        "supply": "1500",
+        "utxos": [
+          {
+            "txid": "9174b59aa0878fb8d8501fc39c80037a28762c168808cd4c0b8f7f114296659d",
+            "vout": 3,
+            "balance": "500",
+            "lockTime": 0,
+            "ancestors": [
+              "5804a490bf8b82dae18c48874fac26076a312fdc867e814abdbb4b71e3a3797d"
+            ]
+          },
+          {
+            "txid": "94746bfa151eed2a62a6638f3920fa657aa45f71e5f1691f387e67178d8bc1ce",
+            "vout": 0,
+            "balance": "1000",
+            "lockTime": 0,
+            "ancestors": [
+              "16f9c56b4f11520234b6d89f47902450bd3aca08cbb3290c2c8a317d16cb74c4"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "creator": "go",
+      "reader": "rust",
+      "stable": true,
+      "id": "6c4e86fb7119b82a9bc234f1e8745ea33cb34f5b28716cccdf187eb3c06ffd35",
+      "status": "passed",
+      "value": {
+        "decimal": 0,
+        "name": "Interop172",
+        "supply": "1500",
+        "symbol": "I172",
+        "utxos": [
+          {
+            "ancestors": [
+              "5804a490bf8b82dae18c48874fac26076a312fdc867e814abdbb4b71e3a3797d"
+            ],
+            "balance": "500",
+            "lockTime": 0,
+            "txid": "9174b59aa0878fb8d8501fc39c80037a28762c168808cd4c0b8f7f114296659d",
+            "vout": 3
+          },
+          {
+            "ancestors": [
+              "16f9c56b4f11520234b6d89f47902450bd3aca08cbb3290c2c8a317d16cb74c4"
+            ],
+            "balance": "1000",
+            "lockTime": 0,
+            "txid": "94746bfa151eed2a62a6638f3920fa657aa45f71e5f1691f387e67178d8bc1ce",
+            "vout": 0
+          }
+        ]
+      }
+    },
+    {
+      "creator": "go",
+      "reader": "go",
+      "stable": true,
+      "id": "6c4e86fb7119b82a9bc234f1e8745ea33cb34f5b28716cccdf187eb3c06ffd35",
+      "status": "passed",
+      "value": {
+        "decimal": 0,
+        "name": "Interop172",
+        "supply": "1500",
+        "symbol": "I172",
+        "utxos": [
+          {
+            "ancestors": [
+              "5804a490bf8b82dae18c48874fac26076a312fdc867e814abdbb4b71e3a3797d"
+            ],
+            "balance": "500",
+            "lockTime": 0,
+            "txid": "9174b59aa0878fb8d8501fc39c80037a28762c168808cd4c0b8f7f114296659d",
+            "vout": 3
+          },
+          {
+            "ancestors": [
+              "16f9c56b4f11520234b6d89f47902450bd3aca08cbb3290c2c8a317d16cb74c4"
+            ],
+            "balance": "1000",
+            "lockTime": 0,
+            "txid": "94746bfa151eed2a62a6638f3920fa657aa45f71e5f1691f387e67178d8bc1ce",
+            "vout": 0
+          }
+        ]
+      }
+    }
+  ]
+}

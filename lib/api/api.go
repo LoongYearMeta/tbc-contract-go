@@ -854,3 +854,37 @@ func FetchTBCLockTime(network string) (uint32, error) {
 	}
 	return uint32(headers[0].Height), nil
 }
+
+// FetchContractData performs a retryable GET and returns lossless JSON data for
+// generation-specific query packages. Broadcast POSTs never use this helper.
+func FetchContractData(path, network string) (json.RawMessage, error) {
+	if strings.Contains(path, "..") || strings.HasPrefix(path, "/") || strings.ContainsAny(path, "?#") {
+		return nil, fmt.Errorf("invalid contract query path")
+	}
+	body, err := httpGetWithRetry(getBaseURL(network) + path)
+	if err != nil {
+		return nil, err
+	}
+	var envelope struct {
+		Data    json.RawMessage `json:"data"`
+		Error   json.RawMessage `json:"error"`
+		Code    json.RawMessage `json:"code"`
+		Message string          `json:"message"`
+	}
+	if err = json.Unmarshal(body, &envelope); err != nil {
+		return nil, err
+	}
+	if len(envelope.Error) > 0 && string(envelope.Error) != "null" && string(envelope.Error) != "\"\"" {
+		return nil, fmt.Errorf("contract API: %s", envelope.Error)
+	}
+	if len(envelope.Code) > 0 {
+		code := strings.Trim(string(envelope.Code), "\"")
+		if code != "0" && code != "200" && code != "success" {
+			return nil, fmt.Errorf("contract API code %s: %s", code, envelope.Message)
+		}
+	}
+	if len(envelope.Data) == 0 || string(envelope.Data) == "null" {
+		return nil, fmt.Errorf("contract API missing data: %s", envelope.Message)
+	}
+	return envelope.Data, nil
+}

@@ -1,0 +1,205 @@
+{
+  "status": "passed",
+  "cases": [
+    {
+      "operation": "amm.add",
+      "controlled": false,
+      "lpLocked": false,
+      "language": "rust",
+      "fundingSat": 102073,
+      "outputs": 8,
+      "referenceOutputs": 8,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.add",
+      "controlled": false,
+      "lpLocked": false,
+      "language": "go",
+      "fundingSat": 102068,
+      "outputs": 8,
+      "referenceOutputs": 8,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.swap_ft",
+      "controlled": false,
+      "lpLocked": false,
+      "language": "rust",
+      "fundingSat": 11848,
+      "outputs": 7,
+      "referenceOutputs": 7,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.swap_ft",
+      "controlled": false,
+      "lpLocked": false,
+      "language": "go",
+      "fundingSat": 11843,
+      "outputs": 7,
+      "referenceOutputs": 7,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.swap_tbc",
+      "controlled": false,
+      "lpLocked": false,
+      "language": "rust",
+      "fundingSat": 1524,
+      "outputs": 8,
+      "referenceOutputs": 8,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.swap_tbc",
+      "controlled": false,
+      "lpLocked": false,
+      "language": "go",
+      "fundingSat": 1519,
+      "outputs": 8,
+      "referenceOutputs": 8,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.lp_transfer",
+      "controlled": false,
+      "lpLocked": false,
+      "language": "rust",
+      "fundingSat": 361,
+      "outputs": 2,
+      "referenceOutputs": 2,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.lp_transfer",
+      "controlled": false,
+      "lpLocked": false,
+      "language": "go",
+      "fundingSat": 361,
+      "outputs": 2,
+      "referenceOutputs": 2,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.remove",
+      "controlled": false,
+      "lpLocked": false,
+      "language": "rust",
+      "fundingSat": 3053,
+      "outputs": 11,
+      "referenceOutputs": 11,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.remove",
+      "controlled": false,
+      "lpLocked": false,
+      "language": "go",
+      "fundingSat": 3053,
+      "outputs": 11,
+      "referenceOutputs": 11,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.add",
+      "controlled": true,
+      "lpLocked": true,
+      "language": "rust",
+      "fundingSat": 102093,
+      "outputs": 8,
+      "referenceOutputs": 8,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.add",
+      "controlled": true,
+      "lpLocked": true,
+      "language": "go",
+      "fundingSat": 102088,
+      "outputs": 8,
+      "referenceOutputs": 8,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.swap_ft",
+      "controlled": true,
+      "lpLocked": true,
+      "language": "rust",
+      "fundingSat": 11856,
+      "outputs": 7,
+      "referenceOutputs": 7,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.swap_ft",
+      "controlled": true,
+      "lpLocked": true,
+      "language": "go",
+      "fundingSat": 11851,
+      "outputs": 7,
+      "referenceOutputs": 7,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.swap_tbc",
+      "controlled": true,
+      "lpLocked": true,
+      "language": "rust",
+      "fundingSat": 1529,
+      "outputs": 8,
+      "referenceOutputs": 8,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.swap_tbc",
+      "controlled": true,
+      "lpLocked": true,
+      "language": "go",
+      "fundingSat": 1524,
+      "outputs": 8,
+      "referenceOutputs": 8,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.lp_transfer",
+      "controlled": true,
+      "lpLocked": true,
+      "language": "rust",
+      "fundingSat": 373,
+      "outputs": 2,
+      "referenceOutputs": 2,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.lp_transfer",
+      "controlled": true,
+      "lpLocked": true,
+      "language": "go",
+      "fundingSat": 373,
+      "outputs": 2,
+      "referenceOutputs": 2,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.remove",
+      "controlled": true,
+      "lpLocked": true,
+      "language": "rust",
+      "fundingSat": 3088,
+      "outputs": 11,
+      "referenceOutputs": 11,
+      "allValidatorsPassed": true
+    },
+    {
+      "operation": "amm.remove",
+      "controlled": true,
+      "lpLocked": true,
+      "language": "go",
+      "fundingSat": 3088,
+      "outputs": 11,
+      "referenceOutputs": 11,
+      "allValidatorsPassed": true
+    }
+  ]
+}

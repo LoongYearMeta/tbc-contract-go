@@ -312,6 +312,12 @@ type nftIn0Unlocker struct {
 }
 
 func (u *nftIn0Unlocker) UnlockingScript(ctx context.Context, tx *bt.Tx, p bt.UnlockerParams) (*bscript.Script, error) {
+	if u.preTx != nil && len(u.preTx.Outputs) > 0 {
+		if _, _, err := ParseTBC721StandardCode(u.preTx.Outputs[0].LockingScript); err == nil {
+			return BuildTBC721StandardUnlock(u.priv, tx, u.preTx, u.prePre)
+		}
+	}
+
 	shf := p.SigHashFlags
 	if shf == 0 {
 		shf = sighash.AllForkID

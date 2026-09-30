@@ -1,0 +1,60 @@
+{
+  "date": "2026-09-30",
+  "network": "offline",
+  "reference": {
+    "contract": "1.7.2",
+    "lib": "1.0.31",
+    "npmIntegrityVerified": true,
+    "npmFilesMatched": 57
+  },
+  "rustTests": {
+    "command": "cargo test --all-targets --quiet",
+    "passed": 450,
+    "failed": 0
+  },
+  "goTests": {
+    "command": "go test ./...",
+    "status": "passed"
+  },
+  "phases": [
+    {
+      "phase": "interop",
+      "status": "passed",
+      "transactions": 36,
+      "simulatedFeesSat": 8706
+    },
+    {
+      "phase": "stablecoin",
+      "status": "passed",
+      "transactions": 27,
+      "simulatedFeesSat": 10027
+    },
+    {
+      "phase": "stablecoin-advanced",
+      "status": "passed",
+      "transactions": 36,
+      "simulatedFeesSat": 11862
+    },
+    {
+      "phase": "amm",
+      "status": "passed",
+      "transactions": 72,
+      "simulatedFeesSat": 73026
+    },
+    {
+      "phase": "locks",
+      "status": "passed",
+      "transactions": 54,
+      "simulatedFeesSat": 14343
+    },
+    {
+      "phase": "lop",
+      "status": "passed",
+      "transactions": 264,
+      "simulatedFeesSat": 92537
+    }
+  ],
+  "totalTransactions": 489,
+  "stablecoinPools": "excluded by user direction",
+  "broadcast": false
+}

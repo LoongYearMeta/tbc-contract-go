@@ -1,0 +1,76 @@
+{
+  "run": "2026-09-30-073440",
+  "network": "testnet",
+  "address": "143KgKGcse57nXBnXyJwtQrf2KP4KWto59",
+  "phases": [
+    {
+      "name": "interop",
+      "report": "docs/verification/2026-09-30-073440-live-audit-interop.json",
+      "log": "/tmp/tbc-172-live-audit-interop.log",
+      "status": "passed",
+      "exitCode": 0,
+      "transactions": 36,
+      "feesSat": 8706
+    },
+    {
+      "name": "stablecoin",
+      "report": "docs/verification/2026-09-30-073440-live-audit-stablecoin.json",
+      "log": "/tmp/tbc-172-live-audit-stablecoin.log",
+      "status": "passed",
+      "exitCode": 0,
+      "transactions": 27,
+      "feesSat": 10038
+    },
+    {
+      "name": "stablecoin-advanced",
+      "report": "docs/verification/2026-09-30-073440-live-audit-stablecoin-advanced.json",
+      "log": "/tmp/tbc-172-live-audit-stablecoin-advanced.log",
+      "status": "passed",
+      "exitCode": 0,
+      "transactions": 36,
+      "feesSat": 11869
+    },
+    {
+      "name": "amm",
+      "report": "docs/verification/2026-09-30-073440-live-audit-amm.json",
+      "log": "/tmp/tbc-172-live-audit-amm.log",
+      "status": "passed",
+      "exitCode": 0,
+      "transactions": 72,
+      "feesSat": 73025
+    },
+    {
+      "name": "locks",
+      "report": "docs/verification/2026-09-30-073440-live-audit-locks.json",
+      "log": "/tmp/tbc-172-live-audit-locks.log",
+      "status": "passed",
+      "exitCode": 0,
+      "transactions": 54,
+      "feesSat": 14343
+    },
+    {
+      "name": "lop",
+      "report": "docs/verification/2026-09-30-073440-live-audit-lop.json",
+      "log": "/tmp/tbc-172-live-audit-lop.log",
+      "status": "passed",
+      "exitCode": 0,
+      "transactions": 264,
+      "feesSat": 92541
+    }
+  ],
+  "status": "passed",
+  "summary": {
+    "acceptedAndRawRefetched": 489,
+    "uniqueTransactions": 489,
+    "minerFeesSat": 210522,
+    "byLanguage": {
+      "js": 255,
+      "rust": 117,
+      "go": 117
+    },
+    "sameInputJSComparisons": 172,
+    "verifiedInputs": 924,
+    "stablecoinPools": "excluded",
+    "blockConfirmationChecked": false
+  }
+}

@@ -1,0 +1,2443 @@
+{
+  "reference": {
+    "contract": "1.7.2",
+    "lib": "1.0.31"
+  },
+  "network": "offline",
+  "externalSigning": true,
+  "nativeValidation": true,
+  "address": "1Q1pE5vPGEEMqRcVRMbtBK842Y6Pzo6nK9",
+  "status": "passed",
+  "transactions": [
+    {
+      "language": "js",
+      "operation": "stable.create.0",
+      "txid": "44307a5f225cf3073fbc307b0ee1961ce341a8bb21c3858d5b500b9e84697709",
+      "bytes": 719,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 200,
+          "scriptSha256": "f079a5a089059b0ed04f42e095572951d18842bc670059287cf008dde49d4b83"
+        },
+        {
+          "vout": 1,
+          "satoshis": 100,
+          "scriptSha256": "ad81a5e0197504c17dde6642bcfd43e0cf9f4a5079508ce841ada3b9b923ebf0"
+        },
+        {
+          "vout": 2,
+          "satoshis": 0,
+          "scriptSha256": "71ba0880c88b905ad1f87b63d8596f149ec03d8aa6baf3c30e9633fb3ce01f14"
+        },
+        {
+          "vout": 3,
+          "satoshis": 29999620,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "29fd28d9983aacd64151f5f5962bde2a2d1c306c0e10d646782b141df57b6358",
+          "vout": 0
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "js",
+      "operation": "stable.create.1",
+      "txid": "0fa01d56709143903a9bafa14fba387dd2caa9da22969332bb166ed327e99b0e",
+      "bytes": 4861,
+      "fee": 389,
+      "verifiedInputs": 3,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            },
+            {
+              "inputIndex": 2,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            },
+            {
+              "inputIndex": 2,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 200,
+          "scriptSha256": "f079a5a089059b0ed04f42e095572951d18842bc670059287cf008dde49d4b83"
+        },
+        {
+          "vout": 1,
+          "satoshis": 100,
+          "scriptSha256": "ad81a5e0197504c17dde6642bcfd43e0cf9f4a5079508ce841ada3b9b923ebf0"
+        },
+        {
+          "vout": 2,
+          "satoshis": 0,
+          "scriptSha256": "2ea0617aac93672e2be4dda17f41f4c3b330ce0abee5ee5651285b5acc7de17b"
+        },
+        {
+          "vout": 3,
+          "satoshis": 500,
+          "scriptSha256": "9c5b894d49b0730c2f072f8a4f031cab5bb69a97c2a705eb2483e3bb4b01364e"
+        },
+        {
+          "vout": 4,
+          "satoshis": 0,
+          "scriptSha256": "da69fb8e01b9a8ef923d2841db20486eff4c34a0954165330961247cb52b89ca"
+        },
+        {
+          "vout": 5,
+          "satoshis": 29998731,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "44307a5f225cf3073fbc307b0ee1961ce341a8bb21c3858d5b500b9e84697709",
+          "vout": 0
+        },
+        {
+          "txid": "44307a5f225cf3073fbc307b0ee1961ce341a8bb21c3858d5b500b9e84697709",
+          "vout": 1
+        },
+        {
+          "txid": "44307a5f225cf3073fbc307b0ee1961ce341a8bb21c3858d5b500b9e84697709",
+          "vout": 3
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "rust",
+      "operation": "stable.transfer",
+      "txid": "673d0c145a643109313db467fc7871b64fd4185f8a1a4c064475b01490c05fcc",
+      "bytes": 4612,
+      "fee": 370,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "91e3e2c901fcf9e7a88e2821894b1cabe3fc98d98cf6238827fb167dc29b6145",
+        "referenceFeeSat": 370,
+        "feeChangeDifferenceSat": 0,
+        "referenceScriptsVerified": true
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "9c5b894d49b0730c2f072f8a4f031cab5bb69a97c2a705eb2483e3bb4b01364e"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "da69fb8e01b9a8ef923d2841db20486eff4c34a0954165330961247cb52b89ca"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29998361,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "0fa01d56709143903a9bafa14fba387dd2caa9da22969332bb166ed327e99b0e",
+          "vout": 3
+        },
+        {
+          "txid": "0fa01d56709143903a9bafa14fba387dd2caa9da22969332bb166ed327e99b0e",
+          "vout": 5
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "go",
+      "operation": "stable.transfer",
+      "txid": "c07f769b40cf0547d2a8fda82105b28a050dcbe26c8fef4b0996dbf5e727a777",
+      "bytes": 4528,
+      "fee": 363,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "9472863a7639252572555d3d133007be09ef3fda147dbd169074508e87419a11",
+        "referenceFeeSat": 363,
+        "feeChangeDifferenceSat": 0,
+        "referenceScriptsVerified": true
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "9c5b894d49b0730c2f072f8a4f031cab5bb69a97c2a705eb2483e3bb4b01364e"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "da69fb8e01b9a8ef923d2841db20486eff4c34a0954165330961247cb52b89ca"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29997998,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "673d0c145a643109313db467fc7871b64fd4185f8a1a4c064475b01490c05fcc",
+          "vout": 0
+        },
+        {
+          "txid": "673d0c145a643109313db467fc7871b64fd4185f8a1a4c064475b01490c05fcc",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "js",
+      "operation": "stable.transfer",
+      "txid": "81ed7769db35438b10ffed838a3cc5cdae42702254391b4f134998dd93c5a962",
+      "bytes": 4406,
+      "fee": 353,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "9c5b894d49b0730c2f072f8a4f031cab5bb69a97c2a705eb2483e3bb4b01364e"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "da69fb8e01b9a8ef923d2841db20486eff4c34a0954165330961247cb52b89ca"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29997645,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "c07f769b40cf0547d2a8fda82105b28a050dcbe26c8fef4b0996dbf5e727a777",
+          "vout": 0
+        },
+        {
+          "txid": "c07f769b40cf0547d2a8fda82105b28a050dcbe26c8fef4b0996dbf5e727a777",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "js",
+      "operation": "stable.freeze",
+      "txid": "0089e24178601e641bedb9714b0c2916c0dd4a37b48cd55a94686c6a3798cac2",
+      "bytes": 4406,
+      "fee": 353,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "9c5b894d49b0730c2f072f8a4f031cab5bb69a97c2a705eb2483e3bb4b01364e"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "3e5ec00d316c125d8586cd457a95052404b46e00d1fcc1eb2a40d6a2c7a34276"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29997292,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "81ed7769db35438b10ffed838a3cc5cdae42702254391b4f134998dd93c5a962",
+          "vout": 0
+        },
+        {
+          "txid": "81ed7769db35438b10ffed838a3cc5cdae42702254391b4f134998dd93c5a962",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "js",
+      "operation": "stable.unfreeze",
+      "txid": "2f6cc3b9bb67f793c6511df9949f7f56289d3c813d401bf247ac3c1189d3ea5b",
+      "bytes": 4406,
+      "fee": 353,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "9c5b894d49b0730c2f072f8a4f031cab5bb69a97c2a705eb2483e3bb4b01364e"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "da69fb8e01b9a8ef923d2841db20486eff4c34a0954165330961247cb52b89ca"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29996939,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "0089e24178601e641bedb9714b0c2916c0dd4a37b48cd55a94686c6a3798cac2",
+          "vout": 0
+        },
+        {
+          "txid": "0089e24178601e641bedb9714b0c2916c0dd4a37b48cd55a94686c6a3798cac2",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "js",
+      "operation": "stable.transfer",
+      "txid": "bd74999bdf04655af84686b892bc645bd8e7b068f56ec143d48fbb36df027366",
+      "bytes": 7663,
+      "fee": 614,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "9c5b894d49b0730c2f072f8a4f031cab5bb69a97c2a705eb2483e3bb4b01364e"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "2a34ddad2b3de1cecbe89d07ce9edb6bb0eb4041ddfc687d48145a74c69d2477"
+        },
+        {
+          "vout": 2,
+          "satoshis": 500,
+          "scriptSha256": "9c5b894d49b0730c2f072f8a4f031cab5bb69a97c2a705eb2483e3bb4b01364e"
+        },
+        {
+          "vout": 3,
+          "satoshis": 0,
+          "scriptSha256": "0a2dcf11a82df8d42a169640c1838b98087f1577f5c86aa5393e87890b3958ad"
+        },
+        {
+          "vout": 4,
+          "satoshis": 29995825,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "2f6cc3b9bb67f793c6511df9949f7f56289d3c813d401bf247ac3c1189d3ea5b",
+          "vout": 0
+        },
+        {
+          "txid": "2f6cc3b9bb67f793c6511df9949f7f56289d3c813d401bf247ac3c1189d3ea5b",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "js",
+      "operation": "stable.merge",
+      "txid": "9f3076b44120fee56ce0e3e4814b278ab5ad61e0517fe59df6deea1e9ce99464",
+      "bytes": 5778,
+      "fee": 463,
+      "verifiedInputs": 3,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 2,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 2,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "9c5b894d49b0730c2f072f8a4f031cab5bb69a97c2a705eb2483e3bb4b01364e"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "748aa63c8b7b62c947029cf8d67e5bdec65b8f43bde42add377d79f7f8922bd1"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29995862,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "bd74999bdf04655af84686b892bc645bd8e7b068f56ec143d48fbb36df027366",
+          "vout": 0
+        },
+        {
+          "txid": "bd74999bdf04655af84686b892bc645bd8e7b068f56ec143d48fbb36df027366",
+          "vout": 2
+        },
+        {
+          "txid": "bd74999bdf04655af84686b892bc645bd8e7b068f56ec143d48fbb36df027366",
+          "vout": 4
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "rust",
+      "operation": "stable.create.0",
+      "txid": "593636ce052d07b3ea9240f53a3ec37e031ebb0a9c3976fb777c012be9a727e9",
+      "bytes": 719,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 200,
+          "scriptSha256": "6ab4c2e13eb1940c01352b2e975b0f3ac87e2f031ca5aec54474beb4db69f289"
+        },
+        {
+          "vout": 1,
+          "satoshis": 100,
+          "scriptSha256": "ad81a5e0197504c17dde6642bcfd43e0cf9f4a5079508ce841ada3b9b923ebf0"
+        },
+        {
+          "vout": 2,
+          "satoshis": 0,
+          "scriptSha256": "71ba0880c88b905ad1f87b63d8596f149ec03d8aa6baf3c30e9633fb3ce01f14"
+        },
+        {
+          "vout": 3,
+          "satoshis": 29995482,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "9f3076b44120fee56ce0e3e4814b278ab5ad61e0517fe59df6deea1e9ce99464",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "rust",
+      "operation": "stable.create.1",
+      "txid": "5d91af6572638c7d95a00489f589241fd1d1f8e16c832e7b55b7ce30f46df92e",
+      "bytes": 4943,
+      "fee": 396,
+      "verifiedInputs": 3,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            },
+            {
+              "inputIndex": 2,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            },
+            {
+              "inputIndex": 2,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 200,
+          "scriptSha256": "6ab4c2e13eb1940c01352b2e975b0f3ac87e2f031ca5aec54474beb4db69f289"
+        },
+        {
+          "vout": 1,
+          "satoshis": 100,
+          "scriptSha256": "ad81a5e0197504c17dde6642bcfd43e0cf9f4a5079508ce841ada3b9b923ebf0"
+        },
+        {
+          "vout": 2,
+          "satoshis": 0,
+          "scriptSha256": "2ea0617aac93672e2be4dda17f41f4c3b330ce0abee5ee5651285b5acc7de17b"
+        },
+        {
+          "vout": 3,
+          "satoshis": 500,
+          "scriptSha256": "b96fa64fa3045b79173c03265f812b3b549d121d575893cf2c9132708c926db0"
+        },
+        {
+          "vout": 4,
+          "satoshis": 0,
+          "scriptSha256": "da69fb8e01b9a8ef923d2841db20486eff4c34a0954165330961247cb52b89ca"
+        },
+        {
+          "vout": 5,
+          "satoshis": 29994586,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "593636ce052d07b3ea9240f53a3ec37e031ebb0a9c3976fb777c012be9a727e9",
+          "vout": 0
+        },
+        {
+          "txid": "593636ce052d07b3ea9240f53a3ec37e031ebb0a9c3976fb777c012be9a727e9",
+          "vout": 1
+        },
+        {
+          "txid": "593636ce052d07b3ea9240f53a3ec37e031ebb0a9c3976fb777c012be9a727e9",
+          "vout": 3
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "js",
+      "operation": "stable.transfer",
+      "txid": "028f46fdfc5e195714c890e8b9523c494eda380401e4fa41f6c09c26c5435132",
+      "bytes": 4612,
+      "fee": 370,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "b96fa64fa3045b79173c03265f812b3b549d121d575893cf2c9132708c926db0"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "da69fb8e01b9a8ef923d2841db20486eff4c34a0954165330961247cb52b89ca"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29994216,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "5d91af6572638c7d95a00489f589241fd1d1f8e16c832e7b55b7ce30f46df92e",
+          "vout": 3
+        },
+        {
+          "txid": "5d91af6572638c7d95a00489f589241fd1d1f8e16c832e7b55b7ce30f46df92e",
+          "vout": 5
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "go",
+      "operation": "stable.transfer",
+      "txid": "71e6e2fe7b13eceed1404c974274f8fd7b7af853bc7cf3fbd77e0c04f5d2d8ad",
+      "bytes": 4527,
+      "fee": 363,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "1379c232ebc9f46faa79214e5cb3fd393bbe8ddc115a4616cbdf9b31f629c003",
+        "referenceFeeSat": 363,
+        "feeChangeDifferenceSat": 0,
+        "referenceScriptsVerified": true
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "b96fa64fa3045b79173c03265f812b3b549d121d575893cf2c9132708c926db0"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "da69fb8e01b9a8ef923d2841db20486eff4c34a0954165330961247cb52b89ca"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29993853,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "028f46fdfc5e195714c890e8b9523c494eda380401e4fa41f6c09c26c5435132",
+          "vout": 0
+        },
+        {
+          "txid": "028f46fdfc5e195714c890e8b9523c494eda380401e4fa41f6c09c26c5435132",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "rust",
+      "operation": "stable.transfer",
+      "txid": "13194d3ac26ad855bb240a694be54f5515900e5bc9098cda0ae26f5fb14a0989",
+      "bytes": 4407,
+      "fee": 353,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "43a6dfd3b7703b27772f837689c52a5570ea133f264ca5880f487041cc8e5648",
+        "referenceFeeSat": 353,
+        "feeChangeDifferenceSat": 0,
+        "referenceScriptsVerified": true
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "b96fa64fa3045b79173c03265f812b3b549d121d575893cf2c9132708c926db0"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "da69fb8e01b9a8ef923d2841db20486eff4c34a0954165330961247cb52b89ca"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29993500,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "71e6e2fe7b13eceed1404c974274f8fd7b7af853bc7cf3fbd77e0c04f5d2d8ad",
+          "vout": 0
+        },
+        {
+          "txid": "71e6e2fe7b13eceed1404c974274f8fd7b7af853bc7cf3fbd77e0c04f5d2d8ad",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "rust",
+      "operation": "stable.freeze",
+      "txid": "e66faf089b0d980681f17b814c5557b9f4cfaf2450e79a0525a26ab94e53ad85",
+      "bytes": 4406,
+      "fee": 353,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "e66faf089b0d980681f17b814c5557b9f4cfaf2450e79a0525a26ab94e53ad85",
+        "referenceFeeSat": 353,
+        "feeChangeDifferenceSat": 0,
+        "referenceScriptsVerified": true
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "b96fa64fa3045b79173c03265f812b3b549d121d575893cf2c9132708c926db0"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "3e5ec00d316c125d8586cd457a95052404b46e00d1fcc1eb2a40d6a2c7a34276"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29993147,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "13194d3ac26ad855bb240a694be54f5515900e5bc9098cda0ae26f5fb14a0989",
+          "vout": 0
+        },
+        {
+          "txid": "13194d3ac26ad855bb240a694be54f5515900e5bc9098cda0ae26f5fb14a0989",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "rust",
+      "operation": "stable.unfreeze",
+      "txid": "516006df2c8c32a8b3c4c554449c85556d41bf371a0d2ec6002cb4301d3392e7",
+      "bytes": 4406,
+      "fee": 353,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "516006df2c8c32a8b3c4c554449c85556d41bf371a0d2ec6002cb4301d3392e7",
+        "referenceFeeSat": 353,
+        "feeChangeDifferenceSat": 0,
+        "referenceScriptsVerified": true
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "b96fa64fa3045b79173c03265f812b3b549d121d575893cf2c9132708c926db0"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "da69fb8e01b9a8ef923d2841db20486eff4c34a0954165330961247cb52b89ca"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29992794,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "e66faf089b0d980681f17b814c5557b9f4cfaf2450e79a0525a26ab94e53ad85",
+          "vout": 0
+        },
+        {
+          "txid": "e66faf089b0d980681f17b814c5557b9f4cfaf2450e79a0525a26ab94e53ad85",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "rust",
+      "operation": "stable.transfer",
+      "txid": "568794b7c18410d9831e75e8ff4313db8db685e9ffd166b225dfe625670d96b3",
+      "bytes": 7664,
+      "fee": 614,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "36ff4c73b44ae663ce71986977978e39229a47b3ff3c79d5178bbb1776ed5cd1",
+        "referenceFeeSat": 614,
+        "feeChangeDifferenceSat": 0,
+        "referenceScriptsVerified": true
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "b96fa64fa3045b79173c03265f812b3b549d121d575893cf2c9132708c926db0"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "2a34ddad2b3de1cecbe89d07ce9edb6bb0eb4041ddfc687d48145a74c69d2477"
+        },
+        {
+          "vout": 2,
+          "satoshis": 500,
+          "scriptSha256": "b96fa64fa3045b79173c03265f812b3b549d121d575893cf2c9132708c926db0"
+        },
+        {
+          "vout": 3,
+          "satoshis": 0,
+          "scriptSha256": "0a2dcf11a82df8d42a169640c1838b98087f1577f5c86aa5393e87890b3958ad"
+        },
+        {
+          "vout": 4,
+          "satoshis": 29991680,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "516006df2c8c32a8b3c4c554449c85556d41bf371a0d2ec6002cb4301d3392e7",
+          "vout": 0
+        },
+        {
+          "txid": "516006df2c8c32a8b3c4c554449c85556d41bf371a0d2ec6002cb4301d3392e7",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "rust",
+      "operation": "stable.merge",
+      "txid": "59ace5723d13985e65c6004594c1a9fba427c37b3617c36a9849c154129d0d02",
+      "bytes": 5779,
+      "fee": 463,
+      "verifiedInputs": 3,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 2,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 2,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "f1378aa241e0959b899a19d10066829638a59ef4de4d0247dc731a79193e7dea",
+        "referenceFeeSat": 463,
+        "feeChangeDifferenceSat": 0,
+        "referenceScriptsVerified": true
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "b96fa64fa3045b79173c03265f812b3b549d121d575893cf2c9132708c926db0"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "748aa63c8b7b62c947029cf8d67e5bdec65b8f43bde42add377d79f7f8922bd1"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29991717,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "568794b7c18410d9831e75e8ff4313db8db685e9ffd166b225dfe625670d96b3",
+          "vout": 0
+        },
+        {
+          "txid": "568794b7c18410d9831e75e8ff4313db8db685e9ffd166b225dfe625670d96b3",
+          "vout": 2
+        },
+        {
+          "txid": "568794b7c18410d9831e75e8ff4313db8db685e9ffd166b225dfe625670d96b3",
+          "vout": 4
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "go",
+      "operation": "stable.create.0",
+      "txid": "09e01da04b7e1f8cfb3839783874f8a846c9b4380732f2755c551f0a1f4083dc",
+      "bytes": 718,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 200,
+          "scriptSha256": "c4187e576dbcf4e1211284980a2b81965201779ef176cc24fdae89b2147ab6e0"
+        },
+        {
+          "vout": 1,
+          "satoshis": 100,
+          "scriptSha256": "ad81a5e0197504c17dde6642bcfd43e0cf9f4a5079508ce841ada3b9b923ebf0"
+        },
+        {
+          "vout": 2,
+          "satoshis": 0,
+          "scriptSha256": "71ba0880c88b905ad1f87b63d8596f149ec03d8aa6baf3c30e9633fb3ce01f14"
+        },
+        {
+          "vout": 3,
+          "satoshis": 29991337,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "59ace5723d13985e65c6004594c1a9fba427c37b3617c36a9849c154129d0d02",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "go",
+      "operation": "stable.create.1",
+      "txid": "b204462b1fb303f100256f50be8f594d317ea2df5701b35ef4917d63bb527e5c",
+      "bytes": 4943,
+      "fee": 396,
+      "verifiedInputs": 3,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            },
+            {
+              "inputIndex": 2,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            },
+            {
+              "inputIndex": 2,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 200,
+          "scriptSha256": "c4187e576dbcf4e1211284980a2b81965201779ef176cc24fdae89b2147ab6e0"
+        },
+        {
+          "vout": 1,
+          "satoshis": 100,
+          "scriptSha256": "ad81a5e0197504c17dde6642bcfd43e0cf9f4a5079508ce841ada3b9b923ebf0"
+        },
+        {
+          "vout": 2,
+          "satoshis": 0,
+          "scriptSha256": "2ea0617aac93672e2be4dda17f41f4c3b330ce0abee5ee5651285b5acc7de17b"
+        },
+        {
+          "vout": 3,
+          "satoshis": 500,
+          "scriptSha256": "9be9545d440b90102815b9aa0535c2dd3c3f7703b3c3a9e5e89ceb884927b9d7"
+        },
+        {
+          "vout": 4,
+          "satoshis": 0,
+          "scriptSha256": "da69fb8e01b9a8ef923d2841db20486eff4c34a0954165330961247cb52b89ca"
+        },
+        {
+          "vout": 5,
+          "satoshis": 29990441,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "09e01da04b7e1f8cfb3839783874f8a846c9b4380732f2755c551f0a1f4083dc",
+          "vout": 0
+        },
+        {
+          "txid": "09e01da04b7e1f8cfb3839783874f8a846c9b4380732f2755c551f0a1f4083dc",
+          "vout": 1
+        },
+        {
+          "txid": "09e01da04b7e1f8cfb3839783874f8a846c9b4380732f2755c551f0a1f4083dc",
+          "vout": 3
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "rust",
+      "operation": "stable.transfer",
+      "txid": "6a2f1daba517df1c67165eeff31e03be89971040f0de065ab9d737e206dec9ac",
+      "bytes": 4612,
+      "fee": 370,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "6ee1ff25c2745bb03cdc78190bbe19e5120573606be1e44e331998ab3c1c0d94",
+        "referenceFeeSat": 370,
+        "feeChangeDifferenceSat": 0,
+        "referenceScriptsVerified": true
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "9be9545d440b90102815b9aa0535c2dd3c3f7703b3c3a9e5e89ceb884927b9d7"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "da69fb8e01b9a8ef923d2841db20486eff4c34a0954165330961247cb52b89ca"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29990071,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "b204462b1fb303f100256f50be8f594d317ea2df5701b35ef4917d63bb527e5c",
+          "vout": 3
+        },
+        {
+          "txid": "b204462b1fb303f100256f50be8f594d317ea2df5701b35ef4917d63bb527e5c",
+          "vout": 5
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "js",
+      "operation": "stable.transfer",
+      "txid": "8a57020e955e545dd214f6daf4a9ab74c0e7dd89bee432beb715f4d150223489",
+      "bytes": 4527,
+      "fee": 363,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "9be9545d440b90102815b9aa0535c2dd3c3f7703b3c3a9e5e89ceb884927b9d7"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "da69fb8e01b9a8ef923d2841db20486eff4c34a0954165330961247cb52b89ca"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29989708,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "6a2f1daba517df1c67165eeff31e03be89971040f0de065ab9d737e206dec9ac",
+          "vout": 0
+        },
+        {
+          "txid": "6a2f1daba517df1c67165eeff31e03be89971040f0de065ab9d737e206dec9ac",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "go",
+      "operation": "stable.transfer",
+      "txid": "70a50fd09453adc544fbfd0c8fbde5220939fb01fc96ef608ae977dcb239d33d",
+      "bytes": 4407,
+      "fee": 353,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "b7d384b4e60f00ce951c3a3b692815727b27d254813f48ab2b9fb200ab7238b7",
+        "referenceFeeSat": 353,
+        "feeChangeDifferenceSat": 0,
+        "referenceScriptsVerified": true
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "9be9545d440b90102815b9aa0535c2dd3c3f7703b3c3a9e5e89ceb884927b9d7"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "da69fb8e01b9a8ef923d2841db20486eff4c34a0954165330961247cb52b89ca"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29989355,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "8a57020e955e545dd214f6daf4a9ab74c0e7dd89bee432beb715f4d150223489",
+          "vout": 0
+        },
+        {
+          "txid": "8a57020e955e545dd214f6daf4a9ab74c0e7dd89bee432beb715f4d150223489",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "go",
+      "operation": "stable.freeze",
+      "txid": "cda3c2a4c94e2b0f1df8a108fed739a341305f65d17ccbe992fa0f5d6c7bbbac",
+      "bytes": 4407,
+      "fee": 353,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "cda3c2a4c94e2b0f1df8a108fed739a341305f65d17ccbe992fa0f5d6c7bbbac",
+        "referenceFeeSat": 353,
+        "feeChangeDifferenceSat": 0,
+        "referenceScriptsVerified": true
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "9be9545d440b90102815b9aa0535c2dd3c3f7703b3c3a9e5e89ceb884927b9d7"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "3e5ec00d316c125d8586cd457a95052404b46e00d1fcc1eb2a40d6a2c7a34276"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29989002,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "70a50fd09453adc544fbfd0c8fbde5220939fb01fc96ef608ae977dcb239d33d",
+          "vout": 0
+        },
+        {
+          "txid": "70a50fd09453adc544fbfd0c8fbde5220939fb01fc96ef608ae977dcb239d33d",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "go",
+      "operation": "stable.unfreeze",
+      "txid": "6cba4a5b06437f834747ef4d982545cfc404a3c455b7d8938f4555fb7e47b31c",
+      "bytes": 4407,
+      "fee": 353,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "6cba4a5b06437f834747ef4d982545cfc404a3c455b7d8938f4555fb7e47b31c",
+        "referenceFeeSat": 353,
+        "feeChangeDifferenceSat": 0,
+        "referenceScriptsVerified": true
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "9be9545d440b90102815b9aa0535c2dd3c3f7703b3c3a9e5e89ceb884927b9d7"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "da69fb8e01b9a8ef923d2841db20486eff4c34a0954165330961247cb52b89ca"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29988649,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "cda3c2a4c94e2b0f1df8a108fed739a341305f65d17ccbe992fa0f5d6c7bbbac",
+          "vout": 0
+        },
+        {
+          "txid": "cda3c2a4c94e2b0f1df8a108fed739a341305f65d17ccbe992fa0f5d6c7bbbac",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "go",
+      "operation": "stable.transfer",
+      "txid": "c7aa798d855bd465c32b622a7b4d17f236828c2037e4807bbf61309eefed1e5c",
+      "bytes": 7663,
+      "fee": 614,
+      "verifiedInputs": 2,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "0dbbcd19a5b93cf679ae7980f6f52c774cbedf481261f3f7c529981d6f8651de",
+        "referenceFeeSat": 614,
+        "feeChangeDifferenceSat": 0,
+        "referenceScriptsVerified": true
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "9be9545d440b90102815b9aa0535c2dd3c3f7703b3c3a9e5e89ceb884927b9d7"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "2a34ddad2b3de1cecbe89d07ce9edb6bb0eb4041ddfc687d48145a74c69d2477"
+        },
+        {
+          "vout": 2,
+          "satoshis": 500,
+          "scriptSha256": "9be9545d440b90102815b9aa0535c2dd3c3f7703b3c3a9e5e89ceb884927b9d7"
+        },
+        {
+          "vout": 3,
+          "satoshis": 0,
+          "scriptSha256": "0a2dcf11a82df8d42a169640c1838b98087f1577f5c86aa5393e87890b3958ad"
+        },
+        {
+          "vout": 4,
+          "satoshis": 29987535,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "6cba4a5b06437f834747ef4d982545cfc404a3c455b7d8938f4555fb7e47b31c",
+          "vout": 0
+        },
+        {
+          "txid": "6cba4a5b06437f834747ef4d982545cfc404a3c455b7d8938f4555fb7e47b31c",
+          "vout": 2
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    },
+    {
+      "language": "go",
+      "operation": "stable.merge",
+      "txid": "c2d0efec66e77d61da344dcc4b07326ad10a7a2333970abb72afedd85fac4ba2",
+      "bytes": 5778,
+      "fee": 463,
+      "verifiedInputs": 3,
+      "nativeValidation": {
+        "rust": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 2,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        },
+        "go": {
+          "success": true,
+          "inputs": [
+            {
+              "inputIndex": 0,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 1,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 2
+            },
+            {
+              "inputIndex": 2,
+              "success": true,
+              "error": "",
+              "stackDepth": 1,
+              "altStackDepth": 0
+            }
+          ],
+          "valueConserved": true,
+          "nodeAcceptanceChecked": false
+        }
+      },
+      "jsComparison": {
+        "sameInputsAndContractOutputs": true,
+        "referenceTxid": "4cdf603393abcae04d60be1fa962437f183cb5ad4ac56289788abfed10204b26",
+        "referenceFeeSat": 463,
+        "feeChangeDifferenceSat": 0,
+        "referenceScriptsVerified": true
+      },
+      "outputs": [
+        {
+          "vout": 0,
+          "satoshis": 500,
+          "scriptSha256": "9be9545d440b90102815b9aa0535c2dd3c3f7703b3c3a9e5e89ceb884927b9d7"
+        },
+        {
+          "vout": 1,
+          "satoshis": 0,
+          "scriptSha256": "748aa63c8b7b62c947029cf8d67e5bdec65b8f43bde42add377d79f7f8922bd1"
+        },
+        {
+          "vout": 2,
+          "satoshis": 29987572,
+          "scriptSha256": "0085f44548c4e5276a92d8321cb79cbf7fca6333b4d343cd25c853fd855b7c4c"
+        }
+      ],
+      "parents": [
+        {
+          "txid": "c7aa798d855bd465c32b622a7b4d17f236828c2037e4807bbf61309eefed1e5c",
+          "vout": 0
+        },
+        {
+          "txid": "c7aa798d855bd465c32b622a7b4d17f236828c2037e4807bbf61309eefed1e5c",
+          "vout": 2
+        },
+        {
+          "txid": "c7aa798d855bd465c32b622a7b4d17f236828c2037e4807bbf61309eefed1e5c",
+          "vout": 4
+        }
+      ],
+      "broadcast": false,
+      "refetched": false
+    }
+  ],
+  "totalFeesSat": 10028
+}

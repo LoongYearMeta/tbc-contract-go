@@ -635,7 +635,7 @@ func poolWritePoolNFTHashOutput(buf []byte, satoshis uint64, lockScript []byte) 
 // mirror the TS predicate).
 func poolIsFTOrCoinScript(scriptLen int) bool {
 	return scriptLen == poolFtV1Length || scriptLen == poolFtV2Length ||
-		scriptLen == poolCoinLength
+		scriptLen == poolCoinLength || scriptLen == poolFtV4Length
 }
 
 // poolP2PKHPubKeyHashHex extracts the 20-byte pubKeyHash from a P2PKH locking
@@ -692,7 +692,8 @@ func poolAddLPOutputsData(tx *bt.Tx, withLock int) ([]byte, error) {
 		if len(chunks) >= 2 {
 			sub := len(chunks[len(chunks)-2].Buf) + 1
 			poolCodeLength := len(poolCode) - sub
-			if poolCodeLength > 3284 {
+			// Plan 6 removes the historical empty lock-output witness leaf.
+			if poolCodeLength > 3284 && poolCodeLength < 3746 {
 				buf = append(buf, 0x00)
 			}
 		}

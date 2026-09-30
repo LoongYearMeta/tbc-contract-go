@@ -1,0 +1,2711 @@
+{
+  "network": "testnet",
+  "reference": "tbc-contract@1.7.2 / tbc-lib-js@1.0.31",
+  "transactions": [
+    {
+      "language": "go",
+      "operation": "ft-source",
+      "txid": "75ff35ea774ea2f0a909ad89325dbdf0ae1c2e7ab75215386c23e820b3658adb",
+      "sourceLog": "tbc-legacy-go-ft.log",
+      "bytes": 323,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "a09631e7559e10ca1db1b3310166107bce8fa768f223de37b51cf90213c10100",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "ft-mint",
+      "txid": "7704b3cc8198b4f94bc75942999b9be0ac0554247301bbd375d8f1354a1f6171",
+      "sourceLog": "tbc-legacy-go-ft.log",
+      "bytes": 2363,
+      "fee": 190,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "75ff35ea774ea2f0a909ad89325dbdf0ae1c2e7ab75215386c23e820b3658adb",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "ft-transfer",
+      "txid": "5d8a4dd1a41a8c2b1f5ede1c3c909817179a9bf0cd9d6d01220af85a91b1f370",
+      "sourceLog": "tbc-legacy-go-ft.log",
+      "bytes": 5562,
+      "fee": 446,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "7704b3cc8198b4f94bc75942999b9be0ac0554247301bbd375d8f1354a1f6171",
+          "vout": 0
+        },
+        {
+          "txid": "7704b3cc8198b4f94bc75942999b9be0ac0554247301bbd375d8f1354a1f6171",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "ft-transfer-additional-info",
+      "txid": "80ed3206641954499dce9e25db963c55239a8426f5b9cd1e69dff55916560bcb",
+      "sourceLog": "tbc-legacy-go-ft.log",
+      "bytes": 5783,
+      "fee": 463,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "5d8a4dd1a41a8c2b1f5ede1c3c909817179a9bf0cd9d6d01220af85a91b1f370",
+          "vout": 0
+        },
+        {
+          "txid": "5d8a4dd1a41a8c2b1f5ede1c3c909817179a9bf0cd9d6d01220af85a91b1f370",
+          "vout": 4
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "ft-batch-transfer",
+      "txid": "041a446479b9d5e5f476533945c15a6e6376736687b5fcffd04fa261ade5615b",
+      "sourceLog": "tbc-legacy-go-ft.log",
+      "bytes": 8042,
+      "fee": 644,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "5d8a4dd1a41a8c2b1f5ede1c3c909817179a9bf0cd9d6d01220af85a91b1f370",
+          "vout": 2
+        },
+        {
+          "txid": "80ed3206641954499dce9e25db963c55239a8426f5b9cd1e69dff55916560bcb",
+          "vout": 5
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "ft-merge",
+      "txid": "c259405b91014e419cc222d06368dc2c7a49c125d4998bfc59ca9c578f0233e1",
+      "sourceLog": "tbc-legacy-go-ft.log",
+      "bytes": 5796,
+      "fee": 464,
+      "verifiedInputs": 4,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "80ed3206641954499dce9e25db963c55239a8426f5b9cd1e69dff55916560bcb",
+          "vout": 0
+        },
+        {
+          "txid": "80ed3206641954499dce9e25db963c55239a8426f5b9cd1e69dff55916560bcb",
+          "vout": 2
+        },
+        {
+          "txid": "041a446479b9d5e5f476533945c15a6e6376736687b5fcffd04fa261ade5615b",
+          "vout": 4
+        },
+        {
+          "txid": "041a446479b9d5e5f476533945c15a6e6376736687b5fcffd04fa261ade5615b",
+          "vout": 6
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "token-htlc-withdraw-deploy",
+      "txid": "cf5a80bc3e2a8bdd4b0e09032700f8bee168d9459a07a32d6f44831b4dafb539",
+      "sourceLog": "tbc-legacy-go-ft.log",
+      "bytes": 6793,
+      "fee": 549,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "c259405b91014e419cc222d06368dc2c7a49c125d4998bfc59ca9c578f0233e1",
+          "vout": 0
+        },
+        {
+          "txid": "c259405b91014e419cc222d06368dc2c7a49c125d4998bfc59ca9c578f0233e1",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "token-htlc-withdraw",
+      "txid": "1bac9407633812b034e0166437f61725165872884d052b93079f9bee5a340ba5",
+      "sourceLog": "tbc-legacy-go-ft.log",
+      "bytes": 4073,
+      "fee": 439,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "cf5a80bc3e2a8bdd4b0e09032700f8bee168d9459a07a32d6f44831b4dafb539",
+          "vout": 0
+        },
+        {
+          "txid": "cf5a80bc3e2a8bdd4b0e09032700f8bee168d9459a07a32d6f44831b4dafb539",
+          "vout": 1
+        },
+        {
+          "txid": "cf5a80bc3e2a8bdd4b0e09032700f8bee168d9459a07a32d6f44831b4dafb539",
+          "vout": 5
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "token-htlc-refund-deploy",
+      "txid": "3b4d815b72ecaea6064b88bba5a6ac66dea9ea3d48c0d9dd9902a7456dc8673b",
+      "sourceLog": "tbc-legacy-go-ft.log",
+      "bytes": 5947,
+      "fee": 549,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "cf5a80bc3e2a8bdd4b0e09032700f8bee168d9459a07a32d6f44831b4dafb539",
+          "vout": 3
+        },
+        {
+          "txid": "1bac9407633812b034e0166437f61725165872884d052b93079f9bee5a340ba5",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "token-htlc-refund",
+      "txid": "2478eae7aed10154b37340b2f95d8493e2b17132618f6fb0abc9c09e7dfbd9b3",
+      "sourceLog": "tbc-legacy-go-ft.log",
+      "bytes": 4158,
+      "fee": 439,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "3b4d815b72ecaea6064b88bba5a6ac66dea9ea3d48c0d9dd9902a7456dc8673b",
+          "vout": 0
+        },
+        {
+          "txid": "3b4d815b72ecaea6064b88bba5a6ac66dea9ea3d48c0d9dd9902a7456dc8673b",
+          "vout": 1
+        },
+        {
+          "txid": "3b4d815b72ecaea6064b88bba5a6ac66dea9ea3d48c0d9dd9902a7456dc8673b",
+          "vout": 5
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "multisig-ft-source",
+      "txid": "04fa03def09007e34ef129b83d8f8c2b99e09cbb5e55a25e91407caa5aae8407",
+      "sourceLog": "tbc-legacy-go-multisig.log",
+      "bytes": 327,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "418510aa38178fd2ecaf0a975e5d129d4dc34ada74c169f2291723de66f581a4",
+          "vout": 4
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "multisig-ft-mint",
+      "txid": "eca642c66c2612ad787d50c195b31f7123e01281ef872f3e561cf8b89a37ad60",
+      "sourceLog": "tbc-legacy-go-multisig.log",
+      "bytes": 2367,
+      "fee": 190,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "04fa03def09007e34ef129b83d8f8c2b99e09cbb5e55a25e91407caa5aae8407",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "multisig-wallet-create",
+      "txid": "c94c9b39f97b5479733bd5a3575e8c371512169ad88659e6197cd79bfa1440eb",
+      "sourceLog": "tbc-legacy-go-multisig.log",
+      "bytes": 662,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "04fa03def09007e34ef129b83d8f8c2b99e09cbb5e55a25e91407caa5aae8407",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "multisig-tbc-deposit",
+      "txid": "5dc8d0bb6244672ab3bc851fa3919e2ad394da47db56948717511beb786e2b9a",
+      "sourceLog": "tbc-legacy-go-multisig.log",
+      "bytes": 242,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "c94c9b39f97b5479733bd5a3575e8c371512169ad88659e6197cd79bfa1440eb",
+          "vout": 5
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "multisig-tbc-spend",
+      "txid": "60bbae44df23bf50b87f3e38a972f70fcfb100d2bc2ab80e6d22879b7aafb316",
+      "sourceLog": "tbc-legacy-go-multisig.log",
+      "bytes": 382,
+      "fee": 1000,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "c94c9b39f97b5479733bd5a3575e8c371512169ad88659e6197cd79bfa1440eb",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "multisig-tbc-forward",
+      "txid": "2b22a01def4176daf2bc62513cdb41bd7011d6bb9ae863abe3449f307885b827",
+      "sourceLog": "tbc-legacy-go-multisig.log",
+      "bytes": 398,
+      "fee": 1000,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "5dc8d0bb6244672ab3bc851fa3919e2ad394da47db56948717511beb786e2b9a",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "multisig-ft-deposit",
+      "txid": "6d8ce7c387f0cf6833718f33b24294bacfc40a18ccc016ac25b82e5b84b12a81",
+      "sourceLog": "tbc-legacy-go-multisig.log",
+      "bytes": 5581,
+      "fee": 447,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "eca642c66c2612ad787d50c195b31f7123e01281ef872f3e561cf8b89a37ad60",
+          "vout": 0
+        },
+        {
+          "txid": "5dc8d0bb6244672ab3bc851fa3919e2ad394da47db56948717511beb786e2b9a",
+          "vout": 1
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "multisig-ft-spend",
+      "txid": "e44ed733743118b096c55404accfe60ce22a05b6b94ff3bb3a9d4c7303cbd6fd",
+      "sourceLog": "tbc-legacy-go-multisig.log",
+      "bytes": 6177,
+      "fee": 2000,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "60bbae44df23bf50b87f3e38a972f70fcfb100d2bc2ab80e6d22879b7aafb316",
+          "vout": 0
+        },
+        {
+          "txid": "6d8ce7c387f0cf6833718f33b24294bacfc40a18ccc016ac25b82e5b84b12a81",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "multisig-ft-forward",
+      "txid": "ba726c49eb427a54583f02965bfd758e9bef1868d6f369c5ba25d692862100cf",
+      "sourceLog": "tbc-legacy-go-multisig.log",
+      "bytes": 6377,
+      "fee": 2000,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "e44ed733743118b096c55404accfe60ce22a05b6b94ff3bb3a9d4c7303cbd6fd",
+          "vout": 0
+        },
+        {
+          "txid": "e44ed733743118b096c55404accfe60ce22a05b6b94ff3bb3a9d4c7303cbd6fd",
+          "vout": 3
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "nft-collection-create",
+      "txid": "301271e46cea968dcc2a1341997ce3f2a726914b43f56836c7d1f6295860a8d9",
+      "sourceLog": "tbc-legacy-go-nft.log",
+      "bytes": 507,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "418510aa38178fd2ecaf0a975e5d129d4dc34ada74c169f2291723de66f581a4",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "nft-single-mint",
+      "txid": "83d4bcbb2f9672905f6f5a10d98dfa291ec0ae5d7b25146eab65bc7a6e2bc1b5",
+      "sourceLog": "tbc-legacy-go-nft.log",
+      "bytes": 736,
+      "fee": 80,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "301271e46cea968dcc2a1341997ce3f2a726914b43f56836c7d1f6295860a8d9",
+          "vout": 1
+        },
+        {
+          "txid": "301271e46cea968dcc2a1341997ce3f2a726914b43f56836c7d1f6295860a8d9",
+          "vout": 5
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "nft-batch-mint-1",
+      "txid": "3d52a4bcbf7195bc997ef4606be0fc174110307c734e95ecbb4d6168230bd431",
+      "sourceLog": "tbc-legacy-go-nft.log",
+      "bytes": 690,
+      "fee": 80,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "301271e46cea968dcc2a1341997ce3f2a726914b43f56836c7d1f6295860a8d9",
+          "vout": 2
+        },
+        {
+          "txid": "83d4bcbb2f9672905f6f5a10d98dfa291ec0ae5d7b25146eab65bc7a6e2bc1b5",
+          "vout": 3
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "nft-batch-mint-2",
+      "txid": "4ff7572c2b0cf34eea7328b8b605caca8138ba48a62eb0b4aef21a371ba3b8ec",
+      "sourceLog": "tbc-legacy-go-nft.log",
+      "bytes": 690,
+      "fee": 80,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "301271e46cea968dcc2a1341997ce3f2a726914b43f56836c7d1f6295860a8d9",
+          "vout": 3
+        },
+        {
+          "txid": "3d52a4bcbf7195bc997ef4606be0fc174110307c734e95ecbb4d6168230bd431",
+          "vout": 3
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "nft-temp-funding",
+      "txid": "1f205ce7b3d8e4b7b09a41d37a2f4f8a8e380e88dac5667766a51959b0019ccc",
+      "sourceLog": "tbc-legacy-go-nft.log",
+      "bytes": 226,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "4ff7572c2b0cf34eea7328b8b605caca8138ba48a62eb0b4aef21a371ba3b8ec",
+          "vout": 3
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "nft-transfer",
+      "txid": "041f02656f06b16f96d966041f3e9e4244bb86dd278f9efd82f2039af573794c",
+      "sourceLog": "tbc-legacy-go-nft.log",
+      "bytes": 1683,
+      "fee": 135,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "83d4bcbb2f9672905f6f5a10d98dfa291ec0ae5d7b25146eab65bc7a6e2bc1b5",
+          "vout": 0
+        },
+        {
+          "txid": "83d4bcbb2f9672905f6f5a10d98dfa291ec0ae5d7b25146eab65bc7a6e2bc1b5",
+          "vout": 1
+        },
+        {
+          "txid": "1f205ce7b3d8e4b7b09a41d37a2f4f8a8e380e88dac5667766a51959b0019ccc",
+          "vout": 1
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "nft-transfer-with-tbc",
+      "txid": "ea4289ef3a81513f8a1414324fead37d41eddc2dfbfbe016eff9c89128b50fca",
+      "sourceLog": "tbc-legacy-go-nft.log",
+      "bytes": 1715,
+      "fee": 138,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "041f02656f06b16f96d966041f3e9e4244bb86dd278f9efd82f2039af573794c",
+          "vout": 0
+        },
+        {
+          "txid": "041f02656f06b16f96d966041f3e9e4244bb86dd278f9efd82f2039af573794c",
+          "vout": 1
+        },
+        {
+          "txid": "1f205ce7b3d8e4b7b09a41d37a2f4f8a8e380e88dac5667766a51959b0019ccc",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "pool-token-source",
+      "txid": "f5b1894f41e63afe59435266a3d18557e15588aa758083f821e3dfc81ae487b4",
+      "sourceLog": "tbc-legacy-go-pool-create.log",
+      "bytes": 328,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "b0a80c6a677db98609e5ba209bb994268db6815f4fb7b67319ca2eedb113a440",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "pool-token-mint",
+      "txid": "bac3a1af182cdbed1de2b99c4d8105ff0a190af7f1f3b041f43a9e8e450ee49b",
+      "sourceLog": "tbc-legacy-go-pool-create.log",
+      "bytes": 2369,
+      "fee": 190,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "f5b1894f41e63afe59435266a3d18557e15588aa758083f821e3dfc81ae487b4",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "pool-source",
+      "txid": "57f98b6295580cce2faab0af34a2ba15ed30234830f5ea52727e1ab15086327c",
+      "sourceLog": "tbc-legacy-go-pool-create.log",
+      "bytes": 244,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "f5b1894f41e63afe59435266a3d18557e15588aa758083f821e3dfc81ae487b4",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "pool-mint",
+      "txid": "40f417caa8371a2fa9b7911dec46595083bf087f87d0156a7cf1004161d175b9",
+      "sourceLog": "tbc-legacy-go-pool-create.log",
+      "bytes": 4104,
+      "fee": 329,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "57f98b6295580cce2faab0af34a2ba15ed30234830f5ea52727e1ab15086327c",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "pool-increase-lp",
+      "txid": "1f085fd96250b44546418697bdaa8461d0f339a3d82ac4c4c11ad77617d34b42",
+      "sourceLog": "tbc-legacy-go-pool-trade.log",
+      "bytes": 15135,
+      "fee": 1211,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "b4f9de5b9b144b1f4c6ae19bde3c417ee6527aa8c0f8bf68339ea9d45264737d",
+          "vout": 0
+        },
+        {
+          "txid": "b4f9de5b9b144b1f4c6ae19bde3c417ee6527aa8c0f8bf68339ea9d45264737d",
+          "vout": 6
+        },
+        {
+          "txid": "4e08786fec2a06e43f32f62460e710611bce11879be913232f3bbf860f219000",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "pool-increase-lp-2",
+      "txid": "9e5b24af253e118a5a59a3941428f48d10096dd03dac404ee22cc59baf5f8f10",
+      "sourceLog": "tbc-legacy-go-pool-trade.log",
+      "bytes": 15212,
+      "fee": 1218,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "1f085fd96250b44546418697bdaa8461d0f339a3d82ac4c4c11ad77617d34b42",
+          "vout": 0
+        },
+        {
+          "txid": "1f085fd96250b44546418697bdaa8461d0f339a3d82ac4c4c11ad77617d34b42",
+          "vout": 6
+        },
+        {
+          "txid": "60bbae44df23bf50b87f3e38a972f70fcfb100d2bc2ab80e6d22879b7aafb316",
+          "vout": 1
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "pool-swap-tbc-to-ft",
+      "txid": "6c0471349b5808b24594d92d4de8999d43084561e3eb10fbc0532f73a6f37271",
+      "sourceLog": "tbc-legacy-go-pool-trade.log",
+      "bytes": 16097,
+      "fee": 1288,
+      "verifiedInputs": 4,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "9e5b24af253e118a5a59a3941428f48d10096dd03dac404ee22cc59baf5f8f10",
+          "vout": 0
+        },
+        {
+          "txid": "2103933bf9b819a5c77a07348cab714876f388d2bd327f3de4bc3e6523e71b2d",
+          "vout": 0
+        },
+        {
+          "txid": "b4f9de5b9b144b1f4c6ae19bde3c417ee6527aa8c0f8bf68339ea9d45264737d",
+          "vout": 2
+        },
+        {
+          "txid": "9e5b24af253e118a5a59a3941428f48d10096dd03dac404ee22cc59baf5f8f10",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "pool-swap-ft-to-tbc",
+      "txid": "e27748b2c232476b1589c258de93e6ff5518c27f07b0355a4dcdd4ead23a2a99",
+      "sourceLog": "tbc-legacy-go-pool-trade.log",
+      "bytes": 12785,
+      "fee": 1023,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "6c0471349b5808b24594d92d4de8999d43084561e3eb10fbc0532f73a6f37271",
+          "vout": 0
+        },
+        {
+          "txid": "9e5b24af253e118a5a59a3941428f48d10096dd03dac404ee22cc59baf5f8f10",
+          "vout": 6
+        },
+        {
+          "txid": "e2929224c409c8289009ef0d0092e42fbfcaa205ff4c3ecd14cef5ae53159d34",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "pool-consume-lp",
+      "txid": "74844a432ad10e19b0886d8bc0a3529cf849771fd02b0a6430013ce27e87d1af",
+      "sourceLog": "tbc-legacy-go-pool-trade.log",
+      "bytes": 24462,
+      "fee": 1957,
+      "verifiedInputs": 5,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "e27748b2c232476b1589c258de93e6ff5518c27f07b0355a4dcdd4ead23a2a99",
+          "vout": 0
+        },
+        {
+          "txid": "b4f9de5b9b144b1f4c6ae19bde3c417ee6527aa8c0f8bf68339ea9d45264737d",
+          "vout": 4
+        },
+        {
+          "txid": "6c0471349b5808b24594d92d4de8999d43084561e3eb10fbc0532f73a6f37271",
+          "vout": 4
+        },
+        {
+          "txid": "1f085fd96250b44546418697bdaa8461d0f339a3d82ac4c4c11ad77617d34b42",
+          "vout": 2
+        },
+        {
+          "txid": "6f560a2de3afd562be519b01fa194e995afc43b3d2bcba6ce325ffe65e90c437",
+          "vout": 1
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "pool-merge-ftlp",
+      "txid": "05be25b3f93b815770a1fce28a40bfa86fa3a9da8027151321dcf96c0510562e",
+      "sourceLog": "tbc-legacy-go-pool-trade.log",
+      "bytes": 6987,
+      "fee": 559,
+      "verifiedInputs": 4,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "1f085fd96250b44546418697bdaa8461d0f339a3d82ac4c4c11ad77617d34b42",
+          "vout": 4
+        },
+        {
+          "txid": "9e5b24af253e118a5a59a3941428f48d10096dd03dac404ee22cc59baf5f8f10",
+          "vout": 4
+        },
+        {
+          "txid": "74844a432ad10e19b0886d8bc0a3529cf849771fd02b0a6430013ce27e87d1af",
+          "vout": 7
+        },
+        {
+          "txid": "b1d74100b7824e424f16039fc90b49279efe622b3f4fefdf9ed59c0bbe53573b",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "pool-burn-ftlp",
+      "txid": "4b5e89faeab0e162e88d941ee6ae42d26a7b7351da9a34151478779e79833477",
+      "sourceLog": "tbc-legacy-go-pool-trade.log",
+      "bytes": 4714,
+      "fee": 378,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "05be25b3f93b815770a1fce28a40bfa86fa3a9da8027151321dcf96c0510562e",
+          "vout": 0
+        },
+        {
+          "txid": "cb6d011b69aea7fb76ad8e1d098a96dda030015aa3f091ea39f6efec21f4f145",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "pool-merge-held-ft",
+      "txid": "15698ef6b26f6d9aa49f2b59864da7cb6539f2fb7f32bed4f0a2f8625a251063",
+      "sourceLog": "tbc-legacy-go-pool-trade.log",
+      "bytes": 16284,
+      "fee": 1303,
+      "verifiedInputs": 4,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "74844a432ad10e19b0886d8bc0a3529cf849771fd02b0a6430013ce27e87d1af",
+          "vout": 0
+        },
+        {
+          "txid": "74844a432ad10e19b0886d8bc0a3529cf849771fd02b0a6430013ce27e87d1af",
+          "vout": 9
+        },
+        {
+          "txid": "e27748b2c232476b1589c258de93e6ff5518c27f07b0355a4dcdd4ead23a2a99",
+          "vout": 3
+        },
+        {
+          "txid": "f7bd6a3476f5623fda4487df6a7fba63e63aa4400ecdc30155aaa4f30ed0844a",
+          "vout": 10
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "stablecoin-coin-nft-create",
+      "txid": "079206cf17e461624c5a53f083ae458c011f4b8d305e3ece1a2971fea735b542",
+      "sourceLog": "tbc-legacy-go-stablecoin-fixed.log",
+      "bytes": 740,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "6d8ce7c387f0cf6833718f33b24294bacfc40a18ccc016ac25b82e5b84b12a81",
+          "vout": 4
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "stablecoin-initial-mint",
+      "txid": "65a6f16ec79505d4e2c33afc48ec30d571db4742d5bd5d763244f39ddef0d353",
+      "sourceLog": "tbc-legacy-go-stablecoin-fixed.log",
+      "bytes": 4125,
+      "fee": 331,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "079206cf17e461624c5a53f083ae458c011f4b8d305e3ece1a2971fea735b542",
+          "vout": 0
+        },
+        {
+          "txid": "079206cf17e461624c5a53f083ae458c011f4b8d305e3ece1a2971fea735b542",
+          "vout": 1
+        },
+        {
+          "txid": "079206cf17e461624c5a53f083ae458c011f4b8d305e3ece1a2971fea735b542",
+          "vout": 3
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "stablecoin-admin-mint",
+      "txid": "9a0f1577faf6e9d39ce08253a0638c606ca3c7ec56bf0c9bf00681ffb00d9b2c",
+      "sourceLog": "tbc-legacy-go-stablecoin-fixed.log",
+      "bytes": 4289,
+      "fee": 344,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "65a6f16ec79505d4e2c33afc48ec30d571db4742d5bd5d763244f39ddef0d353",
+          "vout": 0
+        },
+        {
+          "txid": "65a6f16ec79505d4e2c33afc48ec30d571db4742d5bd5d763244f39ddef0d353",
+          "vout": 1
+        },
+        {
+          "txid": "65a6f16ec79505d4e2c33afc48ec30d571db4742d5bd5d763244f39ddef0d353",
+          "vout": 6
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "stablecoin-owner-transfer",
+      "txid": "1a8fb0e2d864db4bfb44785af8b322c45c9c268a51f749e3d40a62b72ccb955a",
+      "sourceLog": "tbc-legacy-go-stablecoin-fixed.log",
+      "bytes": 5920,
+      "fee": 474,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "65a6f16ec79505d4e2c33afc48ec30d571db4742d5bd5d763244f39ddef0d353",
+          "vout": 3
+        },
+        {
+          "txid": "9a0f1577faf6e9d39ce08253a0638c606ca3c7ec56bf0c9bf00681ffb00d9b2c",
+          "vout": 6
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "stablecoin-batch-transfer",
+      "txid": "2b3cad7e08f80f01f25736123eb65a4bea2b18c7deced48471c376bc6f8f6e31",
+      "sourceLog": "tbc-legacy-go-stablecoin-fixed.log",
+      "bytes": 8310,
+      "fee": 665,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "1a8fb0e2d864db4bfb44785af8b322c45c9c268a51f749e3d40a62b72ccb955a",
+          "vout": 2
+        },
+        {
+          "txid": "1a8fb0e2d864db4bfb44785af8b322c45c9c268a51f749e3d40a62b72ccb955a",
+          "vout": 4
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "stablecoin-merge",
+      "txid": "7d9c0f1f91c5763c9b2578754c0556d46dcf802d47856789e64c00803e000797",
+      "sourceLog": "tbc-legacy-go-stablecoin-fixed.log",
+      "bytes": 6080,
+      "fee": 487,
+      "verifiedInputs": 4,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "1a8fb0e2d864db4bfb44785af8b322c45c9c268a51f749e3d40a62b72ccb955a",
+          "vout": 0
+        },
+        {
+          "txid": "2b3cad7e08f80f01f25736123eb65a4bea2b18c7deced48471c376bc6f8f6e31",
+          "vout": 4
+        },
+        {
+          "txid": "9a0f1577faf6e9d39ce08253a0638c606ca3c7ec56bf0c9bf00681ffb00d9b2c",
+          "vout": 3
+        },
+        {
+          "txid": "2b3cad7e08f80f01f25736123eb65a4bea2b18c7deced48471c376bc6f8f6e31",
+          "vout": 6
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "stablecoin-freeze",
+      "txid": "2f57c4960bb9264ec01f802057cedce9d05f70c7614b290c418dac7403b41acd",
+      "sourceLog": "tbc-legacy-go-stablecoin-fixed.log",
+      "bytes": 4295,
+      "fee": 344,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "7d9c0f1f91c5763c9b2578754c0556d46dcf802d47856789e64c00803e000797",
+          "vout": 0
+        },
+        {
+          "txid": "7d9c0f1f91c5763c9b2578754c0556d46dcf802d47856789e64c00803e000797",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "stablecoin-unfreeze",
+      "txid": "ca9999964a40ede75fe945507833af97d9437c9d608d4c5881e276fc6283a07b",
+      "sourceLog": "tbc-legacy-go-stablecoin-fixed.log",
+      "bytes": 3331,
+      "fee": 267,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "2f57c4960bb9264ec01f802057cedce9d05f70c7614b290c418dac7403b41acd",
+          "vout": 0
+        },
+        {
+          "txid": "2f57c4960bb9264ec01f802057cedce9d05f70c7614b290c418dac7403b41acd",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "stablecoin-coin-nft-create",
+      "txid": "3a23dab30a9415f5be5c948d011adecf1da2646d1bc891f4ce255c7df045630c",
+      "sourceLog": "tbc-legacy-go-stablecoin.log",
+      "bytes": 740,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "418510aa38178fd2ecaf0a975e5d129d4dc34ada74c169f2291723de66f581a4",
+          "vout": 6
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "stablecoin-initial-mint",
+      "txid": "2f80fee9e4cf8112f9526deb835936eb76aaadbeab449304a1f157fd160b4a3c",
+      "sourceLog": "tbc-legacy-go-stablecoin.log",
+      "bytes": 4286,
+      "fee": 343,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "3a23dab30a9415f5be5c948d011adecf1da2646d1bc891f4ce255c7df045630c",
+          "vout": 0
+        },
+        {
+          "txid": "3a23dab30a9415f5be5c948d011adecf1da2646d1bc891f4ce255c7df045630c",
+          "vout": 1
+        },
+        {
+          "txid": "3a23dab30a9415f5be5c948d011adecf1da2646d1bc891f4ce255c7df045630c",
+          "vout": 3
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "stablecoin-admin-mint",
+      "txid": "697eec37341a8be37a84309312cb4ad4cf80f11a7ec88169a5498d14547f8632",
+      "sourceLog": "tbc-legacy-go-stablecoin.log",
+      "bytes": 4290,
+      "fee": 344,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "2f80fee9e4cf8112f9526deb835936eb76aaadbeab449304a1f157fd160b4a3c",
+          "vout": 0
+        },
+        {
+          "txid": "2f80fee9e4cf8112f9526deb835936eb76aaadbeab449304a1f157fd160b4a3c",
+          "vout": 1
+        },
+        {
+          "txid": "2f80fee9e4cf8112f9526deb835936eb76aaadbeab449304a1f157fd160b4a3c",
+          "vout": 6
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "stablecoin-owner-transfer",
+      "txid": "e5a444fdc0c1c6ff7c61e31a647aa15d089f684d3eabe6ba6d2951e33366868d",
+      "sourceLog": "tbc-legacy-go-stablecoin.log",
+      "bytes": 5920,
+      "fee": 474,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "2f80fee9e4cf8112f9526deb835936eb76aaadbeab449304a1f157fd160b4a3c",
+          "vout": 3
+        },
+        {
+          "txid": "697eec37341a8be37a84309312cb4ad4cf80f11a7ec88169a5498d14547f8632",
+          "vout": 6
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "stablecoin-batch-transfer",
+      "txid": "3fe116fb37a17707f683980f406ba0c698a404f58b0d52c83aca7cbdd1e828df",
+      "sourceLog": "tbc-legacy-go-stablecoin.log",
+      "bytes": 8310,
+      "fee": 665,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "e5a444fdc0c1c6ff7c61e31a647aa15d089f684d3eabe6ba6d2951e33366868d",
+          "vout": 2
+        },
+        {
+          "txid": "e5a444fdc0c1c6ff7c61e31a647aa15d089f684d3eabe6ba6d2951e33366868d",
+          "vout": 4
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "stablecoin-merge",
+      "txid": "8b9a5eb306c74ad2bd27860a374899e1199c98f0df48303cd0b0d44425df510f",
+      "sourceLog": "tbc-legacy-go-stablecoin.log",
+      "bytes": 6079,
+      "fee": 487,
+      "verifiedInputs": 4,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "e5a444fdc0c1c6ff7c61e31a647aa15d089f684d3eabe6ba6d2951e33366868d",
+          "vout": 0
+        },
+        {
+          "txid": "3fe116fb37a17707f683980f406ba0c698a404f58b0d52c83aca7cbdd1e828df",
+          "vout": 4
+        },
+        {
+          "txid": "697eec37341a8be37a84309312cb4ad4cf80f11a7ec88169a5498d14547f8632",
+          "vout": 3
+        },
+        {
+          "txid": "3fe116fb37a17707f683980f406ba0c698a404f58b0d52c83aca7cbdd1e828df",
+          "vout": 6
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "stablecoin-freeze",
+      "txid": "382243770bc21de518981d829e1073a9c3060b794f8fe9ef9b75832b019e730a",
+      "sourceLog": "tbc-legacy-go-stablecoin.log",
+      "bytes": 4296,
+      "fee": 344,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "8b9a5eb306c74ad2bd27860a374899e1199c98f0df48303cd0b0d44425df510f",
+          "vout": 0
+        },
+        {
+          "txid": "8b9a5eb306c74ad2bd27860a374899e1199c98f0df48303cd0b0d44425df510f",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "stablecoin-unfreeze",
+      "txid": "b0a80c6a677db98609e5ba209bb994268db6815f4fb7b67319ca2eedb113a440",
+      "sourceLog": "tbc-legacy-go-stablecoin.log",
+      "bytes": 3331,
+      "fee": 267,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "382243770bc21de518981d829e1073a9c3060b794f8fe9ef9b75832b019e730a",
+          "vout": 0
+        },
+        {
+          "txid": "382243770bc21de518981d829e1073a9c3060b794f8fe9ef9b75832b019e730a",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "mint.source",
+      "txid": "ba7f479294a7750bb93524d4ccdbfc8901df399cbf33623ec9a747b69d3380bf",
+      "sourceLog": "tbc-legacy-rust-live_ft_flow.log",
+      "bytes": 322,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "47531a0a4d2e324c8bb9568c36798084077fffdab7d03c55a3c738fb9db0e4dc",
+          "vout": 3
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "mint.mint",
+      "txid": "c1ebce7d1fadd80d45d2d22efdee1c1532874234752b86043171a697a8808478",
+      "sourceLog": "tbc-legacy-rust-live_ft_flow.log",
+      "bytes": 2362,
+      "fee": 190,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "ba7f479294a7750bb93524d4ccdbfc8901df399cbf33623ec9a747b69d3380bf",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "transfer",
+      "txid": "864f220510f1ee40b3c16b5b62a160775acef081168f5fe2c66538ca826195fd",
+      "sourceLog": "tbc-legacy-rust-live_ft_flow.log",
+      "bytes": 5555,
+      "fee": 445,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "c1ebce7d1fadd80d45d2d22efdee1c1532874234752b86043171a697a8808478",
+          "vout": 0
+        },
+        {
+          "txid": "ba7f479294a7750bb93524d4ccdbfc8901df399cbf33623ec9a747b69d3380bf",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "batch[0]",
+      "txid": "06e01096cc467e3d2cec111db19fba60ac6bfc30c8fdadf1104a09cf28d4fcbf",
+      "sourceLog": "tbc-legacy-rust-live_ft_flow.log",
+      "bytes": 15023,
+      "fee": 1202,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "864f220510f1ee40b3c16b5b62a160775acef081168f5fe2c66538ca826195fd",
+          "vout": 2
+        },
+        {
+          "txid": "864f220510f1ee40b3c16b5b62a160775acef081168f5fe2c66538ca826195fd",
+          "vout": 4
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "batch[1]",
+      "txid": "60e687219c360fb956cd6ae3e20ca4a36f92562b888fa81071fe46d15410ba45",
+      "sourceLog": "tbc-legacy-rust-live_ft_flow.log",
+      "bytes": 8432,
+      "fee": 675,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "06e01096cc467e3d2cec111db19fba60ac6bfc30c8fdadf1104a09cf28d4fcbf",
+          "vout": 10
+        },
+        {
+          "txid": "06e01096cc467e3d2cec111db19fba60ac6bfc30c8fdadf1104a09cf28d4fcbf",
+          "vout": 12
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "merge[0]",
+      "txid": "3dc1f5eb7b651efacd8bb22ffc38a31e6fa3922532584255369e2a232800629e",
+      "sourceLog": "tbc-legacy-rust-live_ft_flow.log",
+      "bytes": 9410,
+      "fee": 753,
+      "verifiedInputs": 6,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "06e01096cc467e3d2cec111db19fba60ac6bfc30c8fdadf1104a09cf28d4fcbf",
+          "vout": 0
+        },
+        {
+          "txid": "06e01096cc467e3d2cec111db19fba60ac6bfc30c8fdadf1104a09cf28d4fcbf",
+          "vout": 2
+        },
+        {
+          "txid": "06e01096cc467e3d2cec111db19fba60ac6bfc30c8fdadf1104a09cf28d4fcbf",
+          "vout": 4
+        },
+        {
+          "txid": "06e01096cc467e3d2cec111db19fba60ac6bfc30c8fdadf1104a09cf28d4fcbf",
+          "vout": 6
+        },
+        {
+          "txid": "06e01096cc467e3d2cec111db19fba60ac6bfc30c8fdadf1104a09cf28d4fcbf",
+          "vout": 8
+        },
+        {
+          "txid": "60e687219c360fb956cd6ae3e20ca4a36f92562b888fa81071fe46d15410ba45",
+          "vout": 6
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "merge[1]",
+      "txid": "aa0f8e8d9b77df630c3d2b37fb5b4d7f84da56ac8b20d9b9618392c34aade3c9",
+      "sourceLog": "tbc-legacy-rust-live_ft_flow.log",
+      "bytes": 5340,
+      "fee": 428,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "60e687219c360fb956cd6ae3e20ca4a36f92562b888fa81071fe46d15410ba45",
+          "vout": 0
+        },
+        {
+          "txid": "60e687219c360fb956cd6ae3e20ca4a36f92562b888fa81071fe46d15410ba45",
+          "vout": 2
+        },
+        {
+          "txid": "3dc1f5eb7b651efacd8bb22ffc38a31e6fa3922532584255369e2a232800629e",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "merge[2]",
+      "txid": "513d1aca35f4d8110f35614a51d143f4a5986028e8f8c001bb3b5dca6e4b9b96",
+      "sourceLog": "tbc-legacy-rust-live_ft_flow.log",
+      "bytes": 7947,
+      "fee": 636,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "3dc1f5eb7b651efacd8bb22ffc38a31e6fa3922532584255369e2a232800629e",
+          "vout": 0
+        },
+        {
+          "txid": "aa0f8e8d9b77df630c3d2b37fb5b4d7f84da56ac8b20d9b9618392c34aade3c9",
+          "vout": 0
+        },
+        {
+          "txid": "aa0f8e8d9b77df630c3d2b37fb5b4d7f84da56ac8b20d9b9618392c34aade3c9",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "multisig_ft_source",
+      "txid": "3de149122e17ffd4a5092c5f2ae6afc0b5a08d6aa0cd3fde8f026997d1325ad9",
+      "sourceLog": "tbc-legacy-rust-live_multisig_full_flow.log",
+      "bytes": 328,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "8345e9cde0cde337d34639fc4a92b648df1ca8456b9a1548b55149214ad9961d",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "multisig_ft_mint",
+      "txid": "79d18ad097ccc17e32d44d4f4bcd025ddfa518d385b82f3f2ded9793bf397f6e",
+      "sourceLog": "tbc-legacy-rust-live_multisig_full_flow.log",
+      "bytes": 2369,
+      "fee": 190,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "3de149122e17ffd4a5092c5f2ae6afc0b5a08d6aa0cd3fde8f026997d1325ad9",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "multisig_wallet_create",
+      "txid": "7406f180182b88d6a22d116276175c82bee56ac0392715c1b1645b110c0c1c96",
+      "sourceLog": "tbc-legacy-rust-live_multisig_full_flow.log",
+      "bytes": 663,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "3de149122e17ffd4a5092c5f2ae6afc0b5a08d6aa0cd3fde8f026997d1325ad9",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "p2pkh_to_multisig_tbc",
+      "txid": "b2ab5a8f1753f693295d2f6f41c1a0e093304b85575aaf0af3e427cebc1f19fb",
+      "sourceLog": "tbc-legacy-rust-live_multisig_full_flow.log",
+      "bytes": 242,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "7406f180182b88d6a22d116276175c82bee56ac0392715c1b1645b110c0c1c96",
+          "vout": 5
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "multisig_to_p2pkh_tbc",
+      "txid": "6f560a2de3afd562be519b01fa194e995afc43b3d2bcba6ce325ffe65e90c437",
+      "sourceLog": "tbc-legacy-rust-live_multisig_full_flow.log",
+      "bytes": 381,
+      "fee": 1000,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "b2ab5a8f1753f693295d2f6f41c1a0e093304b85575aaf0af3e427cebc1f19fb",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "multisig_to_multisig_tbc",
+      "txid": "3c95fce78f7c0b1c26c4331ad975c9614aa372f46fcf8179038ed6d3cb70891e",
+      "sourceLog": "tbc-legacy-rust-live_multisig_full_flow.log",
+      "bytes": 399,
+      "fee": 1000,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "6f560a2de3afd562be519b01fa194e995afc43b3d2bcba6ce325ffe65e90c437",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "p2pkh_to_multisig_ft",
+      "txid": "58986322fbd6adf50967386f0ca279c1f2212caf698e091b94bb3b67386e0b77",
+      "sourceLog": "tbc-legacy-rust-live_multisig_full_flow.log",
+      "bytes": 5589,
+      "fee": 448,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "79d18ad097ccc17e32d44d4f4bcd025ddfa518d385b82f3f2ded9793bf397f6e",
+          "vout": 0
+        },
+        {
+          "txid": "79d18ad097ccc17e32d44d4f4bcd025ddfa518d385b82f3f2ded9793bf397f6e",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "multisig_to_p2pkh_ft",
+      "txid": "d21614349f8fb0b2307d29564b064cd61db09f91fc62c6c67ffc8c2ed42db088",
+      "sourceLog": "tbc-legacy-rust-live_multisig_full_flow.log",
+      "bytes": 6340,
+      "fee": 2000,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "7406f180182b88d6a22d116276175c82bee56ac0392715c1b1645b110c0c1c96",
+          "vout": 0
+        },
+        {
+          "txid": "58986322fbd6adf50967386f0ca279c1f2212caf698e091b94bb3b67386e0b77",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "multisig_to_multisig_ft",
+      "txid": "3080f2b04663c62fe86d200c6c5afd7ba08447b094fc09a4d55c9e820659926e",
+      "sourceLog": "tbc-legacy-rust-live_multisig_full_flow.log",
+      "bytes": 6380,
+      "fee": 2000,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "d21614349f8fb0b2307d29564b064cd61db09f91fc62c6c67ffc8c2ed42db088",
+          "vout": 0
+        },
+        {
+          "txid": "d21614349f8fb0b2307d29564b064cd61db09f91fc62c6c67ffc8c2ed42db088",
+          "vout": 3
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "collection",
+      "txid": "2a1cb9011ef10ed3dbb3095e818be1b0d543a9647d806d026c685816b63d9ee8",
+      "sourceLog": "tbc-legacy-rust-live_nft_batch_flow.log",
+      "bytes": 513,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "513d1aca35f4d8110f35614a51d143f4a5986028e8f8c001bb3b5dca6e4b9b96",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "batch_nft[0]",
+      "txid": "cc0f2cdbf9907d930ea8b59c140839d4d6d9325220b18739222d1a78cbbe803c",
+      "sourceLog": "tbc-legacy-rust-live_nft_batch_flow.log",
+      "bytes": 771,
+      "fee": 80,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "2a1cb9011ef10ed3dbb3095e818be1b0d543a9647d806d026c685816b63d9ee8",
+          "vout": 1
+        },
+        {
+          "txid": "2a1cb9011ef10ed3dbb3095e818be1b0d543a9647d806d026c685816b63d9ee8",
+          "vout": 4
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "batch_nft[1]",
+      "txid": "60a32da0002aa06ccb4814f2bc892bd924b18120d289a1331c94f954ef3c9e9a",
+      "sourceLog": "tbc-legacy-rust-live_nft_batch_flow.log",
+      "bytes": 770,
+      "fee": 80,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "2a1cb9011ef10ed3dbb3095e818be1b0d543a9647d806d026c685816b63d9ee8",
+          "vout": 2
+        },
+        {
+          "txid": "cc0f2cdbf9907d930ea8b59c140839d4d6d9325220b18739222d1a78cbbe803c",
+          "vout": 3
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_ft_source",
+      "txid": "9749cf356866473d96e38bbd0e017801565a0f92cfda2cf9da0fb468a80ec4b9",
+      "sourceLog": "tbc-legacy-rust-live_pool_nft_v2_full_flow.log",
+      "bytes": 329,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "b2ab5a8f1753f693295d2f6f41c1a0e093304b85575aaf0af3e427cebc1f19fb",
+          "vout": 1
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_ft_mint",
+      "txid": "b260cc6f59b0f787876d537d7c72491e5b9837e87833252f0861a6b26144475e",
+      "sourceLog": "tbc-legacy-rust-live_pool_nft_v2_full_flow.log",
+      "bytes": 2369,
+      "fee": 190,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "9749cf356866473d96e38bbd0e017801565a0f92cfda2cf9da0fb468a80ec4b9",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_source",
+      "txid": "c26b790209344978f13b198164d194009729b911eb28bee40f507929ded3b3e7",
+      "sourceLog": "tbc-legacy-rust-live_pool_nft_v2_full_flow.log",
+      "bytes": 243,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "9749cf356866473d96e38bbd0e017801565a0f92cfda2cf9da0fb468a80ec4b9",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_mint",
+      "txid": "d07a27dfd32912f02fafdada9a79c2d4bcf637ea87ac41123c652d20bc2c36c6",
+      "sourceLog": "tbc-legacy-rust-live_pool_nft_v2_full_flow.log",
+      "bytes": 4106,
+      "fee": 329,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "c26b790209344978f13b198164d194009729b911eb28bee40f507929ded3b3e7",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_init",
+      "txid": "fdc530baf652e66f841ce066c12add045d37f37bcc393ba9eda2bd2ebbca76f2",
+      "sourceLog": "tbc-legacy-rust-live_pool_nft_v2_full_flow.log",
+      "bytes": 13785,
+      "fee": 1103,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "d07a27dfd32912f02fafdada9a79c2d4bcf637ea87ac41123c652d20bc2c36c6",
+          "vout": 0
+        },
+        {
+          "txid": "b260cc6f59b0f787876d537d7c72491e5b9837e87833252f0861a6b26144475e",
+          "vout": 0
+        },
+        {
+          "txid": "c26b790209344978f13b198164d194009729b911eb28bee40f507929ded3b3e7",
+          "vout": 1
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_increase_lp_1",
+      "txid": "4db82eee25c101655a8582629f595097f8f6c98c912f2f3719e501d9a5a91d06",
+      "sourceLog": "tbc-legacy-rust-live_pool_nft_v2_full_flow.log",
+      "bytes": 15018,
+      "fee": 1202,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "fdc530baf652e66f841ce066c12add045d37f37bcc393ba9eda2bd2ebbca76f2",
+          "vout": 0
+        },
+        {
+          "txid": "fdc530baf652e66f841ce066c12add045d37f37bcc393ba9eda2bd2ebbca76f2",
+          "vout": 6
+        },
+        {
+          "txid": "fdc530baf652e66f841ce066c12add045d37f37bcc393ba9eda2bd2ebbca76f2",
+          "vout": 8
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_increase_lp_2",
+      "txid": "f3896ca3d49aadabb79b785d8c72a54208d2ec387a1943a7ce362255f2673962",
+      "sourceLog": "tbc-legacy-rust-live_pool_nft_v2_full_flow.log",
+      "bytes": 15499,
+      "fee": 1240,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "4db82eee25c101655a8582629f595097f8f6c98c912f2f3719e501d9a5a91d06",
+          "vout": 0
+        },
+        {
+          "txid": "4db82eee25c101655a8582629f595097f8f6c98c912f2f3719e501d9a5a91d06",
+          "vout": 6
+        },
+        {
+          "txid": "4db82eee25c101655a8582629f595097f8f6c98c912f2f3719e501d9a5a91d06",
+          "vout": 8
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_swap_tbc_to_ft",
+      "txid": "d31a3582654dae6900a4dedb3c79fef2e840a5119805e7cec08b1931a1fd9712",
+      "sourceLog": "tbc-legacy-rust-live_pool_nft_v2_full_flow.log",
+      "bytes": 13397,
+      "fee": 1072,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "f3896ca3d49aadabb79b785d8c72a54208d2ec387a1943a7ce362255f2673962",
+          "vout": 0
+        },
+        {
+          "txid": "f3896ca3d49aadabb79b785d8c72a54208d2ec387a1943a7ce362255f2673962",
+          "vout": 8
+        },
+        {
+          "txid": "fdc530baf652e66f841ce066c12add045d37f37bcc393ba9eda2bd2ebbca76f2",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_swap_ft_to_tbc_online",
+      "txid": "b64734a53bcfee36d54965344d42871d158d690e5ea6890f099e4d880793e9ea",
+      "sourceLog": "tbc-legacy-rust-live_pool_nft_v2_full_flow.log",
+      "bytes": 12831,
+      "fee": 1027,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "d31a3582654dae6900a4dedb3c79fef2e840a5119805e7cec08b1931a1fd9712",
+          "vout": 0
+        },
+        {
+          "txid": "d31a3582654dae6900a4dedb3c79fef2e840a5119805e7cec08b1931a1fd9712",
+          "vout": 2
+        },
+        {
+          "txid": "d31a3582654dae6900a4dedb3c79fef2e840a5119805e7cec08b1931a1fd9712",
+          "vout": 6
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_swap_ft_to_tbc_local",
+      "txid": "c42f4a7a3715c55d0aa70e3e47f859a18ea86abc6fadd605eeb58ffd33233e00",
+      "sourceLog": "tbc-legacy-rust-live_pool_nft_v2_full_flow.log",
+      "bytes": 12829,
+      "fee": 1027,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "b64734a53bcfee36d54965344d42871d158d690e5ea6890f099e4d880793e9ea",
+          "vout": 0
+        },
+        {
+          "txid": "b64734a53bcfee36d54965344d42871d158d690e5ea6890f099e4d880793e9ea",
+          "vout": 5
+        },
+        {
+          "txid": "b64734a53bcfee36d54965344d42871d158d690e5ea6890f099e4d880793e9ea",
+          "vout": 7
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_consume_lp",
+      "txid": "401f785451484f683b501d5e8a569691e452a8e6c6ed4def3be4696677e6f077",
+      "sourceLog": "tbc-legacy-rust-live_pool_nft_v2_full_flow.log",
+      "bytes": 21045,
+      "fee": 1684,
+      "verifiedInputs": 4,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "c42f4a7a3715c55d0aa70e3e47f859a18ea86abc6fadd605eeb58ffd33233e00",
+          "vout": 0
+        },
+        {
+          "txid": "fdc530baf652e66f841ce066c12add045d37f37bcc393ba9eda2bd2ebbca76f2",
+          "vout": 4
+        },
+        {
+          "txid": "f3896ca3d49aadabb79b785d8c72a54208d2ec387a1943a7ce362255f2673962",
+          "vout": 2
+        },
+        {
+          "txid": "c42f4a7a3715c55d0aa70e3e47f859a18ea86abc6fadd605eeb58ffd33233e00",
+          "vout": 7
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_merge_ftlp",
+      "txid": "0a04793a6e7da530b6296bd69e7c978a5f56b2c4f67018900d4dc15b2ce52fc7",
+      "sourceLog": "tbc-legacy-rust-live_pool_nft_v2_full_flow.log",
+      "bytes": 5325,
+      "fee": 427,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "4db82eee25c101655a8582629f595097f8f6c98c912f2f3719e501d9a5a91d06",
+          "vout": 4
+        },
+        {
+          "txid": "f3896ca3d49aadabb79b785d8c72a54208d2ec387a1943a7ce362255f2673962",
+          "vout": 4
+        },
+        {
+          "txid": "401f785451484f683b501d5e8a569691e452a8e6c6ed4def3be4696677e6f077",
+          "vout": 11
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_burn_ftlp",
+      "txid": "b90d75594a569181b007bfd30bdbd5b26ee045707f952da8448cd080bff0d1cf",
+      "sourceLog": "tbc-legacy-rust-live_pool_nft_v2_full_flow.log",
+      "bytes": 4070,
+      "fee": 326,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "0a04793a6e7da530b6296bd69e7c978a5f56b2c4f67018900d4dc15b2ce52fc7",
+          "vout": 0
+        },
+        {
+          "txid": "0a04793a6e7da530b6296bd69e7c978a5f56b2c4f67018900d4dc15b2ce52fc7",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_merge_held_ft",
+      "txid": "a5558f3997ad0195096c0fb629a5c93e3b3e10ffd98ce73ef9ac3b075d7ab1f4",
+      "sourceLog": "tbc-legacy-rust-live_pool_nft_v2_full_flow.log",
+      "bytes": 13842,
+      "fee": 1108,
+      "verifiedInputs": 4,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "401f785451484f683b501d5e8a569691e452a8e6c6ed4def3be4696677e6f077",
+          "vout": 0
+        },
+        {
+          "txid": "4db82eee25c101655a8582629f595097f8f6c98c912f2f3719e501d9a5a91d06",
+          "vout": 2
+        },
+        {
+          "txid": "d31a3582654dae6900a4dedb3c79fef2e840a5119805e7cec08b1931a1fd9712",
+          "vout": 4
+        },
+        {
+          "txid": "b90d75594a569181b007bfd30bdbd5b26ee045707f952da8448cd080bff0d1cf",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "locked_pool_source",
+      "txid": "4efb21f5dd7ea81aebb2292a3327d18b12c39c14e2544af2e84f70ce7f35f07f",
+      "sourceLog": "tbc-legacy-rust-live_pool_nft_v2_full_flow.log",
+      "bytes": 244,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "a5558f3997ad0195096c0fb629a5c93e3b3e10ffd98ce73ef9ac3b075d7ab1f4",
+          "vout": 4
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "locked_pool_mint",
+      "txid": "02f0fdaa8fed8e062c5fa98529fce7e2cf63cd3d6f820f6ef86e900b67cd0db7",
+      "sourceLog": "tbc-legacy-rust-live_pool_nft_v2_full_flow.log",
+      "bytes": 4285,
+      "fee": 343,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "4efb21f5dd7ea81aebb2292a3327d18b12c39c14e2544af2e84f70ce7f35f07f",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "coin_nft",
+      "txid": "a49458cb75eda859015ebc63c2003a82cc653c17d5d958651f4eaf5e90155f24",
+      "sourceLog": "tbc-legacy-rust-live_stable_coin_extended_flow.log",
+      "bytes": 737,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "60a32da0002aa06ccb4814f2bc892bd924b18120d289a1331c94f954ef3c9e9a",
+          "vout": 3
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "coin_initial_mint",
+      "txid": "8786ee4e422a0d9f639bd182c59c0cfb8726037a3056832c58942f6d4881b3c3",
+      "sourceLog": "tbc-legacy-rust-live_stable_coin_extended_flow.log",
+      "bytes": 4077,
+      "fee": 327,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "a49458cb75eda859015ebc63c2003a82cc653c17d5d958651f4eaf5e90155f24",
+          "vout": 0
+        },
+        {
+          "txid": "a49458cb75eda859015ebc63c2003a82cc653c17d5d958651f4eaf5e90155f24",
+          "vout": 1
+        },
+        {
+          "txid": "a49458cb75eda859015ebc63c2003a82cc653c17d5d958651f4eaf5e90155f24",
+          "vout": 3
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "coin_subsequent_mint",
+      "txid": "746e1f0bb96ae279ad805811e8646117d95d711e598b99a90f3dab87f4b043b3",
+      "sourceLog": "tbc-legacy-rust-live_stable_coin_extended_flow.log",
+      "bytes": 4278,
+      "fee": 343,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "8786ee4e422a0d9f639bd182c59c0cfb8726037a3056832c58942f6d4881b3c3",
+          "vout": 0
+        },
+        {
+          "txid": "8786ee4e422a0d9f639bd182c59c0cfb8726037a3056832c58942f6d4881b3c3",
+          "vout": 1
+        },
+        {
+          "txid": "8786ee4e422a0d9f639bd182c59c0cfb8726037a3056832c58942f6d4881b3c3",
+          "vout": 6
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "coin_transfer",
+      "txid": "34006e961e63f5d80d47fe9fb0b678a4ef579b4df4a6167aae321728fd5410e0",
+      "sourceLog": "tbc-legacy-rust-live_stable_coin_extended_flow.log",
+      "bytes": 6034,
+      "fee": 483,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "746e1f0bb96ae279ad805811e8646117d95d711e598b99a90f3dab87f4b043b3",
+          "vout": 3
+        },
+        {
+          "txid": "746e1f0bb96ae279ad805811e8646117d95d711e598b99a90f3dab87f4b043b3",
+          "vout": 6
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "coin_batch[0]",
+      "txid": "f84c437374c3f2b8e158e832612e074d1b98b29c24392ef99f4a3bd0794a1aeb",
+      "sourceLog": "tbc-legacy-rust-live_stable_coin_extended_flow.log",
+      "bytes": 15389,
+      "fee": 1232,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "34006e961e63f5d80d47fe9fb0b678a4ef579b4df4a6167aae321728fd5410e0",
+          "vout": 2
+        },
+        {
+          "txid": "34006e961e63f5d80d47fe9fb0b678a4ef579b4df4a6167aae321728fd5410e0",
+          "vout": 4
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "coin_merge[0]",
+      "txid": "8345e9cde0cde337d34639fc4a92b648df1ca8456b9a1548b55149214ad9961d",
+      "sourceLog": "tbc-legacy-rust-live_stable_coin_extended_flow.log",
+      "bytes": 9588,
+      "fee": 768,
+      "verifiedInputs": 6,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "f84c437374c3f2b8e158e832612e074d1b98b29c24392ef99f4a3bd0794a1aeb",
+          "vout": 0
+        },
+        {
+          "txid": "f84c437374c3f2b8e158e832612e074d1b98b29c24392ef99f4a3bd0794a1aeb",
+          "vout": 2
+        },
+        {
+          "txid": "f84c437374c3f2b8e158e832612e074d1b98b29c24392ef99f4a3bd0794a1aeb",
+          "vout": 4
+        },
+        {
+          "txid": "f84c437374c3f2b8e158e832612e074d1b98b29c24392ef99f4a3bd0794a1aeb",
+          "vout": 6
+        },
+        {
+          "txid": "f84c437374c3f2b8e158e832612e074d1b98b29c24392ef99f4a3bd0794a1aeb",
+          "vout": 8
+        },
+        {
+          "txid": "f84c437374c3f2b8e158e832612e074d1b98b29c24392ef99f4a3bd0794a1aeb",
+          "vout": 12
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_ft_source",
+      "txid": "cc5feaee5ff671e086053aca88cc4bbb87c4fdec77df81b0b9073b3f24353a30",
+      "sourceLog": "tbc-legacy-rust-pool-diagnostic.log",
+      "bytes": 329,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "694be3506eebef782cf385e814f6926cc07b9696c4f5a39267614c400181fc9b",
+          "vout": 1
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_ft_mint",
+      "txid": "52b4c60a6e516e7a899954e751a475cabcbac94cb2e21d15309684b29b3ed411",
+      "sourceLog": "tbc-legacy-rust-pool-diagnostic.log",
+      "bytes": 2369,
+      "fee": 190,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "cc5feaee5ff671e086053aca88cc4bbb87c4fdec77df81b0b9073b3f24353a30",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_source",
+      "txid": "ae39e8534384d4b2a23b0fcdb25989fe47348ea52d3a12db6ce03ed89e709a7d",
+      "sourceLog": "tbc-legacy-rust-pool-diagnostic.log",
+      "bytes": 244,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "cc5feaee5ff671e086053aca88cc4bbb87c4fdec77df81b0b9073b3f24353a30",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_mint",
+      "txid": "dde91aae870734b7fadc40d01daa09bd7855a9e7e0ac7bb8fbacac39221ca2ba",
+      "sourceLog": "tbc-legacy-rust-pool-diagnostic.log",
+      "bytes": 4106,
+      "fee": 329,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "ae39e8534384d4b2a23b0fcdb25989fe47348ea52d3a12db6ce03ed89e709a7d",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_init",
+      "txid": "4ff5757cd567ccfc8d88ba3c071458b4a723dfb368c3be5762cca90b4b69a22d",
+      "sourceLog": "tbc-legacy-rust-pool-diagnostic.log",
+      "bytes": 13784,
+      "fee": 1103,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "dde91aae870734b7fadc40d01daa09bd7855a9e7e0ac7bb8fbacac39221ca2ba",
+          "vout": 0
+        },
+        {
+          "txid": "52b4c60a6e516e7a899954e751a475cabcbac94cb2e21d15309684b29b3ed411",
+          "vout": 0
+        },
+        {
+          "txid": "ae39e8534384d4b2a23b0fcdb25989fe47348ea52d3a12db6ce03ed89e709a7d",
+          "vout": 1
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_increase_lp_1",
+      "txid": "47cdb0ef1c62497f5acac3853f60252fe3c3c79ef5c6f1cb6517917e4662b798",
+      "sourceLog": "tbc-legacy-rust-pool-diagnostic.log",
+      "bytes": 15017,
+      "fee": 1202,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "4ff5757cd567ccfc8d88ba3c071458b4a723dfb368c3be5762cca90b4b69a22d",
+          "vout": 0
+        },
+        {
+          "txid": "4ff5757cd567ccfc8d88ba3c071458b4a723dfb368c3be5762cca90b4b69a22d",
+          "vout": 6
+        },
+        {
+          "txid": "4ff5757cd567ccfc8d88ba3c071458b4a723dfb368c3be5762cca90b4b69a22d",
+          "vout": 8
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_increase_lp_2",
+      "txid": "ce00274eb614799c6a2d9070b874132399342ef17e5ebac76abf31b71925346f",
+      "sourceLog": "tbc-legacy-rust-pool-diagnostic.log",
+      "bytes": 15499,
+      "fee": 1240,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "47cdb0ef1c62497f5acac3853f60252fe3c3c79ef5c6f1cb6517917e4662b798",
+          "vout": 0
+        },
+        {
+          "txid": "47cdb0ef1c62497f5acac3853f60252fe3c3c79ef5c6f1cb6517917e4662b798",
+          "vout": 6
+        },
+        {
+          "txid": "47cdb0ef1c62497f5acac3853f60252fe3c3c79ef5c6f1cb6517917e4662b798",
+          "vout": 8
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_swap_tbc_to_ft",
+      "txid": "c4bcfb06b2f27dc69f3b6d5e2656111f4122405899cee19da8a2dc1edda1381d",
+      "sourceLog": "tbc-legacy-rust-pool-diagnostic.log",
+      "bytes": 13397,
+      "fee": 1072,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "ce00274eb614799c6a2d9070b874132399342ef17e5ebac76abf31b71925346f",
+          "vout": 0
+        },
+        {
+          "txid": "ce00274eb614799c6a2d9070b874132399342ef17e5ebac76abf31b71925346f",
+          "vout": 8
+        },
+        {
+          "txid": "4ff5757cd567ccfc8d88ba3c071458b4a723dfb368c3be5762cca90b4b69a22d",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_swap_ft_to_tbc_online",
+      "txid": "249a759682f03d71936d7cba49707c02c4ba5e513184240f98fc69c34a7e5579",
+      "sourceLog": "tbc-legacy-rust-pool-diagnostic.log",
+      "bytes": 12831,
+      "fee": 1027,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "c4bcfb06b2f27dc69f3b6d5e2656111f4122405899cee19da8a2dc1edda1381d",
+          "vout": 0
+        },
+        {
+          "txid": "c4bcfb06b2f27dc69f3b6d5e2656111f4122405899cee19da8a2dc1edda1381d",
+          "vout": 2
+        },
+        {
+          "txid": "c4bcfb06b2f27dc69f3b6d5e2656111f4122405899cee19da8a2dc1edda1381d",
+          "vout": 6
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_swap_ft_to_tbc_local",
+      "txid": "4cda6230587919a4fd8bda54ada173b942bad61544e633f499b3388c23cb0efc",
+      "sourceLog": "tbc-legacy-rust-pool-diagnostic.log",
+      "bytes": 12831,
+      "fee": 1027,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "249a759682f03d71936d7cba49707c02c4ba5e513184240f98fc69c34a7e5579",
+          "vout": 0
+        },
+        {
+          "txid": "249a759682f03d71936d7cba49707c02c4ba5e513184240f98fc69c34a7e5579",
+          "vout": 5
+        },
+        {
+          "txid": "249a759682f03d71936d7cba49707c02c4ba5e513184240f98fc69c34a7e5579",
+          "vout": 7
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_consume_lp",
+      "txid": "de1c9e2d68d191d6f01f1e99517065f7c4efc6c3ef04999346be7325c2d97c6c",
+      "sourceLog": "tbc-legacy-rust-pool-diagnostic.log",
+      "bytes": 21043,
+      "fee": 1684,
+      "verifiedInputs": 4,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "4cda6230587919a4fd8bda54ada173b942bad61544e633f499b3388c23cb0efc",
+          "vout": 0
+        },
+        {
+          "txid": "4ff5757cd567ccfc8d88ba3c071458b4a723dfb368c3be5762cca90b4b69a22d",
+          "vout": 4
+        },
+        {
+          "txid": "ce00274eb614799c6a2d9070b874132399342ef17e5ebac76abf31b71925346f",
+          "vout": 2
+        },
+        {
+          "txid": "4cda6230587919a4fd8bda54ada173b942bad61544e633f499b3388c23cb0efc",
+          "vout": 7
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_merge_ftlp",
+      "txid": "ef69678038ec11b49366d16b88536289d2cc6ae81afd2737ed6706fd76382824",
+      "sourceLog": "tbc-legacy-rust-pool-diagnostic.log",
+      "bytes": 5327,
+      "fee": 427,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "47cdb0ef1c62497f5acac3853f60252fe3c3c79ef5c6f1cb6517917e4662b798",
+          "vout": 4
+        },
+        {
+          "txid": "ce00274eb614799c6a2d9070b874132399342ef17e5ebac76abf31b71925346f",
+          "vout": 4
+        },
+        {
+          "txid": "de1c9e2d68d191d6f01f1e99517065f7c4efc6c3ef04999346be7325c2d97c6c",
+          "vout": 11
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_burn_ftlp",
+      "txid": "7ffee836da5da412bf240e5c66072eeaac139e642ea18e213d7d3a29e9520607",
+      "sourceLog": "tbc-legacy-rust-pool-diagnostic.log",
+      "bytes": 4072,
+      "fee": 326,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "ef69678038ec11b49366d16b88536289d2cc6ae81afd2737ed6706fd76382824",
+          "vout": 0
+        },
+        {
+          "txid": "ef69678038ec11b49366d16b88536289d2cc6ae81afd2737ed6706fd76382824",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_merge_held_ft",
+      "txid": "92681595fd2693b1135459a19d39737140cf060b212401a8a713292f7f23a9c4",
+      "sourceLog": "tbc-legacy-rust-pool-diagnostic.log",
+      "bytes": 13844,
+      "fee": 1108,
+      "verifiedInputs": 4,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "de1c9e2d68d191d6f01f1e99517065f7c4efc6c3ef04999346be7325c2d97c6c",
+          "vout": 0
+        },
+        {
+          "txid": "47cdb0ef1c62497f5acac3853f60252fe3c3c79ef5c6f1cb6517917e4662b798",
+          "vout": 2
+        },
+        {
+          "txid": "c4bcfb06b2f27dc69f3b6d5e2656111f4122405899cee19da8a2dc1edda1381d",
+          "vout": 4
+        },
+        {
+          "txid": "7ffee836da5da412bf240e5c66072eeaac139e642ea18e213d7d3a29e9520607",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "locked_pool_source",
+      "txid": "d62c602b39497daaf0bbe593bb34a8e3dbc0a58b129edc13ae3806ad4b1343ca",
+      "sourceLog": "tbc-legacy-rust-pool-diagnostic.log",
+      "bytes": 243,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "92681595fd2693b1135459a19d39737140cf060b212401a8a713292f7f23a9c4",
+          "vout": 4
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "locked_pool_mint",
+      "txid": "1caeff2cb5736d6a6455828554842689b3d7e3334ae0328e69fd04bdd11549a2",
+      "sourceLog": "tbc-legacy-rust-pool-diagnostic.log",
+      "bytes": 4286,
+      "fee": 343,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "d62c602b39497daaf0bbe593bb34a8e3dbc0a58b129edc13ae3806ad4b1343ca",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_ft_source",
+      "txid": "7a03d9c00fae6d1720ddd162bbbf06adf7be14b36a8312778fb4694a0a847810",
+      "sourceLog": "tbc-legacy-rust-pool-retry.log",
+      "bytes": 329,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "4efb21f5dd7ea81aebb2292a3327d18b12c39c14e2544af2e84f70ce7f35f07f",
+          "vout": 1
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_ft_mint",
+      "txid": "38c38d9e090b34a4b9c521120504398d017ca3986ea73db5505e052286698cb5",
+      "sourceLog": "tbc-legacy-rust-pool-retry.log",
+      "bytes": 2369,
+      "fee": 190,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "7a03d9c00fae6d1720ddd162bbbf06adf7be14b36a8312778fb4694a0a847810",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_source",
+      "txid": "c476ca414cc94de960ad26df183ad5626760fbeda89e28e1734d0120c8f256ba",
+      "sourceLog": "tbc-legacy-rust-pool-retry.log",
+      "bytes": 244,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "7a03d9c00fae6d1720ddd162bbbf06adf7be14b36a8312778fb4694a0a847810",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_mint",
+      "txid": "72cb3a541d71a6fbcad0659892c6bfd0a6c8dd96e9db071211252a3dd3e70913",
+      "sourceLog": "tbc-legacy-rust-pool-retry.log",
+      "bytes": 4106,
+      "fee": 329,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "c476ca414cc94de960ad26df183ad5626760fbeda89e28e1734d0120c8f256ba",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_init",
+      "txid": "769e1146df55d44424db6c6ca36068ea9156fd93158c2f472dbe05162f72c99b",
+      "sourceLog": "tbc-legacy-rust-pool-retry.log",
+      "bytes": 13785,
+      "fee": 1103,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "72cb3a541d71a6fbcad0659892c6bfd0a6c8dd96e9db071211252a3dd3e70913",
+          "vout": 0
+        },
+        {
+          "txid": "38c38d9e090b34a4b9c521120504398d017ca3986ea73db5505e052286698cb5",
+          "vout": 0
+        },
+        {
+          "txid": "c476ca414cc94de960ad26df183ad5626760fbeda89e28e1734d0120c8f256ba",
+          "vout": 1
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_increase_lp_1",
+      "txid": "6fa296fb0011bcfb794f153e2f4949050bf6a14b0b65660b06c02781da6fa81b",
+      "sourceLog": "tbc-legacy-rust-pool-retry.log",
+      "bytes": 15016,
+      "fee": 1202,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "769e1146df55d44424db6c6ca36068ea9156fd93158c2f472dbe05162f72c99b",
+          "vout": 0
+        },
+        {
+          "txid": "769e1146df55d44424db6c6ca36068ea9156fd93158c2f472dbe05162f72c99b",
+          "vout": 6
+        },
+        {
+          "txid": "769e1146df55d44424db6c6ca36068ea9156fd93158c2f472dbe05162f72c99b",
+          "vout": 8
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_increase_lp_2",
+      "txid": "153f87d695796e9c343278b4032c41f93566cd1d9b8ffe0ed56984d8e2101330",
+      "sourceLog": "tbc-legacy-rust-pool-retry.log",
+      "bytes": 15499,
+      "fee": 1240,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "6fa296fb0011bcfb794f153e2f4949050bf6a14b0b65660b06c02781da6fa81b",
+          "vout": 0
+        },
+        {
+          "txid": "6fa296fb0011bcfb794f153e2f4949050bf6a14b0b65660b06c02781da6fa81b",
+          "vout": 6
+        },
+        {
+          "txid": "6fa296fb0011bcfb794f153e2f4949050bf6a14b0b65660b06c02781da6fa81b",
+          "vout": 8
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_swap_tbc_to_ft",
+      "txid": "080c7867084bf28a186a27082c9782a74e093661156d02454659c1629b570046",
+      "sourceLog": "tbc-legacy-rust-pool-retry.log",
+      "bytes": 13397,
+      "fee": 1072,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "153f87d695796e9c343278b4032c41f93566cd1d9b8ffe0ed56984d8e2101330",
+          "vout": 0
+        },
+        {
+          "txid": "153f87d695796e9c343278b4032c41f93566cd1d9b8ffe0ed56984d8e2101330",
+          "vout": 8
+        },
+        {
+          "txid": "769e1146df55d44424db6c6ca36068ea9156fd93158c2f472dbe05162f72c99b",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_swap_ft_to_tbc_online",
+      "txid": "3e829a45642c48d79b1053cd3c896649175d59671b5914b2e247f014fb7927ce",
+      "sourceLog": "tbc-legacy-rust-pool-retry.log",
+      "bytes": 12832,
+      "fee": 1027,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "080c7867084bf28a186a27082c9782a74e093661156d02454659c1629b570046",
+          "vout": 0
+        },
+        {
+          "txid": "080c7867084bf28a186a27082c9782a74e093661156d02454659c1629b570046",
+          "vout": 2
+        },
+        {
+          "txid": "080c7867084bf28a186a27082c9782a74e093661156d02454659c1629b570046",
+          "vout": 6
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_swap_ft_to_tbc_local",
+      "txid": "5eae1653008133cbb6fddc00ce249a200ab8946a3bf4e5fafa1eedf8e2a89573",
+      "sourceLog": "tbc-legacy-rust-pool-retry.log",
+      "bytes": 12831,
+      "fee": 1027,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "3e829a45642c48d79b1053cd3c896649175d59671b5914b2e247f014fb7927ce",
+          "vout": 0
+        },
+        {
+          "txid": "3e829a45642c48d79b1053cd3c896649175d59671b5914b2e247f014fb7927ce",
+          "vout": 5
+        },
+        {
+          "txid": "3e829a45642c48d79b1053cd3c896649175d59671b5914b2e247f014fb7927ce",
+          "vout": 7
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_consume_lp",
+      "txid": "5b0fb99e9289c9bcd3668e1f182b52ea9bd8e529e77681ffa38c01cc12120c63",
+      "sourceLog": "tbc-legacy-rust-pool-retry.log",
+      "bytes": 21043,
+      "fee": 1684,
+      "verifiedInputs": 4,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "5eae1653008133cbb6fddc00ce249a200ab8946a3bf4e5fafa1eedf8e2a89573",
+          "vout": 0
+        },
+        {
+          "txid": "769e1146df55d44424db6c6ca36068ea9156fd93158c2f472dbe05162f72c99b",
+          "vout": 4
+        },
+        {
+          "txid": "153f87d695796e9c343278b4032c41f93566cd1d9b8ffe0ed56984d8e2101330",
+          "vout": 2
+        },
+        {
+          "txid": "5eae1653008133cbb6fddc00ce249a200ab8946a3bf4e5fafa1eedf8e2a89573",
+          "vout": 7
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_merge_ftlp",
+      "txid": "91c6b64c389292d4d331ca456b8f4709cefce0f0cb31a458e93c9761fe7fe70f",
+      "sourceLog": "tbc-legacy-rust-pool-retry.log",
+      "bytes": 5325,
+      "fee": 427,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "6fa296fb0011bcfb794f153e2f4949050bf6a14b0b65660b06c02781da6fa81b",
+          "vout": 4
+        },
+        {
+          "txid": "153f87d695796e9c343278b4032c41f93566cd1d9b8ffe0ed56984d8e2101330",
+          "vout": 4
+        },
+        {
+          "txid": "5b0fb99e9289c9bcd3668e1f182b52ea9bd8e529e77681ffa38c01cc12120c63",
+          "vout": 11
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_burn_ftlp",
+      "txid": "c639080110ee0b9624bc9c71877d0fdd15119919671a21f50e8546af5ab7d663",
+      "sourceLog": "tbc-legacy-rust-pool-retry.log",
+      "bytes": 4070,
+      "fee": 326,
+      "verifiedInputs": 2,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "91c6b64c389292d4d331ca456b8f4709cefce0f0cb31a458e93c9761fe7fe70f",
+          "vout": 0
+        },
+        {
+          "txid": "91c6b64c389292d4d331ca456b8f4709cefce0f0cb31a458e93c9761fe7fe70f",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "pool_merge_held_ft",
+      "txid": "7e88fff81e1ba7138c65f4bb4db8c91d21aab61963201ba23bc3e7f0322a8069",
+      "sourceLog": "tbc-legacy-rust-pool-retry.log",
+      "bytes": 13843,
+      "fee": 1108,
+      "verifiedInputs": 4,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "5b0fb99e9289c9bcd3668e1f182b52ea9bd8e529e77681ffa38c01cc12120c63",
+          "vout": 0
+        },
+        {
+          "txid": "6fa296fb0011bcfb794f153e2f4949050bf6a14b0b65660b06c02781da6fa81b",
+          "vout": 2
+        },
+        {
+          "txid": "080c7867084bf28a186a27082c9782a74e093661156d02454659c1629b570046",
+          "vout": 4
+        },
+        {
+          "txid": "c639080110ee0b9624bc9c71877d0fdd15119919671a21f50e8546af5ab7d663",
+          "vout": 2
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "locked_pool_source",
+      "txid": "694be3506eebef782cf385e814f6926cc07b9696c4f5a39267614c400181fc9b",
+      "sourceLog": "tbc-legacy-rust-pool-retry.log",
+      "bytes": 244,
+      "fee": 80,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "7e88fff81e1ba7138c65f4bb4db8c91d21aab61963201ba23bc3e7f0322a8069",
+          "vout": 4
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "operation": "locked_pool_mint",
+      "txid": "39af8086c0d37a3de28615cd080f5b00c41eabd2d3dda1ed380df2220b02801b",
+      "sourceLog": "tbc-legacy-rust-pool-retry.log",
+      "bytes": 4285,
+      "fee": 343,
+      "verifiedInputs": 1,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "694be3506eebef782cf385e814f6926cc07b9696c4f5a39267614c400181fc9b",
+          "vout": 0
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "operation": "legacy-pool-v2-plan6-init",
+      "txid": "b4f9de5b9b144b1f4c6ae19bde3c417ee6527aa8c0f8bf68339ea9d45264737d",
+      "sourceLog": "native-go-fixed-plan6",
+      "bytes": 13862,
+      "fee": 1110,
+      "verifiedInputs": 3,
+      "refetched": true,
+      "parents": [
+        {
+          "txid": "40f417caa8371a2fa9b7911dec46595083bf087f87d0156a7cf1004161d175b9",
+          "vout": 0
+        },
+        {
+          "txid": "bac3a1af182cdbed1de2b99c4d8105ff0a190af7f1f3b041f43a9e8e450ee49b",
+          "vout": 0
+        },
+        {
+          "txid": "041f02656f06b16f96d966041f3e9e4244bb86dd278f9efd82f2039af573794c",
+          "vout": 3
+        }
+      ]
+    }
+  ],
+  "blocked": [
+    {
+      "language": "rust",
+      "operation": "legacy-locked-pool-v2-init",
+      "txid": "40bd5e947b8fe0eaf5902b7c25b01c88b293b6e7a03ea240879437360d977ee9",
+      "scriptPreflightPassed": true,
+      "broadcast": false,
+      "reason": "index-gate/A3: lp: neither mint nor transfer",
+      "rulesVersion": 2
+    }
+  ],
+  "totalFeesSat": 77249,
+  "status": "passed-with-recorded-gateway-rejection"
+}

@@ -1,0 +1,32 @@
+{
+  "network": "testnet",
+  "decimal": 6,
+  "txid": "01f59fe30293de0aacfc0dbfea26b5565fdcfb9b327ffa718da3240e035377a2",
+  "fee": 100,
+  "verifiedInputs": 1,
+  "broadcast": true,
+  "refetched": true,
+  "branches": [
+    {
+      "language": "js",
+      "vout": 0,
+      "satoshis": 12000000
+    },
+    {
+      "language": "rust",
+      "vout": 1,
+      "satoshis": 12000000
+    },
+    {
+      "language": "go",
+      "vout": 2,
+      "satoshis": 12000000
+    }
+  ],
+  "parents": [
+    {
+      "txid": "02d3c8f54cca0660cd2170e502c80d6b811dac83f1172e324d6438b5e3f9163d",
+      "vout": 1
+    }
+  ]
+}

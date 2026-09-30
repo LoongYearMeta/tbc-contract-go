@@ -1,0 +1,910 @@
+{
+  "reference": "tbc-contract@1.7.2",
+  "network": "offline",
+  "checks": [
+    {
+      "language": "js",
+      "name": "invalid-plan-0",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: lpPlan must be 1-6"
+    },
+    {
+      "language": "js",
+      "name": "invalid-plan-7",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: lpPlan must be 1-6"
+    },
+    {
+      "language": "js",
+      "name": "duplicate-controllers",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: duplicate controller public-key hash"
+    },
+    {
+      "language": "js",
+      "name": "six-controllers",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: controllerPubKeyHashes must contain 1-5 public-key hashes"
+    },
+    {
+      "language": "js",
+      "name": "short-controller",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: each controller public-key hash must be exactly 20 bytes of hex"
+    },
+    {
+      "language": "js",
+      "name": "zero-initial-tbc",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: TBC increment must be positive"
+    },
+    {
+      "language": "js",
+      "name": "oversized-amount",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: TBC increment must be a bigint in [0, 2^63-1]"
+    },
+    {
+      "language": "js",
+      "name": "zero-first-ft",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: initial FT amount must be positive"
+    },
+    {
+      "language": "js",
+      "name": "insufficient-ft",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: insufficient user FT; consolidate into one input explicitly"
+    },
+    {
+      "language": "js",
+      "name": "initial-ft-budget",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: firstFtAmountRaw requires a TBC budget"
+    },
+    {
+      "language": "js",
+      "name": "swap-ft-slippage",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: FT output is below minFtOutRaw"
+    },
+    {
+      "language": "js",
+      "name": "swap-tbc-slippage",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: TBC output is below minTbcOutSat"
+    },
+    {
+      "language": "js",
+      "name": "over-burn",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: LP burn amount exceeds Pool LP supply"
+    },
+    {
+      "language": "js",
+      "name": "plain-lp-cannot-lock",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: plain LP has no lockTime field"
+    },
+    {
+      "language": "js",
+      "name": "zero-lp-transfer",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: LP transfer amount must be positive"
+    },
+    {
+      "language": "js",
+      "name": "insufficient-lp",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: insufficient LP balance"
+    },
+    {
+      "language": "js",
+      "name": "duplicate-lp-input",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: duplicate input b83c25b765258c0560325964202024c784c0561c79b07c215ef68bc06dca455e:4"
+    },
+    {
+      "language": "js",
+      "name": "six-lp-inputs",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: LP transfer requires 1–5 LP inputs and one funding input"
+    },
+    {
+      "language": "js",
+      "name": "missing-pool-ancestry",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM witness: prePreTx must be a tbc.Transaction"
+    },
+    {
+      "language": "rust",
+      "name": "invalid-plan-0",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.mint: interop worker failed: invalid script: TBC AMM: LP plan must be 1..6\n"
+    },
+    {
+      "language": "rust",
+      "name": "invalid-plan-7",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.mint: interop worker failed: invalid script: TBC AMM: LP plan must be 1..6\n"
+    },
+    {
+      "language": "rust",
+      "name": "duplicate-controllers",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.mint: interop worker failed: invalid script: TBC AMM: duplicate controller\n"
+    },
+    {
+      "language": "rust",
+      "name": "six-controllers",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.mint: interop worker failed: invalid script: TBC AMM: controller list must contain 1..5 hashes\n"
+    },
+    {
+      "language": "rust",
+      "name": "short-controller",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.mint: interop worker failed: invalid UTXO data: controller hash\n"
+    },
+    {
+      "language": "rust",
+      "name": "zero-initial-tbc",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.add: interop worker failed: invalid script: TBC AMM: amount must be positive\n"
+    },
+    {
+      "language": "rust",
+      "name": "oversized-amount",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.add: interop worker failed: invalid script: TBC AMM: amount exceeds signed 63-bit range\n"
+    },
+    {
+      "language": "rust",
+      "name": "zero-first-ft",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.add: interop worker failed: invalid script: TBC AMM: amount must be positive\n"
+    },
+    {
+      "language": "rust",
+      "name": "insufficient-ft",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.add: interop worker failed: invalid script: TBC AMM: insufficient user FT\n"
+    },
+    {
+      "language": "rust",
+      "name": "initial-ft-budget",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.add: interop worker failed: invalid script: TBC AMM: first liquidity requires 1500 sat pool and TBC budget\n"
+    },
+    {
+      "language": "rust",
+      "name": "swap-ft-slippage",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.swap_ft: interop worker failed: invalid script: TBC AMM: FT output below minimum\n"
+    },
+    {
+      "language": "rust",
+      "name": "swap-tbc-slippage",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.swap_tbc: interop worker failed: invalid script: TBC AMM: TBC payout or retained fee outside range\n"
+    },
+    {
+      "language": "rust",
+      "name": "over-burn",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.remove: interop worker failed: invalid script: TBC AMM: burn exceeds LP supply\n"
+    },
+    {
+      "language": "rust",
+      "name": "plain-lp-cannot-lock",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.lp_transfer: interop worker failed: invalid script: TBC AMM: plain LP has no lock\n"
+    },
+    {
+      "language": "rust",
+      "name": "zero-lp-transfer",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.lp_transfer: interop worker failed: invalid script: TBC AMM: invalid LP transfer inputs\n"
+    },
+    {
+      "language": "rust",
+      "name": "insufficient-lp",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.lp_transfer: interop worker failed: invalid script: TBC AMM: insufficient LP\n"
+    },
+    {
+      "language": "rust",
+      "name": "duplicate-lp-input",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.lp_transfer: interop worker failed: invalid script: TBC AMM: invalid LP identity or owner\n"
+    },
+    {
+      "language": "rust",
+      "name": "six-lp-inputs",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.lp_transfer: interop worker failed: invalid script: TBC AMM: invalid LP transfer inputs\n"
+    },
+    {
+      "language": "rust",
+      "name": "missing-pool-ancestry",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.add: interop worker failed: invalid UTXO data: pool ancestor\n"
+    },
+    {
+      "language": "go",
+      "name": "invalid-plan-0",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.mint: interop worker failed: modern TBC20: LP plan must be 1..6\n"
+    },
+    {
+      "language": "go",
+      "name": "invalid-plan-7",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.mint: interop worker failed: modern TBC20: LP plan must be 1..6\n"
+    },
+    {
+      "language": "go",
+      "name": "duplicate-controllers",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.mint: interop worker failed: modern TBC20: duplicate controller\n"
+    },
+    {
+      "language": "go",
+      "name": "six-controllers",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.mint: interop worker failed: modern TBC20: controller whitelist requires 1..5 hashes\n"
+    },
+    {
+      "language": "go",
+      "name": "short-controller",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.mint: interop worker failed: controller hash\n"
+    },
+    {
+      "language": "go",
+      "name": "zero-initial-tbc",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.add: interop worker failed: modern TBC20: amount must be positive\n"
+    },
+    {
+      "language": "go",
+      "name": "oversized-amount",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.add: interop worker failed: modern TBC20: amount exceeds signed 63-bit range\n"
+    },
+    {
+      "language": "go",
+      "name": "zero-first-ft",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.add: interop worker failed: modern TBC20: amount must be positive\n"
+    },
+    {
+      "language": "go",
+      "name": "insufficient-ft",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.add: interop worker failed: modern TBC20: insufficient user FT\n"
+    },
+    {
+      "language": "go",
+      "name": "initial-ft-budget",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.add: interop worker failed: modern TBC20: first liquidity requires TBC budget and initial FT\n"
+    },
+    {
+      "language": "go",
+      "name": "swap-ft-slippage",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.swap_ft: interop worker failed: modern TBC20: FT payout below minimum\n"
+    },
+    {
+      "language": "go",
+      "name": "swap-tbc-slippage",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.swap_tbc: interop worker failed: modern TBC20: TBC payout or retained fee outside range\n"
+    },
+    {
+      "language": "go",
+      "name": "over-burn",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.remove: interop worker failed: modern TBC20: burn exceeds LP supply\n"
+    },
+    {
+      "language": "go",
+      "name": "plain-lp-cannot-lock",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.lp_transfer: interop worker failed: modern TBC20: plain LP has no lock\n"
+    },
+    {
+      "language": "go",
+      "name": "zero-lp-transfer",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.lp_transfer: interop worker failed: modern TBC20: invalid LP transfer inputs\n"
+    },
+    {
+      "language": "go",
+      "name": "insufficient-lp",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.lp_transfer: interop worker failed: modern TBC20: insufficient LP\n"
+    },
+    {
+      "language": "go",
+      "name": "duplicate-lp-input",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.lp_transfer: interop worker failed: modern TBC20: duplicate input\n"
+    },
+    {
+      "language": "go",
+      "name": "six-lp-inputs",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.lp_transfer: interop worker failed: modern TBC20: invalid LP transfer inputs\n"
+    },
+    {
+      "language": "go",
+      "name": "missing-pool-ancestry",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.add: interop worker failed: missing Pool ancestor\n"
+    },
+    {
+      "language": "js",
+      "name": "unauthorized-controller-1",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: signer is not a member of the controller whitelist"
+    },
+    {
+      "language": "js",
+      "name": "whitelist-1-member-0",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "unauthorized-controller-1",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.add: interop worker failed: invalid script: TBC AMM: Controller not whitelisted\n"
+    },
+    {
+      "language": "rust",
+      "name": "whitelist-1-member-0",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "unauthorized-controller-1",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.add: interop worker failed: modern TBC20: invalid Pool Controller authorization\n"
+    },
+    {
+      "language": "go",
+      "name": "whitelist-1-member-0",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "unauthorized-controller-2",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: signer is not a member of the controller whitelist"
+    },
+    {
+      "language": "js",
+      "name": "whitelist-2-member-0",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "whitelist-2-member-1",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "unauthorized-controller-2",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.add: interop worker failed: invalid script: TBC AMM: Controller not whitelisted\n"
+    },
+    {
+      "language": "rust",
+      "name": "whitelist-2-member-0",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "whitelist-2-member-1",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "unauthorized-controller-2",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.add: interop worker failed: modern TBC20: invalid Pool Controller authorization\n"
+    },
+    {
+      "language": "go",
+      "name": "whitelist-2-member-0",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "whitelist-2-member-1",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "unauthorized-controller-3",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: signer is not a member of the controller whitelist"
+    },
+    {
+      "language": "js",
+      "name": "whitelist-3-member-0",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "whitelist-3-member-1",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "whitelist-3-member-2",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "unauthorized-controller-3",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.add: interop worker failed: invalid script: TBC AMM: Controller not whitelisted\n"
+    },
+    {
+      "language": "rust",
+      "name": "whitelist-3-member-0",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "whitelist-3-member-1",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "whitelist-3-member-2",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "unauthorized-controller-3",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.add: interop worker failed: modern TBC20: invalid Pool Controller authorization\n"
+    },
+    {
+      "language": "go",
+      "name": "whitelist-3-member-0",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "whitelist-3-member-1",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "whitelist-3-member-2",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "unauthorized-controller-4",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: signer is not a member of the controller whitelist"
+    },
+    {
+      "language": "js",
+      "name": "whitelist-4-member-0",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "whitelist-4-member-1",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "whitelist-4-member-2",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "whitelist-4-member-3",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "unauthorized-controller-4",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.add: interop worker failed: invalid script: TBC AMM: Controller not whitelisted\n"
+    },
+    {
+      "language": "rust",
+      "name": "whitelist-4-member-0",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "whitelist-4-member-1",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "whitelist-4-member-2",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "whitelist-4-member-3",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "unauthorized-controller-4",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.add: interop worker failed: modern TBC20: invalid Pool Controller authorization\n"
+    },
+    {
+      "language": "go",
+      "name": "whitelist-4-member-0",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "whitelist-4-member-1",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "whitelist-4-member-2",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "whitelist-4-member-3",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "unauthorized-controller-5",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC AMM: signer is not a member of the controller whitelist"
+    },
+    {
+      "language": "js",
+      "name": "whitelist-5-member-0",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "whitelist-5-member-1",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "whitelist-5-member-2",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "whitelist-5-member-3",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "whitelist-5-member-4",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "unauthorized-controller-5",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.add: interop worker failed: invalid script: TBC AMM: Controller not whitelisted\n"
+    },
+    {
+      "language": "rust",
+      "name": "whitelist-5-member-0",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "whitelist-5-member-1",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "whitelist-5-member-2",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "whitelist-5-member-3",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "whitelist-5-member-4",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "unauthorized-controller-5",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.add: interop worker failed: modern TBC20: invalid Pool Controller authorization\n"
+    },
+    {
+      "language": "go",
+      "name": "whitelist-5-member-0",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "whitelist-5-member-1",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "whitelist-5-member-2",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "whitelist-5-member-3",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "whitelist-5-member-4",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "future-lock-preserved-on-input-and-change",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "mixed-height-timestamp-locks",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "TBC20 LP: cannot combine nonzero height and timestamp LP locks"
+    },
+    {
+      "language": "rust",
+      "name": "future-lock-preserved-on-input-and-change",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "mixed-height-timestamp-locks",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "rust amm.lp_transfer: interop worker failed: invalid script: modern TBC20: cannot mix block-height and timestamp locks\n"
+    },
+    {
+      "language": "go",
+      "name": "future-lock-preserved-on-input-and-change",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "mixed-height-timestamp-locks",
+      "status": "passed",
+      "expected": "rejected",
+      "reason": "go amm.lp_transfer: interop worker failed: modern TBC20: cannot mix height and timestamp locks\n"
+    },
+    {
+      "language": "js",
+      "name": "lock-boundary-499999999",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "lock-boundary-499999999",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "lock-boundary-499999999",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "lock-boundary-500000000",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "lock-boundary-500000000",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "lock-boundary-500000000",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "lock-boundary-2147483647",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "lock-boundary-2147483647",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "lock-boundary-2147483647",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "lock-boundary-2147483648",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "lock-boundary-2147483648",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "lock-boundary-2147483648",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "js",
+      "name": "lock-boundary-4294967295",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "rust",
+      "name": "lock-boundary-4294967295",
+      "status": "passed",
+      "expected": "valid"
+    },
+    {
+      "language": "go",
+      "name": "lock-boundary-4294967295",
+      "status": "passed",
+      "expected": "valid"
+    }
+  ],
+  "status": "passed"
+}
