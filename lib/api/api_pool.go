@@ -181,7 +181,7 @@ func FetchFtLpBalance(ftlpCode, network string) (*big.Int, error) {
 }
 
 // FetchFtLpUTXOList returns all LP UTXOs for the given ftlpCode script.
-func FetchFtLpUTXOList(ftlpCode, network string) ([]*LpUTXO, error) {
+func FetchFtLpUTXOList(ftlpCode, network string, batchSize ...int) ([]*LpUTXO, error) {
 	hash, err := scriptHashFromHex(ftlpCode)
 	if err != nil {
 		return nil, err
@@ -189,7 +189,7 @@ func FetchFtLpUTXOList(ftlpCode, network string) ([]*LpUTXO, error) {
 	baseURL := getBaseURL(network)
 	url := fmt.Sprintf("%spool/lputxo/scriptpubkeyhash/%s", baseURL, hash)
 
-	body, err := httpGetWithRetry(url)
+	body, err := getUTXOListBody(url, batchSize)
 	if err != nil {
 		return nil, err
 	}

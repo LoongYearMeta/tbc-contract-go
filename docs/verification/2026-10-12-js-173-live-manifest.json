@@ -1,0 +1,66 @@
+{
+  "reference": {
+    "contract": "1.7.3",
+    "lib": "1.0.31"
+  },
+  "localCandidates": {
+    "rust": "0.5.0",
+    "go": "0.3.0"
+  },
+  "network": "testnet",
+  "status": "passed",
+  "address": "1CtGgPnAFX2zEHzRxiqiuF6r5QCzdJGaz5",
+  "uniqueBroadcastTransactions": 513,
+  "totalMinerFeesSat": 218240,
+  "transactionsByBuilder": {
+    "js": 267,
+    "rust": 123,
+    "go": 123
+  },
+  "sameInputJSComparisons": 180,
+  "evidence": "broadcast accepted and raw bytes refetched; not a block-confirmation claim",
+  "reports": [
+    {
+      "file": "2026-10-12-js-173-live-amm.json",
+      "transactions": 72,
+      "minerFeesSat": 73707,
+      "sha256": "5740bc9a32e66b4ac4e25b6f19ed6b2d08451926bdfc61912f836acd0b0603fd"
+    },
+    {
+      "file": "2026-10-12-js-173-live-interop.json",
+      "transactions": 36,
+      "minerFeesSat": 8706,
+      "sha256": "c74ae305899da2fbbe17d1f4811c15c76cfb596e86ce2e7885d2e533d400b08a"
+    },
+    {
+      "file": "2026-10-12-js-173-live-legacy-stable.json",
+      "transactions": 24,
+      "minerFeesSat": 7040,
+      "sha256": "e9613faaaad9645bf20c18779bcff6ff115cb8dd8226cfe674c31a91d8bd96d0"
+    },
+    {
+      "file": "2026-10-12-js-173-live-locks.json",
+      "transactions": 54,
+      "minerFeesSat": 14343,
+      "sha256": "9efdb0ddec2fbeb11acb4176d18a99c16d52a25a8300f8d0497a1c2153c1413c"
+    },
+    {
+      "file": "2026-10-12-js-173-live-lop.json",
+      "transactions": 264,
+      "minerFeesSat": 92537,
+      "sha256": "ac26e1ab56e43a307ec7701acf8f127aa443e2edfdeff7ce84164643cf5b4b4b"
+    },
+    {
+      "file": "2026-10-12-js-173-live-stable-advanced.json",
+      "transactions": 36,
+      "minerFeesSat": 11869,
+      "sha256": "57baca3876389946deff177f6f8ded47be8bf38af02aa6ec157ac39351e595ff"
+    },
+    {
+      "file": "2026-10-12-js-173-live-stable.json",
+      "transactions": 27,
+      "minerFeesSat": 10038,
+      "sha256": "66fd6fb4880e58898fdb8023f263a62ed6afd230a1312fc6e04d2d41189eb741"
+    }
+  ]
+}

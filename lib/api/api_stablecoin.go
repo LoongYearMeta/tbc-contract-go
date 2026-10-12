@@ -124,11 +124,11 @@ func GetCoinBalance(contractTxID, addressOrHash, network string) (*big.Int, erro
 	return bal2, nil
 }
 
-func fetchCoinUTXOListResponse(contractTxID, hash, network string) (ftUtxoListResponse, error) {
+func fetchCoinUTXOListResponse(contractTxID, hash, network string, batchSize ...int) (ftUtxoListResponse, error) {
 	baseURL := getBaseURL(network)
 	url := fmt.Sprintf("%sstablecoin/utxo/combinescript/%s/stablecoinid/%s", baseURL, hash, contractTxID)
 
-	body, err := httpGetWithRetry(url)
+	body, err := getUTXOListBody(url, batchSize)
 	if err != nil {
 		return ftUtxoListResponse{}, err
 	}
@@ -145,19 +145,19 @@ func fetchCoinUTXOListResponse(contractTxID, hash, network string) (ftUtxoListRe
 // FetchCoinUTXOList returns all stableCoin UTXOs for an address/hash.
 // Mirrors TS API.fetchCoinUTXOList. The locking scripts on the returned UTXOs
 // are enriched from chain (the indexer response itself doesn't carry them).
-func FetchCoinUTXOList(contractTxID, addressOrHash, codeScript, network string) ([]*util.FtUTXO, error) {
+func FetchCoinUTXOList(contractTxID, addressOrHash, codeScript, network string, batchSize ...int) ([]*util.FtUTXO, error) {
 	hashJS, err := buildAddressOrHashLegacy(addressOrHash)
 	if err != nil {
 		return nil, err
 	}
-	r, err := fetchCoinUTXOListResponse(contractTxID, hashJS, network)
+	r, err := fetchCoinUTXOListResponse(contractTxID, hashJS, network, batchSize...)
 	if err != nil {
 		return nil, err
 	}
 	if len(r.Data.UTXOs) == 0 {
 		hashAlt, err2 := buildAddressOrHash(addressOrHash)
 		if err2 == nil && hashAlt != hashJS {
-			r, err = fetchCoinUTXOListResponse(contractTxID, hashAlt, network)
+			r, err = fetchCoinUTXOListResponse(contractTxID, hashAlt, network, batchSize...)
 			if err != nil {
 				return nil, err
 			}

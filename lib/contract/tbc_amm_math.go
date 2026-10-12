@@ -15,6 +15,22 @@ type TBCAMMQuote struct {
 	Fees                                   *TBCAMMFees
 }
 
+// TBCAMMFeeRates are independent basis-point rates stored in the 1.7.3 Tape.
+type TBCAMMFeeRates struct{ LP, Tax, ServiceProvider, Protocol uint16 }
+
+func (r TBCAMMFeeRates) Total() (uint16, error) {
+	total := uint32(r.LP) + uint32(r.Tax) + uint32(r.ServiceProvider) + uint32(r.Protocol)
+	if total >= 10000 {
+		return 0, modernError("total Swap fee rate must be below 10000 basis points")
+	}
+	return uint16(total), nil
+}
+
+// TBCAMMRatesFromPlan is a compatibility preset, not an on-chain plan field.
+func TBCAMMRatesFromPlan(plan uint8) (TBCAMMFeeRates, error) {
+	total, lp, _, e := TBCAMMFeePolicy(plan)
+	return TBCAMMFeeRates{LP: lp, ServiceProvider: total - lp}, e
+}
 func TBCAMMFeePolicy(plan uint8) (uint16, uint16, string, error) {
 	addresses := []string{"", "13oCEJaqyyiC8iRrfup6PDL2GKZ3xQrsZL", "1Fa6Uy64Ub4qNdB896zX2pNMx4a8zMhtCy", "125fTLNsraQxTYqT4EeQNF2ggzcqicveKL", "19DetoaaohQkjFVJ6oGXd83xhZYQSbpE1g", "15EKrhuD8Yf3SfhjAgbizYqfnBbKh9ZMZ7", "1N7rf2AuAHB2aCrVgnbQhSWhaUVk3rGhjm"}
 	if plan < 1 || plan > 6 {
@@ -61,10 +77,18 @@ func (s TBCAMMMathState) Validate(active bool) error {
 	return nil
 }
 func CalculateTBCAMMFees(base uint64, plan uint8) (*TBCAMMFees, error) {
+	rates, e := TBCAMMRatesFromPlan(plan)
+	if e != nil {
+		return nil, e
+	}
+	return CalculateTBCAMMFeesWithRates(base, rates)
+}
+func CalculateTBCAMMFeesWithRates(base uint64, rates TBCAMMFeeRates) (*TBCAMMFees, error) {
 	if e := ammAmount(base); e != nil {
 		return nil, e
 	}
-	total, lp, _, e := TBCAMMFeePolicy(plan)
+	total, e := rates.Total()
+	lp := rates.LP
 	if e != nil {
 		return nil, e
 	}
@@ -158,6 +182,13 @@ func (s TBCAMMMathState) Remove(burn uint64) (*TBCAMMQuote, error) {
 	return &TBCAMMQuote{Next: next, LPDelta: burn, FTDelta: ft, TBCDelta: tbc, ValueDelta: value}, next.Validate(false)
 }
 func (s TBCAMMMathState) SwapFT(input uint64, plan uint8, min uint64) (*TBCAMMQuote, error) {
+	rates, e := TBCAMMRatesFromPlan(plan)
+	if e != nil {
+		return nil, e
+	}
+	return s.SwapFTWithRates(input, rates, min)
+}
+func (s TBCAMMMathState) SwapFTWithRates(input uint64, rates TBCAMMFeeRates, min uint64) (*TBCAMMQuote, error) {
 	if e := s.Validate(true); e != nil {
 		return nil, e
 	}
@@ -167,7 +198,7 @@ func (s TBCAMMMathState) SwapFT(input uint64, plan uint8, min uint64) (*TBCAMMQu
 	if e := ammAmount(min); e != nil {
 		return nil, e
 	}
-	fees, e := CalculateTBCAMMFees(input, plan)
+	fees, e := CalculateTBCAMMFeesWithRates(input, rates)
 	if e != nil {
 		return nil, e
 	}
@@ -191,6 +222,13 @@ func (s TBCAMMMathState) SwapFT(input uint64, plan uint8, min uint64) (*TBCAMMQu
 	return &TBCAMMQuote{Next: next, FTDelta: out, TBCDelta: inc, ValueDelta: value, Fees: fees}, nil
 }
 func (s TBCAMMMathState) SwapTBC(input uint64, plan uint8, min uint64) (*TBCAMMQuote, error) {
+	rates, e := TBCAMMRatesFromPlan(plan)
+	if e != nil {
+		return nil, e
+	}
+	return s.SwapTBCWithRates(input, rates, min)
+}
+func (s TBCAMMMathState) SwapTBCWithRates(input uint64, rates TBCAMMFeeRates, min uint64) (*TBCAMMQuote, error) {
 	if e := s.Validate(true); e != nil {
 		return nil, e
 	}
@@ -208,7 +246,7 @@ func (s TBCAMMMathState) SwapTBC(input uint64, plan uint8, min uint64) (*TBCAMMQ
 	if e != nil {
 		return nil, e
 	}
-	fees, e := CalculateTBCAMMFees(gross, plan)
+	fees, e := CalculateTBCAMMFeesWithRates(gross, rates)
 	if e != nil {
 		return nil, e
 	}

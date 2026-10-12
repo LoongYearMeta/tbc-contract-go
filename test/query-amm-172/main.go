@@ -50,7 +50,7 @@ func run() error {
 		return e
 	}
 	n := func(v uint64) string { return strconv.FormatUint(v, 10) }
-	return json.NewEncoder(os.Stdout).Encode(map[string]interface{}{"txid": pool.Parent.TxID(), "ancestor": pool.Ancestor.TxID(), "value": n(s.Value), "lp": n(s.LP), "ft": n(s.FT), "tbc": n(s.TBC), "plan": t.LPPlan, "feeRate": t.FeeRate})
+	return json.NewEncoder(os.Stdout).Encode(map[string]interface{}{"txid": pool.Parent.TxID(), "ancestor": pool.Ancestor.TxID(), "value": n(s.Value), "lp": n(s.LP), "ft": n(s.FT), "tbc": n(s.TBC), "feeRates": t.Fees, "feeAddressHash": hex.EncodeToString(t.FeeAddress[:])})
 }
 func main() {
 	if e := run(); e != nil {

@@ -1,0 +1,211 @@
+{
+  "status": "passed",
+  "network": "testnet",
+  "nativeCandidates": {
+    "rust": "tbc-sdk 0.5.0",
+    "go": "tbc-contract-go 0.3.0"
+  },
+  "releasePublished": false,
+  "additionalUniqueBroadcasts": 144,
+  "additionalMinerFeesSat": 146733,
+  "broadcastEvidence": "accepted and refetched with identical raw bytes; does not assert block confirmation",
+  "recovery": "both native builders restore immutable configuration through from_pool without caller-supplied version",
+  "reports": [
+    {
+      "report": "2026-10-12-amm-172-compat-live.json",
+      "sha256": "9cabe74744f442eb9c3b2fd66c62332ec0594928d1cd23c87c17da877df198b3",
+      "status": "passed",
+      "poolVersion": "1.7.2",
+      "transactions": 72,
+      "queryReads": 0,
+      "minerFeesSat": 73025,
+      "builders": {
+        "js": 24,
+        "rust": 24,
+        "go": 24
+      },
+      "sameInputJSComparisons": 32
+    },
+    {
+      "report": "2026-10-12-amm-172-compat-prepared.json",
+      "sha256": "5376ec1fdfcc765b9740a205b3cdc382ce40e3447ab4748a35965b17aa781f14",
+      "status": "passed",
+      "poolVersion": "1.7.2",
+      "transactions": 72,
+      "queryReads": 0,
+      "minerFeesSat": 73026,
+      "builders": {
+        "js": 24,
+        "rust": 24,
+        "go": 24
+      },
+      "sameInputJSComparisons": 32
+    },
+    {
+      "report": "2026-10-12-amm-172-compat-amm-queries.json",
+      "sha256": "2b143e95fc4012176312b7569ff74c41523c0b7381a5bbe99e55f1921bc2fef6",
+      "status": "passed",
+      "poolVersion": "1.7.2",
+      "transactions": 0,
+      "queryReads": 18
+    },
+    {
+      "report": "2026-10-12-amm-173-compat-live.json",
+      "sha256": "4e3e4dcf2b3a800e47c8da150e31ccf672e494824f07e0680c90b417989749ab",
+      "status": "passed",
+      "poolVersion": "1.7.3",
+      "transactions": 72,
+      "queryReads": 0,
+      "minerFeesSat": 73708,
+      "builders": {
+        "js": 24,
+        "rust": 24,
+        "go": 24
+      },
+      "sameInputJSComparisons": 32
+    },
+    {
+      "report": "2026-10-12-amm-173-compat-prepared.json",
+      "sha256": "3e814baedbff76b2535031b7955e4a9995a35ad7d5a501916eebd7e89a51f75e",
+      "status": "passed",
+      "poolVersion": "1.7.3",
+      "transactions": 72,
+      "queryReads": 0,
+      "minerFeesSat": 73710,
+      "builders": {
+        "js": 24,
+        "rust": 24,
+        "go": 24
+      },
+      "sameInputJSComparisons": 32
+    },
+    {
+      "report": "2026-10-12-amm-173-compat-amm-queries.json",
+      "sha256": "908efbd6a6cf5899c148ba3f839c08c4c63292e9eb72b6dd9f3dee647fcaf2a3",
+      "status": "passed",
+      "poolVersion": "1.7.3",
+      "transactions": 0,
+      "queryReads": 18
+    }
+  ],
+  "jsCreatedPoolExamples": [
+    {
+      "poolVersion": "1.7.2",
+      "jsCreatedPool": "9314e27c67078d6c48ee4201d7f4be228f7a306f532bd89f35c458a3b1edcfac",
+      "poolCodeSha256": "47b42b290afd47efdc43a97ddf64846e2f94a3b02f6710897696b960b2580102",
+      "nativeSpends": [
+        {
+          "language": "rust",
+          "operation": "amm.add",
+          "txid": "d7d89188fbb7e4efcf37ed9af4aa27de0fae0b9ac26a872a7795b36f3e04ccfc"
+        },
+        {
+          "language": "go",
+          "operation": "amm.swap_ft",
+          "txid": "6c6cf51378bf567ec159a4337ac3ee9e2690fc467d61cac6586bf0e4a3c1b884"
+        },
+        {
+          "language": "rust",
+          "operation": "amm.swap_tbc",
+          "txid": "4ab6e4f1e6ab43dedf1680d9a4eac05ef735a59c162ee26f0b1c168046608349"
+        },
+        {
+          "language": "go",
+          "operation": "amm.remove",
+          "txid": "f8e90b3b813f623f465dba736311c867ad9851015fef4b706e953c76fc01e541"
+        }
+      ]
+    },
+    {
+      "poolVersion": "1.7.2",
+      "jsCreatedPool": "bfa7836206ad5026b4c30e0e01449ce736b016201581a9bd8c9dd401cd20c594",
+      "poolCodeSha256": "45eced4108d53f1d339f6dc8492aaa7197ae731d163a268a8f4c9bbb646d4398",
+      "nativeSpends": [
+        {
+          "language": "rust",
+          "operation": "amm.add",
+          "txid": "3852b27f20609ede5b252190416432c83ff0a8edb7fea6ed0bc9da7ea6920bb4"
+        },
+        {
+          "language": "go",
+          "operation": "amm.swap_ft",
+          "txid": "8a2dd6573835c06d44a3695a3f9732920e187b13f22c1a6618830f902dd0df7c"
+        },
+        {
+          "language": "rust",
+          "operation": "amm.swap_tbc",
+          "txid": "bf04910bbf9f1e55d7db47b27d0dcd8317155f13accc7a8114ad790b67c01a3d"
+        },
+        {
+          "language": "go",
+          "operation": "amm.remove",
+          "txid": "8ef3270dee59f0a77531d8152f46f0079d70956ab1cd8b520f8d643217ac6b26"
+        }
+      ]
+    },
+    {
+      "poolVersion": "1.7.3",
+      "jsCreatedPool": "07d9303c6691c4480350823ab55dee0a38b36b615ee1fea7c25d7c28fe76e662",
+      "poolCodeSha256": "a437b974608574c363d215fffb594b34b6461607d18461dfe84226ede5914061",
+      "nativeSpends": [
+        {
+          "language": "rust",
+          "operation": "amm.add",
+          "txid": "2bad462e7825ba366c75d35ec57ecb002a7ce81bd2a9dc033a720f0ea150d885"
+        },
+        {
+          "language": "go",
+          "operation": "amm.swap_ft",
+          "txid": "48faae2f77cd1191aad1784667b2fc4f75a52f64f137a800b41b991a408af96e"
+        },
+        {
+          "language": "rust",
+          "operation": "amm.swap_tbc",
+          "txid": "247afe34cf8e51c74c0442bbf1c5cc3ca404cad87f2745f87b02de31f61fc9e5"
+        },
+        {
+          "language": "go",
+          "operation": "amm.remove",
+          "txid": "8636e6f00186479a4a7465a30525f50c1d3c7e377453154dc20c7f81b887cbdc"
+        }
+      ]
+    },
+    {
+      "poolVersion": "1.7.3",
+      "jsCreatedPool": "25ffa7c5f5245c74f665ded80e6cf815d511bbb32b8fb0797b89300e774e3ef1",
+      "poolCodeSha256": "97d720f2d50770a4a6e1b35f07f5e598fd5ed0a419bc7163d3d7479fdb01d035",
+      "nativeSpends": [
+        {
+          "language": "rust",
+          "operation": "amm.add",
+          "txid": "9026d374e6486485e7093ff2de54b8dc06acea0afdf71d26a9a118b18a7de3eb"
+        },
+        {
+          "language": "go",
+          "operation": "amm.swap_ft",
+          "txid": "19a83665112e23ca63a387521a81a053f9750d9f4e33e217290c85932b6c8ba4"
+        },
+        {
+          "language": "rust",
+          "operation": "amm.swap_tbc",
+          "txid": "89a011b37506bced44ae61381043a0b9591b1827db84cfde262eea214eaf19a4"
+        },
+        {
+          "language": "go",
+          "operation": "amm.remove",
+          "txid": "fe0dc052d7d8403ab2f4f8a03fda3570c1fe164ca6517a4c5fba10051c20ec9f"
+        }
+      ]
+    }
+  ],
+  "localValidation": {
+    "rustLibraryAndIntegrationTests": {
+      "command": "cargo test --lib --tests",
+      "passed": 305
+    },
+    "rustAllTargetsCheck": "passed",
+    "goAllPackagesTests": "passed",
+    "finalLegacyTapeFramingRegression": "passed",
+    "note": "The final strict 1.7.2 marker-rejection check was added after live broadcasts; all library/integration tests were rerun. Canonical live transaction construction is unchanged."
+  }
+}

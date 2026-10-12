@@ -11,7 +11,7 @@ import (
 
 func ammFixture(t *testing.T) map[string]interface{} {
 	t.Helper()
-	b, e := os.ReadFile("testdata/js-1.7.2/amm.json")
+	b, e := os.ReadFile("testdata/js-1.7.3/amm.json")
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -21,7 +21,7 @@ func ammFixture(t *testing.T) map[string]interface{} {
 	}
 	return v
 }
-func TestTBCAMMPinnedJS172CodeAndTape(t *testing.T) {
+func TestTBCAMMPinnedJS173CodeAndTape(t *testing.T) {
 	for _, item := range ammFixture(t)["vectors"].([]interface{}) {
 		v := item.(map[string]interface{})
 		script, _ := bscript.NewFromHexString(v["code"].(string))

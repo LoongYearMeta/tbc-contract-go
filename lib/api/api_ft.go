@@ -9,9 +9,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 	bt "github.com/LoongYearMeta/tbc-lib-go"
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
-	"github.com/LoongYearMeta/tbc-contract-go/lib/util"
 )
 
 // FtInfoResponse mirrors TS FT info API response.
@@ -247,11 +247,11 @@ func GetFTBalance(contractTxID, addressOrHash, network string) (*big.Int, error)
 	return getFTBalanceCombinescriptDual(contractTxID, addressOrHash, network)
 }
 
-func fetchFtUTXOListResponse(contractTxID, hash, network string) (ftUtxoListResponse, error) {
+func fetchFtUTXOListResponse(contractTxID, hash, network string, batchSize ...int) (ftUtxoListResponse, error) {
 	baseURL := getBaseURL(network)
 	url := fmt.Sprintf("%sft/utxo/combinescript/%s/contract/%s", baseURL, hash, contractTxID)
 
-	body, err := httpGetWithRetry(url)
+	body, err := getUTXOListBody(url, batchSize)
 	if err != nil {
 		return ftUtxoListResponse{}, err
 	}
@@ -267,19 +267,19 @@ func fetchFtUTXOListResponse(contractTxID, hash, network string) (ftUtxoListResp
 }
 
 // FetchFtUTXOList returns all FT UTXOs for an address/hash.
-func FetchFtUTXOList(contractTxID, addressOrHash, codeScript, network string) ([]*util.FtUTXO, error) {
+func FetchFtUTXOList(contractTxID, addressOrHash, codeScript, network string, batchSize ...int) ([]*util.FtUTXO, error) {
 	hashJS, err := buildAddressOrHashLegacy(addressOrHash)
 	if err != nil {
 		return nil, err
 	}
-	r, err := fetchFtUTXOListResponse(contractTxID, hashJS, network)
+	r, err := fetchFtUTXOListResponse(contractTxID, hashJS, network, batchSize...)
 	if err != nil {
 		return nil, err
 	}
 	if len(r.Data.UTXOs) == 0 {
 		hashAlt, err2 := buildAddressOrHash(addressOrHash)
 		if err2 == nil && hashAlt != hashJS {
-			r, err = fetchFtUTXOListResponse(contractTxID, hashAlt, network)
+			r, err = fetchFtUTXOListResponse(contractTxID, hashAlt, network, batchSize...)
 			if err != nil {
 				return nil, err
 			}
@@ -573,4 +573,3 @@ func FetchFtPrePreTxData(preTX *bt.Tx, preTxVout int, network string) (string, e
 	}
 	return "57" + prepretxdata, nil
 }
-

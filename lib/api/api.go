@@ -117,7 +117,7 @@ func httpGetResponseWithRetry(url string) (*http.Response, error) {
 
 // httpGetWithRetry is the read-and-discard variant of httpGetResponseWithRetry:
 // it returns the response body bytes and closes the response.
-func httpGetWithRetry(url string) ([]byte, error) {
+func httpGetSingleWithRetry(url string) ([]byte, error) {
 	resp, err := httpGetResponseWithRetry(url)
 	if err != nil {
 		return nil, err
@@ -126,6 +126,9 @@ func httpGetWithRetry(url string) ([]byte, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+	if e := indexResponseError(body, resp.StatusCode); e != nil {
+		return nil, e
 	}
 	if resp.StatusCode < http.StatusOK ||
 		resp.StatusCode >= http.StatusMultipleChoices {

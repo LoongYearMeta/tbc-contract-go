@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/LoongYearMeta/tbc-contract-go/lib/api"
 	c "github.com/LoongYearMeta/tbc-contract-go/lib/contract"
@@ -13,6 +14,7 @@ import (
 	"github.com/LoongYearMeta/tbc-lib-go/bscript"
 	"github.com/LoongYearMeta/tbc-lib-go/crypto"
 	"math/big"
+	"sort"
 	"strconv"
 )
 
@@ -146,6 +148,27 @@ func (q Client) FetchTokenInfo(id string, stable bool) (*TokenInfo, error) {
 	return &TokenInfo{ContractID: id, Name: name, Symbol: symbol, Decimal: uint8(decimal.Uint64()), TotalSupply: supply, Asset: a}, nil
 }
 func (q Client) FetchTokenUTXOs(id string, a *c.TokenAsset, owner [21]byte) ([]TokenUTXO, error) {
+	return q.fetchTokenUTXOsQuery(id, a, owner, api.UTXOQueryOptions{})
+}
+func (q Client) FetchTokenUTXOsForAmount(id string, a *c.TokenAsset, owner [21]byte, amount *big.Int, maxInputs int) ([]TokenUTXO, error) {
+	if amount == nil || amount.Sign() <= 0 || maxInputs < 1 || maxInputs > 5 {
+		return nil, fmt.Errorf("positive amount and 1..5 inputs required")
+	}
+	list, e := q.fetchTokenUTXOsQuery(id, a, owner, api.UTXOQueryOptions{Target: amount, Limit: maxInputs})
+	if e != nil {
+		return nil, e
+	}
+	selected, e := SelectTokenUTXOs(list, amount, maxInputs)
+	if errors.Is(e, ErrTokenInputsIncompatible) && a.Modern != nil {
+		list, e = q.FetchTokenUTXOs(id, a, owner)
+		if e != nil {
+			return nil, e
+		}
+		return SelectTokenUTXOs(list, amount, maxInputs)
+	}
+	return selected, e
+}
+func (q Client) fetchTokenUTXOsQuery(id string, a *c.TokenAsset, owner [21]byte, options api.UTXOQueryOptions) ([]TokenUTXO, error) {
 	if e := validID(id); e != nil {
 		return nil, e
 	}
@@ -170,16 +193,16 @@ func (q Client) FetchTokenUTXOs(id string, a *c.TokenAsset, owner [21]byte) ([]T
 			route = "pool/lputxo/scriptpubkeyhash/" + hex.EncodeToString(h)
 		}
 	}
-	d, e := q.data(route)
+	options.AllowNull = lp
+	raw, e := api.FetchUTXORecords(route, q.Network, options)
 	if e != nil {
 		return nil, e
 	}
-	var records []map[string]json.RawMessage
-	if e = json.Unmarshal(d["utxos"], &records); e != nil {
-		return nil, e
-	}
-	if records == nil {
-		return nil, fmt.Errorf("missing UTXO array")
+	records := make([]map[string]json.RawMessage, len(raw))
+	for i, r := range raw {
+		if e = json.Unmarshal(r, &records[i]); e != nil {
+			return nil, e
+		}
 	}
 	cache := map[string]*bt.Tx{}
 	seen := map[string]bool{}
@@ -338,7 +361,7 @@ func (q Client) FetchTBCAMMInput(id string, amm *c.TBCAMM) (c.TBCAMMPoolSpend, e
 	if e != nil {
 		return result, e
 	}
-	for field, want := range map[string]uint64{"value": p.Outputs[0].Satoshis, "lp_balance": t.LP, "token_balance": t.FT, "tbc_balance": t.TBC, "service_fee_rate": uint64(t.FeeRate)} {
+	for field, want := range map[string]uint64{"value": p.Outputs[0].Satoshis, "lp_balance": t.LP, "token_balance": t.FT, "tbc_balance": t.TBC} {
 		n, e := integer(d[field])
 		if e != nil || n.Cmp(new(big.Int).SetUint64(want)) != 0 {
 			return result, fmt.Errorf("AMM indexed %s differs from raw state", field)
@@ -362,4 +385,59 @@ func (q Client) FetchTBCAMMInput(id string, amm *c.TBCAMM) (c.TBCAMMPoolSpend, e
 		return result, fmt.Errorf("AMM ancestor mismatch")
 	}
 	return c.TBCAMMPoolSpend{Parent: p, Ancestor: ancestor}, nil
+}
+
+// ErrTokenInputsIncompatible distinguishes lock-domain/input-limit fragmentation from insufficient funds.
+var ErrTokenInputsIncompatible = errors.New("TOKEN_INPUTS_INCOMPATIBLE: token balance is fragmented across input limits or lock-time domains")
+
+func SelectTokenUTXOs(list []TokenUTXO, amount *big.Int, maxInputs int) ([]TokenUTXO, error) {
+	if amount != nil && amount.Sign() <= 0 || maxInputs < 1 || maxInputs > 5 {
+		return nil, fmt.Errorf("positive amount and 1..5 inputs required")
+	}
+	balance := func(v []TokenUTXO) *big.Int {
+		n := new(big.Int)
+		for _, u := range v {
+			n.Add(n, u.Asset.Balance)
+		}
+		return n
+	}
+	ordered := append([]TokenUTXO{}, list...)
+	for _, u := range ordered {
+		if u.Asset == nil || u.Asset.Balance == nil || u.Asset.Balance.Sign() < 0 {
+			return nil, fmt.Errorf("invalid token balance")
+		}
+	}
+	sort.SliceStable(ordered, func(i, j int) bool { return ordered[i].Asset.Balance.Cmp(ordered[j].Asset.Balance) > 0 })
+	candidates := [][]TokenUTXO{}
+	for _, timestamp := range []bool{false, true} {
+		selected := []TokenUTXO{}
+		for _, u := range ordered {
+			if u.Asset.LockTime != 0 && (u.Asset.LockTime >= 500000000) != timestamp {
+				continue
+			}
+			if len(selected) == maxInputs {
+				break
+			}
+			selected = append(selected, u)
+			if amount != nil && balance(selected).Cmp(amount) >= 0 {
+				break
+			}
+		}
+		if amount == nil || balance(selected).Cmp(amount) >= 0 {
+			candidates = append(candidates, selected)
+		}
+	}
+	if len(candidates) == 0 {
+		if balance(list).Cmp(amount) < 0 {
+			return nil, fmt.Errorf("insufficient token balance")
+		}
+		return nil, ErrTokenInputsIncompatible
+	}
+	sort.SliceStable(candidates, func(i, j int) bool {
+		if amount != nil {
+			return len(candidates[i]) < len(candidates[j])
+		}
+		return balance(candidates[i]).Cmp(balance(candidates[j])) > 0
+	})
+	return candidates[0], nil
 }

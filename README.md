@@ -2,7 +2,7 @@
 
 TBC 合约与索引 API 的 Go 实现，与 [tbc-contract](https://github.com/sCrypt-Inc/tbc-contract) 的 `lib/contract`、`lib/util` 等对齐。
 
-当前本地版本候选为 **0.2.0**，新增合约以 npm **tbc-contract@1.7.2** 为基准；尚未发布 Git 标签。保留旧合约入口。详见 [兼容范围与真实测试网验证](docs/js-1.7.2-compatibility.md)。
+当前版本候选为 **0.3.0**，新增合约以 npm **tbc-contract@1.7.3** 为基准；尚未发布 Git 标签。保留旧合约入口。详见 [兼容范围与真实测试网验证](docs/js-1.7.3-compatibility.md)。
 
 Pool 参数矩阵与旧锁定 LP 拒绝调查见 [专项验证报告](docs/pool-parameter-coverage-172.md)。
 

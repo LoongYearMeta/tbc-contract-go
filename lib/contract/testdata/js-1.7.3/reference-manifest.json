@@ -1,0 +1,20 @@
+{
+  "reference": {
+    "tbc-contract": "1.7.3",
+    "tbc-lib-js": "1.0.31"
+  },
+  "npmIntegrity": {
+    "tbc-contract": "sha512-fEf2/yRgNalq+VGIsjJlzCR3dsLyhacGMlkI7y8wpnxpSRZN2BdAHyykLySCb4jjsMrzRqKSW0KTHJ0tfZ+pOg==",
+    "tbc-lib-js": "sha512-O3cc2uqyTm2+hUPMzlaKlG5Hb2C2mHXGAmegHNQXzWQvqcuLNVbfDijyzy9sltP8xa5oYaGSG3KTEa6czx5d2w=="
+  },
+  "templates": {
+    "pool": {
+      "artifactSha256": "ecc47489086b5f2dc700f4f6820182c49420bfbbe2d77b35113e9800d12fcf04",
+      "templateSha256": "a821abdb280268430ad7ea7a9421068a719a8e959b84c11265d4456e8d740db7"
+    },
+    "pool_hash_lock": {
+      "artifactSha256": "bb10165f6e70a7ef76caf3eb81f3387309350777319a782ab7af282c9ff5991a",
+      "templateSha256": "834610c0726fa0829c50aaa75c3a0b58c046105248f0b023257437a22f8aca22"
+    }
+  }
+}

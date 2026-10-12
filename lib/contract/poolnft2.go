@@ -1371,7 +1371,7 @@ func (p *PoolNFT2) updatePoolNftTape(poolUtxoTxid ...string) (*bscript.Script, e
 
 // fetchFtlpUTXOList fetches all FT-LP UTXOs for the given address.
 // Uses the pool's current FTA info to build the ftlpCode script hash for the query.
-func (p *PoolNFT2) fetchFtlpUTXOList(address string) ([]*api.LpUTXO, error) {
+func (p *PoolNFT2) fetchFtlpUTXOList(address string, batchSize ...int) ([]*api.LpUTXO, error) {
 	ftaInfo, err := api.FetchFtInfo(p.FtAContractTxID, p.Network)
 	if err != nil {
 		return nil, fmt.Errorf("fetchFtlpUTXOList FetchFtInfo: %w", err)
@@ -1398,12 +1398,12 @@ func (p *PoolNFT2) fetchFtlpUTXOList(address string) ([]*api.LpUTXO, error) {
 	}
 
 	ftlpCodeHex := hex.EncodeToString(ftlpCodeScript.Bytes())
-	return api.FetchFtLpUTXOList(ftlpCodeHex, p.Network)
+	return api.FetchFtLpUTXOList(ftlpCodeHex, p.Network, batchSize...)
 }
 
 // FetchFtLpUTXOList is the exported wrapper for fetchFtlpUTXOList.
-func (p *PoolNFT2) FetchFtLpUTXOList(address string) ([]*api.LpUTXO, error) {
-	return p.fetchFtlpUTXOList(address)
+func (p *PoolNFT2) FetchFtLpUTXOList(address string, batchSize ...int) ([]*api.LpUTXO, error) {
+	return p.fetchFtlpUTXOList(address, batchSize...)
 }
 
 // FetchFtlpBalance returns the sum of FT-LP balances at the given address.

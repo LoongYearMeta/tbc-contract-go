@@ -1,0 +1,28 @@
+{
+  "rustVersion": "0.5.0",
+  "goVersion": "0.3.0",
+  "checks": [
+    {
+      "command": "cargo check --all-targets --quiet",
+      "status": "passed"
+    },
+    {
+      "command": "cargo test --lib --tests --quiet",
+      "status": "passed",
+      "testsPassed": 303
+    },
+    {
+      "command": "go test ./...",
+      "status": "passed"
+    }
+  ],
+  "historicalExampleCheck": {
+    "command": "cargo test --all-targets --quiet",
+    "status": "failed",
+    "failedTests": [
+      "support::pool_preflight::tests::pool_and_ft_inputs_pass_the_real_interpreter_before_a_mutation_blocks_submit",
+      "support::pool_preflight::tests::javascript_stdin_protocol_is_exact_canonical_and_bounded"
+    ],
+    "reason": "Pinned JS 1.6.5 dependency checkout /home/ubuntu/projects/tbc-contract is absent; historical authority pins unchanged."
+  }
+}

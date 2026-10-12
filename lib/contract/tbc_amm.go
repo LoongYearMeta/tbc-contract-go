@@ -14,10 +14,13 @@ import (
 )
 
 type TBCAMM struct {
-	genesis     *bt.Tx
-	plan        uint8
-	controllers [][20]byte
-	lpLocked    bool
+	legacyPlan         uint8
+	genesis            *bt.Tx
+	fees               TBCAMMFeeRates
+	feeAddress         string
+	serviceProviderTag []byte
+	controllers        [][20]byte
+	lpLocked           bool
 }
 type TBCAMMPoolSpend struct{ Parent, Ancestor *bt.Tx }
 type TBCAMMOperation struct {
@@ -41,10 +44,33 @@ type TBCAMMBuildResult struct {
 	Layout      TBCAMMOutputLayout
 }
 
+// NewTBCAMM preserves the 1.7.2 plan-based constructor and pool format.
 func NewTBCAMM(genesis *bt.Tx, plan uint8, controllers [][20]byte, lpLocked bool) (*TBCAMM, error) {
-	if _, _, _, e := TBCAMMFeePolicy(plan); e != nil {
+	rates, e := TBCAMMRatesFromPlan(plan)
+	if e != nil {
 		return nil, e
 	}
+	_, _, address, _ := TBCAMMFeePolicy(plan)
+	a, e := NewTBCAMMWithFees(genesis, rates, address, controllers, lpLocked, []byte{})
+	if e != nil {
+		return nil, e
+	}
+	a.legacyPlan = plan
+	return a, nil
+}
+
+// NewTBCAMMWithFees constructs a 1.7.3 AMM. A nil tag defaults to UTF-8 "NULL"; an empty slice is an explicit empty label.
+func NewTBCAMMWithFees(genesis *bt.Tx, rates TBCAMMFeeRates, feeAddress string, controllers [][20]byte, lpLocked bool, tag []byte) (*TBCAMM, error) {
+	if _, e := rates.Total(); e != nil {
+		return nil, e
+	}
+	if _, e := ammFeeScript(feeAddress); e != nil {
+		return nil, e
+	}
+	if tag == nil {
+		tag = []byte("NULL")
+	}
+	tag = append([]byte{}, tag...)
 	if len(controllers) > 0 {
 		if _, e := ammMembership(controllers); e != nil {
 			return nil, e
@@ -83,15 +109,59 @@ func NewTBCAMM(genesis *bt.Tx, plan uint8, controllers [][20]byte, lpLocked bool
 	}
 	hashes := append([][20]byte{}, controllers...)
 	sort.Slice(hashes, func(i, j int) bool { return bytes.Compare(hashes[i][:], hashes[j][:]) < 0 })
-	return &TBCAMM{copyTx, plan, hashes, lpLocked}, nil
+	return &TBCAMM{genesis: copyTx, fees: rates, feeAddress: feeAddress, serviceProviderTag: tag, controllers: hashes, lpLocked: lpLocked}, nil
 }
-func (a *TBCAMM) tapeSize() int { return len(a.genesis.Outputs[1].LockingScript.Bytes()) }
-func (a *TBCAMM) feeScript() (*bscript.Script, error) {
-	_, _, address, e := TBCAMMFeePolicy(a.plan)
+
+// TBCAMMFromPool detects 1.7.2/1.7.3 and verifies immutable Code/Tape and token bindings.
+// An empty feeAddress recovers the recipient from the legacy plan or the 1.7.3 Tape.
+func TBCAMMFromPool(pool, genesis *bt.Tx, feeAddress string) (*TBCAMM, error) {
+	if pool == nil || len(pool.Outputs) < 2 {
+		return nil, modernError("missing Pool Code/Tape")
+	}
+	c, e := ParseTBCAMMCode(pool.Outputs[0].LockingScript)
 	if e != nil {
 		return nil, e
 	}
+	t, e := ParseTBCAMMTape(pool.Outputs[1].LockingScript)
+	if e != nil {
+		return nil, e
+	}
+	if feeAddress == "" {
+		address, e := bscript.NewAddressFromPublicKeyHash(t.FeeAddress[:], true)
+		if e != nil {
+			return nil, e
+		}
+		feeAddress = address.AddressString
+	}
+	a, e := NewTBCAMMWithFees(genesis, t.Fees, feeAddress, c.Controllers, t.LPLocked, c.ServiceProviderTag)
+	if e != nil {
+		return nil, e
+	}
+	a.legacyPlan = t.LegacyPlan
+	_, _, _, e = a.ReadState(pool)
+	return a, e
+}
+func (a *TBCAMM) tapeSize() int { return len(a.genesis.Outputs[1].LockingScript.Bytes()) }
+
+// Require a canonical P2PKH address, including its checksum and network version.
+func ammFeeScript(address string) (*bscript.Script, error) {
+	parsed, e := bscript.NewAddressFromString(address)
+	if e != nil {
+		return nil, e
+	}
+	hash, e := hex.DecodeString(parsed.PublicKeyHash)
+	if e != nil || len(hash) != 20 {
+		return nil, modernError("invalid fee recipient")
+	}
+	main, _ := bscript.NewAddressFromPublicKeyHash(hash, true)
+	test, _ := bscript.NewAddressFromPublicKeyHash(hash, false)
+	if address != main.AddressString && address != test.AddressString {
+		return nil, modernError("fee recipient must be a canonical P2PKH address")
+	}
 	return bscript.NewP2PKHFromAddress(address)
+}
+func (a *TBCAMM) feeScript() (*bscript.Script, error) {
+	return ammFeeScript(a.feeAddress)
 }
 func (a *TBCAMM) lpCode(hash []byte, owner [21]byte) *ModernTokenCode {
 	kind := ModernLP
@@ -126,8 +196,7 @@ func (a *TBCAMM) ReadState(parent *bt.Tx) (*TBCAMMCode, *TBCAMMTape, TBCAMMMathS
 	if e != nil {
 		return nil, nil, empty, e
 	}
-	rate, _, _, _ := TBCAMMFeePolicy(a.plan)
-	if !reflect.DeepEqual(c.Controllers, a.controllers) && !(len(c.Controllers) == 0 && len(a.controllers) == 0) || c.TapeSize != a.tapeSize() || !bytes.Equal(c.FeeScriptHash[:], crypto.Sha256(fee.Bytes())) || t.FTGenesis != a.genesis.TxID() || t.LPPlan != a.plan || t.FeeRate != rate || t.Controlled != (len(a.controllers) > 0) || t.LPLocked != a.lpLocked {
+	if c.Version != t.Version() || t.LegacyPlan != a.legacyPlan || !reflect.DeepEqual(c.Controllers, a.controllers) && !(len(c.Controllers) == 0 && len(a.controllers) == 0) || c.TapeSize != a.tapeSize() || !bytes.Equal(c.FeeScriptHash[:], crypto.Sha256(fee.Bytes())) || t.FTGenesis != a.genesis.TxID() || t.Fees != a.fees || !bytes.Equal(t.FeeAddress[:], fee.Bytes()[3:23]) || !bytes.Equal(c.ServiceProviderTag, a.serviceProviderTag) || t.Controlled != (len(a.controllers) > 0) || t.LPLocked != a.lpLocked {
 		return nil, nil, empty, modernError("Pool configuration differs from trusted definition")
 	}
 	fi, e := util.GetTBC20StandardCodeIdentity(a.genesis.Outputs[0].LockingScript)
@@ -224,7 +293,10 @@ func (a *TBCAMM) MintFromRoot(feeKey TransactionSigner, fee *bt.UTXO) (*bt.Tx, e
 	if e != nil {
 		return nil, e
 	}
-	c := TBCAMMCode{TapeSize: a.tapeSize(), Controllers: a.controllers}
+	c := TBCAMMCode{Version: TBCAMMV173, TapeSize: a.tapeSize(), Controllers: a.controllers, ServiceProviderTag: a.serviceProviderTag}
+	if a.legacyPlan != 0 {
+		c.Version = TBCAMMV172
+	}
 	copy(c.OriginalUTXO[:], root)
 	copy(c.FeeScriptHash[:], crypto.Sha256(fs.Bytes()))
 	code, e := c.Script()
@@ -239,8 +311,8 @@ func (a *TBCAMM) MintFromRoot(feeKey TransactionSigner, fee *bt.UTXO) (*bt.Tx, e
 	}
 	lc, _ := lp.Script()
 	fi, _ := util.GetTBC20StandardCodeIdentity(a.genesis.Outputs[0].LockingScript)
-	rate, _, _, _ := TBCAMMFeePolicy(a.plan)
-	t := TBCAMMTape{LPSize: uint16(len(lc.Bytes())), FTSize: uint16(len(a.genesis.Outputs[0].LockingScript.Bytes())), FTGenesis: a.genesis.TxID(), FeeRate: rate, LPPlan: a.plan, Controlled: len(a.controllers) > 0, LPLocked: a.lpLocked}
+	t := TBCAMMTape{LegacyPlan: a.legacyPlan, LPSize: uint16(len(lc.Bytes())), FTSize: uint16(len(a.genesis.Outputs[0].LockingScript.Bytes())), FTGenesis: a.genesis.TxID(), Fees: a.fees, Controlled: len(a.controllers) > 0, LPLocked: a.lpLocked}
+	copy(t.FeeAddress[:], fs.Bytes()[3:23])
 	copy(t.LPHash[:], li[:32])
 	copy(t.FTHash[:], fi[:32])
 	tape, e := t.Script()
@@ -302,9 +374,9 @@ func (a *TBCAMM) Operate(o TBCAMMOperation) (*TBCAMMBuildResult, error) {
 	case 2:
 		quote, e = state.Remove(o.Amount)
 	case 3:
-		quote, e = state.SwapFT(o.Amount, a.plan, o.Minimum)
+		quote, e = state.SwapFTWithRates(o.Amount, t.Fees, o.Minimum)
 	case 4:
-		quote, e = state.SwapTBC(o.Amount, a.plan, o.Minimum)
+		quote, e = state.SwapTBCWithRates(o.Amount, t.Fees, o.Minimum)
 	}
 	if e != nil {
 		return nil, e
